@@ -35,7 +35,7 @@ git push origin main
 | 항목 | 값 |
 |------|-----|
 | Name | `playball-kbo` (아무 이름) |
-| Build Command | `npm ci --include=dev && npm run build:render` |
+| Build Command | `npm run build:render` |
 | Start Command | `npm run start:prod` |
 | Health Check | `/amm/health` |
 
@@ -91,4 +91,4 @@ A. 15분 안 쓰면 sleep → 첫 접속 느림. DB는 Supabase 무료 연동 �
 
 **Q. `Exited with status 127` 빌드 실패?**  
 A. Render에 `NODE_ENV=production`이 있으면 `nest`·`vite`가 설치 안 됨. Build Command를  
-`npm ci --include=dev && npm run build:render` 로 바꾸고 다시 Deploy.
+`npm run build:render` 로만 설정 (앞에 `npm ci` 붙이지 말 것) 후 다시 Deploy.

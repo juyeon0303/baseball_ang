@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build && npm run build:app",
-    "build:render": "nest build && npm run build:app && npm run build:web:subpath",
+    "build:render": "node scripts/render-build.mjs",
     "build:app": "npm install --prefix app --include=dev && npm run build --prefix app",
     "build:web": "npm install --prefix web --include=dev && npm run build --prefix web",
     "build:web:subpath": "node scripts/build-stock.mjs",
@@ -51,12 +51,13 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
-    "typeorm": "^1.0.0"
+    "typeorm": "^1.0.0",
+    "@nestjs/cli": "^11.0.0",
+    "typescript": "^5.7.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
@@ -75,7 +76,6 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
