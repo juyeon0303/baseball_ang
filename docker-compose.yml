@@ -1,0 +1,25 @@
+# 로컬 Postgres — STORAGE_MODE=postgres 개발용
+# 사용: docker compose up -d
+# .env 에 DATABASE_URL=postgresql://yagu:yagu@localhost:5432/yagu_jusik
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yagu-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yagu
+      POSTGRES_PASSWORD: yagu
+      POSTGRES_DB: yagu_jusik
+    ports:
+      - '5432:5432'
+    volumes:
+      - yagu_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U yagu -d yagu_jusik']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  yagu_pgdata:

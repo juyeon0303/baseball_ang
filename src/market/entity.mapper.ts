@@ -1,12 +1,16 @@
 import { InstrumentEntity } from '../entities/instrument.entity';
 import { PriceSnapshotEntity } from '../entities/price-snapshot.entity';
 import { TradeEntity } from '../entities/trade.entity';
+import { findMemeById } from './market-meme-lineup';
 import { InstrumentState, PriceSnapshot, TradeRecord } from './market.types';
 import { MetricKind } from './market-lineup';
 
 export function toInstrumentState(row: InstrumentEntity): InstrumentState {
+  const meme = findMemeById(row.id);
+  const kind = row.metric === 'hype' || meme ? 'meme' : 'player';
   return {
     id: row.id,
+    kind,
     name: row.name,
     symbol: row.symbol,
     teamName: row.teamName,
@@ -19,6 +23,12 @@ export function toInstrumentState(row: InstrumentEntity): InstrumentState {
     fairPrice: Number(row.fairPrice),
     price: Number(row.price),
     accent: row.accent,
+    betCta: meme?.betCta,
+    narrative: meme?.narrative,
+    longThesis: meme?.longThesis,
+    shortThesis: meme?.shortThesis,
+    yesBet: meme?.yesBet,
+    noBet: meme?.noBet,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

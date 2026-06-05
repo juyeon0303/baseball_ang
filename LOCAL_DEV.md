@@ -1,39 +1,52 @@
 # 로컬 개발 (Windows)
 
-## ERR_CONNECTION_REFUSED 가 났을 때
+## 프로젝트 3갈래 (헷갈리지 말 것)
 
-브라우저가 `localhost:3000`에 연결하지 못했다는 뜻입니다. **거의 항상 서버가 안 떠 있는 상태**입니다.
+| 폴더 | 역할 | 포트 |
+|------|------|------|
+| **루트** `baseball-backend` | API만 (NestJS) | **3000** |
+| **`web/`** | 웹사이트 UI | **5173** |
+| **`app/`** | 모바일 앱 (아직 없음) | — |
 
-### 1) 가장 흔한 원인 — 폴더가 다름
+자세히: [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)
 
-`C:\Users\user` 에서 `npm run start:dev` 를 실행하면 **Missing script: "start:dev"** 가 납니다.  
-반드시 **프로젝트 폴더**에서 실행하세요.
+## 중간체크 — 이렇게 하세요
+
+```bat
+REM 1) API
+cd C:\Users\user\OneDrive\Desktop\zipcode\baseball-backend
+npm run start:dev
+
+REM 2) 웹 (새 터미널)
+cd C:\Users\user\OneDrive\Desktop\zipcode\baseball-backend\web
+npm install
+npm run dev
+```
+
+**개발 UI:** http://localhost:5173 (`web` Vite)
+
+**배포 미리보기:** `npm run preview:prod` → http://localhost:3000 (API+웹 통합)
+
+## ERR_CONNECTION_REFUSED
+
+- **5173** 거부 → `web` 폴더에서 `npm run dev` 안 켠 상태
+- **3000** 거부 → 루트에서 `npm run start:dev` 안 켠 상태
+- 웹만 켜고 API 안 켜면 상단에 **「API 미연결」** 빨간 표시
+
+## 루트에서 서버만
 
 ```bat
 cd C:\Users\user\OneDrive\Desktop\zipcode\baseball-backend
 npm run start:dev
 ```
 
-또는 탐색기에서 `start-dev.bat` 더블클릭.
+또는 `start-dev.bat` (API 전용)
 
-### 2) 빠른 확인
-
-| 확인 | 명령 |
-|------|------|
-| 서버 살아 있음? | 브라우저 `http://localhost:3000` 또는 `http://127.0.0.1:3000/amm/hub` |
-| 포트 사용 중? | PowerShell: `Get-NetTCPConnection -LocalPort 3000` |
-| 이미 다른 프로세스? | `EADDRINUSE` → 이미 3000 사용 중. 브라우저만 열면 됨 |
-
-### 3) 포트가 꽉 찼을 때 (EADDRINUSE)
+## 포트 충돌 (EADDRINUSE)
 
 ```powershell
 Get-NetTCPConnection -LocalPort 3000 | Select-Object OwningProcess
 Stop-Process -Id <PID> -Force
-cd C:\Users\user\OneDrive\Desktop\zipcode\baseball-backend
-npm run start:dev
 ```
 
-## Cursor / 에이전트
-
-채팅에서 서버를 띄울 때는 프로젝트 경로에서 백그라운드로 `npm run start:dev` 를 실행합니다.  
-터미널을 닫으면 서버도 내려갈 수 있으니, 오래 쓸 때는 `start-dev.bat` 으로 별도 cmd 창을 켜 두는 편이 안전합니다.
+5173도 동일하게 `LocalPort 5173` 확인.

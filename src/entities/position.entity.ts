@@ -16,6 +16,6 @@ export class PositionEntity {
   shortShares: number;
 
   @ManyToOne(() => UserEntity, (u) => u.positions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'externalId' })
   user: UserEntity;
 }

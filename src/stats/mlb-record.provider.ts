@@ -17,7 +17,31 @@ export class MlbRecordProvider {
 
   async fetchSeasonOps(
     mlbPlayerId: number,
-    season = new Date().getFullYear(),
+    season?: number,
+  ): Promise<MlbPlayerStatRow | null> {
+    const years = this.seasonCandidates(season);
+    for (const year of years) {
+      const row = await this.fetchSeasonOpsForYear(mlbPlayerId, year);
+      if (row) return row;
+    }
+    this.logger.warn(`MLB OPS 없음 player=${mlbPlayerId} years=${years.join(',')}`);
+    return null;
+  }
+
+  /** 시즌 미개시·오프시즌 — 당해 → 전년 순으로 시도 */
+  private seasonCandidates(explicit?: number): number[] {
+    const now = new Date();
+    const y = now.getFullYear();
+    if (explicit != null) return [explicit];
+    const month = now.getMonth() + 1;
+    if (month <= 3) return [y, y - 1];
+    if (month >= 11) return [y, y - 1];
+    return [y];
+  }
+
+  private async fetchSeasonOpsForYear(
+    mlbPlayerId: number,
+    season: number,
   ): Promise<MlbPlayerStatRow | null> {
     const url = `https://statsapi.mlb.com/api/v1/people/${mlbPlayerId}/stats?stats=season&group=hitting&season=${season}`;
     const res = await fetch(url, {
@@ -25,7 +49,7 @@ export class MlbRecordProvider {
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
-      this.logger.warn(`MLB API ${res.status} player=${mlbPlayerId}`);
+      this.logger.warn(`MLB API ${res.status} player=${mlbPlayerId} season=${season}`);
       return null;
     }
     const data = (await res.json()) as {

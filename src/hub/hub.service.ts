@@ -13,13 +13,17 @@ export class HubService {
   ) {}
 
   async getHub(userId?: string) {
-    const featuredId = LEE_JUNG_HOO_OPS_ID;
-    const [instrument, game, leaderboard, trades, crowd] = await Promise.all([
+    const game = this.games.getTodayFeatured();
+    const featuredId =
+      game.status === 'live' && game.linkedInstrumentId
+        ? game.linkedInstrumentId
+        : LEE_JUNG_HOO_OPS_ID;
+    const [instrument, leaderboard, trades, crowd, memes] = await Promise.all([
       this.market.getMarket(featuredId),
-      Promise.resolve(this.games.getTodayFeatured()),
       this.market.getLeaderboard(5),
       this.market.getRecentTrades(3),
       this.market.getCrowdRatio(featuredId),
+      this.market.getMemeLineup(),
     ]);
 
     const top = leaderboard.rankings[0] ?? null;
@@ -44,6 +48,8 @@ export class HubService {
       featuredId,
       instrument,
       game,
+      plays: this.games.getSnapshot()?.plays?.slice(0, 5) ?? [],
+      memes,
       crowd,
       liveCount: this.stream.getLiveCount(),
       weekKing: leaderboard.opsKing ?? top,

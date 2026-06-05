@@ -1,4 +1,4 @@
-"""백엔드 market-lineup.ts 와 동일한 KBO/MLB 대표 선수 목록."""
+"""백엔드 market-lineup.ts 와 동일 — 2026 커뮤·파급력 기준 대표 선수."""
 
 from __future__ import annotations
 
@@ -44,10 +44,10 @@ LINEUP: list[RosterEntry] = [
         "stats_source": "kbo",
     },
     {
-        "instrument_id": "kt-choi",
-        "player_name": "최원준",
+        "instrument_id": "kt-hill",
+        "player_name": "힐리어드",
         "metric": "ops",
-        "kbo_player_id": 66606,
+        "kbo_player_id": 56034,
         "stats_source": "kbo",
     },
     {
@@ -58,10 +58,10 @@ LINEUP: list[RosterEntry] = [
         "stats_source": "kbo",
     },
     {
-        "instrument_id": "nc-lee",
-        "player_name": "이우성",
+        "instrument_id": "nc-kim",
+        "player_name": "김주원",
         "metric": "ops",
-        "kbo_player_id": 63260,
+        "kbo_player_id": 51907,
         "stats_source": "kbo",
     },
     {
@@ -86,10 +86,10 @@ LINEUP: list[RosterEntry] = [
         "stats_source": "kbo",
     },
     {
-        "instrument_id": "hh-ryu",
-        "player_name": "류현진",
-        "metric": "era",
-        "kbo_player_id": 76715,
+        "instrument_id": "hh-kang",
+        "player_name": "강백호",
+        "metric": "ops",
+        "kbo_player_id": 68050,
         "stats_source": "kbo",
     },
 ]

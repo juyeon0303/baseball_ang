@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { StockStreamGateway } from '../amm/stock-stream.gateway';
+import { MEME_STOCKS } from './market-meme-lineup';
 import {
   findSeedById,
   findSeedByPlayerName,
@@ -42,6 +43,15 @@ export class MarketService {
     return Promise.resolve(this.store.getLineup());
   }
 
+  async getMemeLineup(): Promise<InstrumentState[]> {
+    if ('getMemeLineup' in this.store && typeof this.store.getMemeLineup === 'function') {
+      return Promise.resolve(this.store.getMemeLineup());
+    }
+    return Promise.all(
+      MEME_STOCKS.map((s) => Promise.resolve(this.store.getInstrument(s.id))),
+    );
+  }
+
   async getMarket(instrumentId: string): Promise<InstrumentState> {
     return Promise.resolve(this.store.getInstrument(instrumentId));
   }
@@ -70,21 +80,28 @@ export class MarketService {
       ),
       recentTrades: await Promise.resolve(this.store.getRecentTrades(20)),
       roadmap: [
-        { id: 'ten-stocks', label: 'KBO 10구단 대표 주식', status: 'done' },
+        { id: 'ten-stocks', label: 'KBO 10구단 대표 종목', status: 'done' },
         { id: 'charts', label: '종목별 시세 차트', status: 'done' },
-        { id: 'postgres', label: 'Postgres 저장', status: 'done' },
+        { id: 'postgres', label: 'Postgres 데이터 저장', status: 'done' },
         {
           id: 'live-stats',
-          label: 'KBO·MLB 실시간 오라클 (5분)',
+          label: 'KBO·MLB 기록 갱신 (09:00 / 10:00)',
           status: 'done',
         },
-        { id: 'live-score', label: '문자 중계 패널', status: 'todo' },
+        { id: 'live-score', label: '실시간 점수판·타석 소식', status: 'done' },
+        { id: 'meme-stocks', label: '밈·화제 베팅', status: 'done' },
+        { id: 'mobile-app', label: 'Ruta++ 모바일 앱 (app/)', status: 'todo' },
+        { id: 'web-frontend', label: '웹 프론트 (web/)', status: 'done' },
       ],
     };
   }
 
   async getRecentTrades(limit = 30, instrumentId?: string) {
     return Promise.resolve(this.store.getRecentTrades(limit, instrumentId));
+  }
+
+  async getStoreStats() {
+    return Promise.resolve(this.store.getStats());
   }
 
   /** 군중 롱/숏 비율 (보유 주식 수 기준) */
@@ -336,15 +353,49 @@ export class MarketService {
     });
   }
 
+  /** 경기 플레이 → 군중 심리( sentiment ) 미세 반영 — 시즌 OPS와 별도 */
+  async applyPlaySentiment(
+    instrumentId: string,
+    delta: number,
+  ): Promise<InstrumentState | null> {
+    if (!Number.isFinite(delta) || delta === 0) return null;
+    try {
+      const inst = await Promise.resolve(this.store.getInstrument(instrumentId));
+      await Promise.resolve(
+        this.store.updateInstrument(instrumentId, {
+          sentiment: Math.max(0.5, Math.min(2, inst.sentiment + delta)),
+        }),
+      );
+      const updated = await Promise.resolve(this.store.recalcPrice(instrumentId));
+      this.broadcast(updated);
+      return updated;
+    } catch {
+      return null;
+    }
+  }
+
+  async updateMemeOracle(
+    instrumentId: string,
+    value: number,
+  ): Promise<InstrumentState> {
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      throw new BadRequestException('밈 지수는 0~100 범위여야 합니다.');
+    }
+    return this.updateOracle(instrumentId, value);
+  }
+
   async updateOracle(instrumentId: string, value: number): Promise<InstrumentState> {
     const inst = await Promise.resolve(this.store.getInstrument(instrumentId));
-    if (!Number.isFinite(value) || value <= 0) {
+    if (!Number.isFinite(value) || value < 0) {
       throw new BadRequestException('유효한 오라클 값이 필요합니다.');
     }
-    if (inst.metric === 'ops' && value > 2) {
+    if (inst.metric === 'hype' && value > 100) {
+      throw new BadRequestException('밈 지수는 0~100 범위여야 합니다.');
+    }
+    if (inst.metric === 'ops' && (value <= 0 || value > 2)) {
       throw new BadRequestException('OPS 범위를 확인하세요.');
     }
-    if (inst.metric === 'era' && value > 15) {
+    if (inst.metric === 'era' && (value <= 0 || value > 15)) {
       throw new BadRequestException('ERA 범위를 확인하세요.');
     }
     await Promise.resolve(

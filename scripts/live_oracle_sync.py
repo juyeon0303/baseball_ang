@@ -4,6 +4,7 @@
 
   python scripts/live_oracle_sync.py
   python scripts/live_oracle_sync.py --kbo-only
+  python scripts/live_oracle_sync.py --mlb-only
 """
 
 from __future__ import annotations
@@ -33,13 +34,28 @@ def main() -> int:
         action="store_true",
         help="KBO 10구단만 (이정후 MLB 제외)",
     )
+    parser.add_argument(
+        "--mlb-only",
+        action="store_true",
+        help="MLB featured만 (이정후, Stats API)",
+    )
     args = parser.parse_args()
 
-    rows = fetch_all_kbo_lineup()
-    if not args.kbo_only:
+    if args.kbo_only and args.mlb_only:
+        logger.error("--kbo-only 와 --mlb-only 는 동시에 쓸 수 없습니다")
+        return 1
+
+    rows = []
+    if args.mlb_only:
         mlb = fetch_lee_jung_hoo_ops()
         if mlb:
-            rows.insert(0, mlb)
+            rows.append(mlb)
+    else:
+        rows = fetch_all_kbo_lineup()
+        if not args.kbo_only:
+            mlb = fetch_lee_jung_hoo_ops()
+            if mlb:
+                rows.insert(0, mlb)
 
     if not rows:
         logger.error("수집된 행이 없습니다")

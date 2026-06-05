@@ -1,72 +1,55 @@
-# GitHub → Render 자동 배포
+# GitHub → Render 배포 (API + 웹 한 번에)
 
-## 1. GitHub에 코드 올리기
+이제 **웹사이트가 API 서버에 포함**됩니다. 배포 URL 하나만 공유하면 됩니다.
 
-PowerShell:
+## 1. 로컬에서 배포 전 확인
 
 ```powershell
 cd C:\Users\user\OneDrive\Desktop\zipcode\baseball-backend
-
-git init
-git add .
-git commit -m "야구주식 MVP"
-
-# GitHub에서 New repository (README 없이 빈 레포)
-git remote add origin https://github.com/juyeon0303/baseball_ang.git
-git branch -M main
-git push -u origin main
+npm run build
+npm run start:prod
 ```
 
-## 2. Render에 Web Service 만들기
+브라우저 **http://localhost:3000** — 가이드·베팅·경기가 보이면 OK.
 
-1. https://dashboard.render.com
-2. **New +** → **Web Service**
-3. **Connect a repository** → 새 GitHub 계정 **Authorize** → 레포 선택
-4. 설정:
-
-| 항목 | 값 |
-|------|-----|
-| Name | `kbo-stock-mvp` (원하는 이름) |
-| Region | Singapore 등 가까운 곳 |
-| Branch | `main` |
-| Runtime | **Node** |
-| Build Command | `npm ci && npm run build` |
-| Start Command | `npm run start:prod` |
-| Instance | Free |
-
-5. **Advanced** → Health Check Path: `/amm/status`
-6. **Create Web Service**
-
-첫 배포 끝나면 URL: `https://kbo-stock-mvp.onrender.com` 형태
-
-## 3. (선택) Supabase
-
-**Environment** 탭에서 Add:
-
-- `STORAGE_MODE` = `postgres`
-- `DATABASE_URL` = Supabase URI
-- `DB_SYNCHRONIZE` = `true`
-
-저장하면 자동 재배포됨.
-
-## 4. 이후 업데이트
-
-코드 수정 후:
+## 2. GitHub push
 
 ```powershell
 git add .
-git commit -m "설명"
-git push
+git commit -m "production build: api + web"
+git push origin main
 ```
 
-→ Render가 **자동으로** 다시 빌드·배포 (Auto-Deploy 켜져 있으면)
+레포: https://github.com/juyeon0303/baseball_ang
 
-## 5. Docker Hub 방식과 차이
+## 3. Render Web Service
 
-| | GitHub + Render | Docker Hub |
-|--|-----------------|------------|
-| 코드 push | `git push` | `docker push` |
-| 배포 | 자동 | Manual Deploy |
-| 편함 | ✅ 개발에 유리 | 이미지 직접 관리 |
+| 항목 | 값 |
+|------|-----|
+| Build Command | `npm ci && npm run build` |
+| Start Command | `npm run start:prod` |
+| Health Check Path | `/amm/hub` |
 
-기존 **Existing Image** 서비스는 끄거나 삭제하고, GitHub Web Service 하나만 쓰는 걸 권장.
+배포 완료 URL 예: `https://yagu-jusik.onrender.com`
+
+## 4. (권장) 환경 변수
+
+| Key | Value |
+|-----|-------|
+| `NODE_ENV` | `production` |
+| `PUBLIC_URL` | `https://your-app.onrender.com` |
+
+### 데이터 유지하려면 (선택)
+
+| Key | Value |
+|-----|-------|
+| `STORAGE_MODE` | `postgres` |
+| `DATABASE_URL` | Supabase URI |
+| `DB_SYNCHRONIZE` | `true` |
+
+## 5. 로컬 개발은 그대로 2터미널
+
+- API: `npm run start:dev` (:3000)
+- 웹 핫리로드: `cd web && npm run dev` (:5173)
+
+자세한 launch 한계·남은 일: [LAUNCH.md](./LAUNCH.md)

@@ -12,6 +12,17 @@ export interface KboPlayerStatRow {
   fetchedAt: string;
 }
 
+export interface KboPitcherSeasonLine {
+  ip: number;
+  bb: number;
+  so: number;
+}
+
+export interface KboHitterSeasonLine {
+  hr: number;
+  games?: number;
+}
+
 @Injectable()
 export class KboRecordProvider {
   private readonly logger = new Logger(KboRecordProvider.name);
@@ -29,6 +40,24 @@ export class KboRecordProvider {
       source: 'kbo_official',
       fetchedAt: new Date().toISOString(),
     };
+  }
+
+  async fetchPitcherSeasonLine(
+    playerId: number,
+  ): Promise<KboPitcherSeasonLine | null> {
+    const html = await this.fetchHtml(
+      `https://www.koreabaseball.com/Record/Player/PitcherDetail/Basic.aspx?playerId=${playerId}`,
+    );
+    return this.parsePitcherSeasonLine(html);
+  }
+
+  async fetchHitterSeasonLine(
+    playerId: number,
+  ): Promise<KboHitterSeasonLine | null> {
+    const html = await this.fetchHtml(
+      `https://www.koreabaseball.com/Record/Player/HitterDetail/Basic.aspx?playerId=${playerId}`,
+    );
+    return this.parseHitterSeasonLine(html);
   }
 
   async fetchPitcherEra(playerId: number): Promise<KboPlayerStatRow | null> {
@@ -84,6 +113,58 @@ export class KboRecordProvider {
       }
     }
     return null;
+  }
+
+  private parsePitcherSeasonLine(html: string): KboPitcherSeasonLine | null {
+    for (const table of this.extractTables(html)) {
+      if (
+        (!table.includes('평균자책') && !table.includes('>ERA<')) ||
+        table.includes('최근 10경기')
+      ) {
+        continue;
+      }
+      const ths = this.extractThLabels(table);
+      const ipIdx = ths.findIndex((h) => h === 'IP');
+      const bbIdx = ths.findIndex((h) => h === 'BB');
+      const soIdx = ths.findIndex((h) => h === 'SO' || h === 'KK');
+      if (ipIdx < 0) continue;
+      const cells = this.firstRowCells(table);
+      if (!cells) continue;
+      const ip = this.parseInnings(cells[ipIdx]);
+      const bb = parseInt(cells[bbIdx] ?? '0', 10) || 0;
+      const so = parseInt(cells[soIdx] ?? '0', 10) || 0;
+      if (ip > 0) return { ip, bb, so };
+    }
+    return null;
+  }
+
+  private parseHitterSeasonLine(html: string): KboHitterSeasonLine | null {
+    for (const table of this.extractTables(html)) {
+      if (!table.includes('출루율+장타율') || table.includes('최근 10경기')) {
+        continue;
+      }
+      const ths = this.extractThLabels(table);
+      const hrIdx = ths.findIndex((h) => h === 'HR');
+      const gIdx = ths.findIndex((h) => h === 'G');
+      if (hrIdx < 0) continue;
+      const cells = this.firstRowCells(table);
+      if (!cells) continue;
+      const hr = parseInt(cells[hrIdx] ?? '0', 10) || 0;
+      const games = gIdx >= 0 ? parseInt(cells[gIdx] ?? '0', 10) || 0 : undefined;
+      return { hr, games };
+    }
+    return null;
+  }
+
+  private parseInnings(ipRaw: string): number {
+    const s = (ipRaw ?? '').trim();
+    if (!s) return 0;
+    if (s.includes('.')) {
+      const [whole, frac] = s.split('.');
+      const outs = parseInt(frac, 10) || 0;
+      return (parseInt(whole, 10) || 0) + outs / 3;
+    }
+    return parseFloat(s) || 0;
   }
 
   private parseSeasonEra(html: string): number | null {

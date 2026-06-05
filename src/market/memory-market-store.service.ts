@@ -9,6 +9,7 @@ import {
   UserWeekStat,
 } from './market.types';
 import { getWeekKey } from './week.util';
+import { MEME_STOCKS, MemeStockSeed } from './market-meme-lineup';
 import {
   ALL_INSTRUMENT_SEEDS,
   KBO_TEAM_STOCKS,
@@ -35,10 +36,18 @@ export class MemoryMarketStoreService implements IMarketStore {
       this.instruments.set(seed.id, this.seedToInstrument(seed));
       this.pushPriceSnapshot(seed.id);
     }
+    for (const meme of MEME_STOCKS) {
+      this.instruments.set(meme.id, this.memeToInstrument(meme));
+      this.pushPriceSnapshot(meme.id);
+    }
   }
 
   getLineup(): InstrumentState[] {
     return KBO_TEAM_STOCKS.map((s) => this.getInstrument(s.id));
+  }
+
+  getMemeLineup(): InstrumentState[] {
+    return MEME_STOCKS.map((s) => this.getInstrument(s.id));
   }
 
   getInstrument(id: string): InstrumentState {
@@ -185,10 +194,12 @@ export class MemoryMarketStoreService implements IMarketStore {
   }
 
   private seedToInstrument(seed: LineupSeed): InstrumentState {
-    const metricLabel = seed.metric === 'era' ? 'ERA' : 'OPS';
+    const metricLabel =
+      seed.metric === 'era' ? 'ERA' : seed.metric === 'hype' ? 'HYPE' : 'OPS';
     const fairPrice = this.pricing.fairPrice(seed.metric, seed.oracleValue);
     return {
       id: seed.id,
+      kind: 'player',
       name: `${seed.playerName} ${metricLabel}`,
       symbol: seed.symbol,
       teamName: seed.teamName,
@@ -201,6 +212,33 @@ export class MemoryMarketStoreService implements IMarketStore {
       fairPrice,
       price: this.pricing.marketPrice(fairPrice, 1),
       accent: seed.accent,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  private memeToInstrument(seed: MemeStockSeed): InstrumentState {
+    const fairPrice = this.pricing.fairPrice('hype', seed.oracleValue);
+    return {
+      id: seed.id,
+      kind: 'meme',
+      name: seed.title,
+      symbol: seed.symbol,
+      teamName: seed.teamName,
+      teamShort: seed.teamShort,
+      playerName: seed.title,
+      metric: 'hype',
+      metricLabel: seed.metricLabel,
+      oracleValue: seed.oracleValue,
+      sentiment: 1,
+      fairPrice,
+      price: this.pricing.marketPrice(fairPrice, 1),
+      accent: seed.accent,
+      betCta: seed.betCta,
+      narrative: seed.narrative,
+      longThesis: seed.longThesis,
+      shortThesis: seed.shortThesis,
+      yesBet: seed.yesBet,
+      noBet: seed.noBet,
       updatedAt: new Date().toISOString(),
     };
   }

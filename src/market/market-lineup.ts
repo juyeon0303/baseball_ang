@@ -1,6 +1,8 @@
+import { isMemeInstrumentId } from './market-meme-lineup';
+
 /** KBO 10구단 대표주 + MVP 히어로(이정후·MLB) */
 
-export type MetricKind = 'ops' | 'era';
+export type MetricKind = 'ops' | 'era' | 'hype';
 export type StatsSource = 'kbo' | 'mlb';
 
 export interface LineupSeed {
@@ -33,9 +35,24 @@ export const LEE_JUNG_HOO_STOCK: LineupSeed = {
   mlbPlayerId: 808982,
 };
 
+/** MLB Stats API 대상 — KBO 10구단과 별도 크롤링 파이프라인 */
+export const MLB_FEATURED_STOCKS: LineupSeed[] = [LEE_JUNG_HOO_STOCK];
+
 export const LEE_JUNG_HOO_OPS_ID = LEE_JUNG_HOO_STOCK.id;
 
-/** 구단별 대표 1명 — 2026 시즌 팀·선수 기준 (KBO 공식 기록실 ID 포함) */
+/**
+ * 구단별 대표 1명 — 2026 커뮤·파급력 기준 (기록 1위보다 거래·화제성 우선)
+ * - 키움: 이주형 (이정후 이후 키움 대표 타자)
+ * - KIA: 김도영 (인기·홈런 1위급)
+ * - LG: 박동원 (프랜차이즈)
+ * - KT: 힐리어드 (강백호 이탈 후 파워·화제)
+ * - SSG: 최정 (불사조)
+ * - NC: 김주원 (영건·WAR 상위)
+ * - 두산: 양의지 (국가대표급 스타)
+ * - 삼성: 구자욱 (팬덤·성적)
+ * - 롯데: 나승엽 (구단 상징)
+ * - 한화: 강백호 (100억 FA, 시즌 최대 화제)
+ */
 export const KBO_TEAM_STOCKS: LineupSeed[] = [
   {
     id: 'kiwoom-joo',
@@ -74,16 +91,16 @@ export const KBO_TEAM_STOCKS: LineupSeed[] = [
     kboPlayerId: 79365,
   },
   {
-    id: 'kt-choi',
+    id: 'kt-hill',
     teamName: 'KT',
     teamShort: 'KT',
-    playerName: '최원준',
-    symbol: 'CWJ',
+    playerName: '힐리어드',
+    symbol: 'HIL',
     metric: 'ops',
     oracleValue: 0.9,
     accent: '#000000',
     statsSource: 'kbo',
-    kboPlayerId: 66606,
+    kboPlayerId: 56034,
   },
   {
     id: 'ssg-choi',
@@ -98,16 +115,16 @@ export const KBO_TEAM_STOCKS: LineupSeed[] = [
     kboPlayerId: 75847,
   },
   {
-    id: 'nc-lee',
+    id: 'nc-kim',
     teamName: 'NC',
     teamShort: 'NC',
-    playerName: '이우성',
-    symbol: 'IWS',
+    playerName: '김주원',
+    symbol: 'KJW2',
     metric: 'ops',
-    oracleValue: 0.82,
+    oracleValue: 0.85,
     accent: '#1d4f91',
     statsSource: 'kbo',
-    kboPlayerId: 63260,
+    kboPlayerId: 51907,
   },
   {
     id: 'ds-yang',
@@ -146,16 +163,16 @@ export const KBO_TEAM_STOCKS: LineupSeed[] = [
     kboPlayerId: 51551,
   },
   {
-    id: 'hh-ryu',
+    id: 'hh-kang',
     teamName: '한화',
     teamShort: '한화',
-    playerName: '류현진',
-    symbol: 'RHH',
-    metric: 'era',
-    oracleValue: 3.28,
+    playerName: '강백호',
+    symbol: 'KBH',
+    metric: 'ops',
+    oracleValue: 1.0,
     accent: '#ff6600',
     statsSource: 'kbo',
-    kboPlayerId: 76715,
+    kboPlayerId: 68050,
   },
 ];
 
@@ -179,7 +196,9 @@ export function resolveInstrumentId(
   instrumentId?: string,
 ): string | null {
   if (instrumentId) {
-    if (SEED_BY_ID.has(instrumentId)) return instrumentId;
+    if (SEED_BY_ID.has(instrumentId) || isMemeInstrumentId(instrumentId)) {
+      return instrumentId;
+    }
     return null;
   }
   const n = Number(playerId);

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InstrumentEntity } from '../entities/instrument.entity';
 import { PositionEntity } from '../entities/position.entity';
 import { PriceSnapshotEntity } from '../entities/price-snapshot.entity';
@@ -12,6 +12,7 @@ import {
   toPriceSnapshot,
   toTradeRecord,
 } from './entity.mapper';
+import { MEME_STOCKS, MemeStockSeed } from './market-meme-lineup';
 import {
   ALL_INSTRUMENT_SEEDS,
   KBO_TEAM_STOCKS,
@@ -32,9 +33,12 @@ import { getWeekKey } from './week.util';
 export { LEE_JUNG_HOO_OPS_ID };
 
 const STARTING_POINTS = 100_000;
+const MAX_TRADES = 300;
 
 @Injectable()
 export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
+  private readonly logger = new Logger(PostgresMarketStoreService.name);
+
   constructor(
     private readonly pricing: PricingService,
     @InjectRepository(InstrumentEntity)
@@ -59,13 +63,33 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
         await this.pushPriceSnapshot(seed.id);
       }
     }
+    for (const meme of MEME_STOCKS) {
+      const exists = await this.instrumentRepo.count({ where: { id: meme.id } });
+      if (!exists) {
+        await this.instrumentRepo.save(this.memeToEntity(meme));
+        await this.pushPriceSnapshot(meme.id);
+      }
+    }
+    const stats = await this.getStats();
+    this.logger.log(
+      `Postgres 마켓 준비 — 종목 ${stats.instrumentCount} · 유저 ${stats.walletCount} · 체결 ${stats.tradeCount}`,
+    );
+  }
+
+  async getMemeLineup(): Promise<InstrumentState[]> {
+    const ids = MEME_STOCKS.map((s) => s.id);
+    const rows = await this.instrumentRepo.find({
+      where: { id: In(ids) },
+    });
+    const byId = new Map(rows.map((r) => [r.id, toInstrumentState(r)]));
+    return ids.map((id) => byId.get(id)!).filter(Boolean);
   }
 
   async getLineup(): Promise<InstrumentState[]> {
-    const rows = await this.instrumentRepo.find({
-      order: { teamShort: 'ASC' },
-    });
-    return rows.map(toInstrumentState);
+    const ids = KBO_TEAM_STOCKS.map((s) => s.id);
+    const rows = await this.instrumentRepo.find({ where: { id: In(ids) } });
+    const byId = new Map(rows.map((r) => [r.id, toInstrumentState(r)]));
+    return ids.map((id) => byId.get(id)!).filter(Boolean);
   }
 
   async getInstrument(id: string): Promise<InstrumentState> {
@@ -233,7 +257,18 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
       oracleValue: partial.oracleValue,
     });
     await this.recordOpsTrade(partial.userId, partial.instrumentId);
+    await this.pruneTrades();
     return toTradeRecord(saved);
+  }
+
+  private async pruneTrades(): Promise<void> {
+    const total = await this.tradeRepo.count();
+    if (total <= MAX_TRADES) return;
+    const oldest = await this.tradeRepo.find({
+      order: { createdAt: 'ASC' },
+      take: total - MAX_TRADES,
+    });
+    if (oldest.length) await this.tradeRepo.remove(oldest);
   }
 
   async getRecentTrades(
@@ -263,8 +298,28 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
     }
   }
 
+  private memeToEntity(seed: MemeStockSeed): InstrumentEntity {
+    const fairPrice = this.pricing.fairPrice('hype', seed.oracleValue);
+    const entity = new InstrumentEntity();
+    entity.id = seed.id;
+    entity.name = seed.title;
+    entity.symbol = seed.symbol;
+    entity.teamName = seed.teamName;
+    entity.teamShort = seed.teamShort;
+    entity.playerName = seed.title;
+    entity.metric = 'hype';
+    entity.metricLabel = seed.metricLabel;
+    entity.oracleValue = seed.oracleValue;
+    entity.sentiment = 1;
+    entity.fairPrice = fairPrice;
+    entity.price = this.pricing.marketPrice(fairPrice, 1);
+    entity.accent = seed.accent;
+    return entity;
+  }
+
   private seedToEntity(seed: LineupSeed): InstrumentEntity {
-    const metricLabel = seed.metric === 'era' ? 'ERA' : 'OPS';
+    const metricLabel =
+      seed.metric === 'era' ? 'ERA' : seed.metric === 'hype' ? 'HYPE' : 'OPS';
     const fairPrice = this.pricing.fairPrice(seed.metric, seed.oracleValue);
     const entity = new InstrumentEntity();
     entity.id = seed.id;

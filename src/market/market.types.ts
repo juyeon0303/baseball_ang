@@ -8,8 +8,11 @@ export type TradeAction =
   | 'open_short'
   | 'close_short';
 
+export type InstrumentKind = 'player' | 'meme';
+
 export interface InstrumentState {
   id: string;
+  kind: InstrumentKind;
   name: string;
   symbol: string;
   teamName: string;
@@ -23,6 +26,13 @@ export interface InstrumentState {
   fairPrice: number;
   accent: string;
   updatedAt: string;
+  /** 밈·베팅 UI 전용 */
+  betCta?: string;
+  narrative?: string;
+  longThesis?: string;
+  shortThesis?: string;
+  yesBet?: string;
+  noBet?: string;
 }
 
 export interface Position {

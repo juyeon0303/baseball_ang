@@ -1,50 +1,77 @@
-import { Injectable } from '@nestjs/common';
-import { LEE_JUNG_HOO_OPS_ID } from '../market/market-lineup';
-
-export interface TodayGame {
-  id: string;
-  awayTeam: string;
-  homeTeam: string;
-  awayScore: number;
-  homeScore: number;
-  inning: string;
-  status: 'live' | 'scheduled' | 'final';
-  linkedInstrumentId: string;
-}
-
-/** 팀명 → 대표 종목 (오늘의 경기 연동용) */
-const TEAM_INSTRUMENT: Record<string, string> = {
-  키움: 'kiwoom-joo',
-  KIA: 'kia-kim',
-  LG: 'lg-park',
-  KT: 'kt-choi',
-  SSG: 'ssg-choi',
-  NC: 'nc-lee',
-  두산: 'ds-yang',
-  삼성: 'ss-koo',
-  롯데: 'lt-na',
-  한화: 'hh-ryu',
-};
-
-@Injectable()
-export class GamesService {
-  /** MVP: 고정 mock — 이후 KBO 스코어 API/스크래퍼로 교체 */
-  getTodayFeatured(): TodayGame {
-    const homeTeam = 'KIA';
-    return {
-      id: 'featured-today',
-      awayTeam: '한화',
-      homeTeam,
-      awayScore: 3,
-      homeScore: 2,
-      inning: '▲5',
-      status: 'live',
-      linkedInstrumentId:
-        TEAM_INSTRUMENT[homeTeam] ?? LEE_JUNG_HOO_OPS_ID,
-    };
-  }
-
-  resolveInstrumentForTeam(teamShort: string): string {
-    return TEAM_INSTRUMENT[teamShort] ?? LEE_JUNG_HOO_OPS_ID;
-  }
-}
+import { Injectable } from '@nestjs/common';
+import { LEE_JUNG_HOO_OPS_ID } from '../market/market-lineup';
+import { todayKey } from '../stats/game-day.util';
+import { ScoreboardSnapshot, TodayGame } from './games.types';
+
+/** 팀명 → 대표 종목 (경기 연동용) */
+const TEAM_INSTRUMENT: Record<string, string> = {
+  키움: 'kiwoom-joo',
+  KIA: 'kia-kim',
+  LG: 'lg-park',
+  KT: 'kt-hill',
+  SSG: 'ssg-choi',
+  NC: 'nc-kim',
+  두산: 'ds-yang',
+  삼성: 'ss-koo',
+  롯데: 'lt-na',
+  한화: 'hh-kang',
+};
+
+@Injectable()
+export class GamesService {
+  private snapshot: ScoreboardSnapshot | null = null;
+
+  setSnapshot(snapshot: ScoreboardSnapshot): void {
+    this.snapshot = snapshot;
+  }
+
+  getSnapshot(): ScoreboardSnapshot | null {
+    return this.snapshot;
+  }
+
+  getTodayGames(): TodayGame[] {
+    return this.snapshot?.games ?? [];
+  }
+
+  getTodayFeatured(): TodayGame {
+    const games = this.getTodayGames();
+    const featuredId = this.snapshot?.featuredGameId;
+    const featured =
+      (featuredId ? games.find((g) => g.id === featuredId) : undefined) ??
+      games.find((g) => g.status === 'live') ??
+      games[0];
+    return featured ?? this.mockFallback();
+  }
+
+  resolveInstrumentForTeam(teamShort: string): string {
+    return TEAM_INSTRUMENT[teamShort] ?? LEE_JUNG_HOO_OPS_ID;
+  }
+
+  buildFallbackSnapshot(): ScoreboardSnapshot {
+    const game = this.mockFallback();
+    return {
+      date: todayKey('Asia/Seoul'),
+      updatedAt: new Date().toISOString(),
+      source: 'kbo_gamecenter',
+      featuredGameId: game.id,
+      games: [game],
+      plays: [],
+    };
+  }
+
+  private mockFallback(): TodayGame {
+    const homeTeam = 'KIA';
+    return {
+      id: 'fallback',
+      awayTeam: '한화',
+      homeTeam,
+      awayScore: 0,
+      homeScore: 0,
+      inning: '일정 로딩중',
+      status: 'scheduled',
+      linkedInstrumentId:
+        TEAM_INSTRUMENT[homeTeam] ?? LEE_JUNG_HOO_OPS_ID,
+    };
+  }
+}
+

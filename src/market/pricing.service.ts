@@ -10,12 +10,21 @@ const ERA_PRICE_SLOPE = 2_500;
 const ERA_MIN = 1.5;
 const ERA_MAX = 6.5;
 const PRICE_FLOOR = 500;
+const HYPE_PRICE_BASE = 600;
+const HYPE_PRICE_SLOPE = 12;
 
 export const SENTIMENT_PER_SHARE = 0.00015;
 
 @Injectable()
 export class PricingService {
   fairPrice(metric: MetricKind, value: number): number {
+    if (metric === 'hype') {
+      const clamped = Math.min(100, Math.max(0, value));
+      return Math.max(
+        PRICE_FLOOR,
+        Math.round(HYPE_PRICE_BASE + clamped * HYPE_PRICE_SLOPE),
+      );
+    }
     if (metric === 'era') {
       const clamped = Math.min(ERA_MAX, Math.max(ERA_MIN, value));
       return Math.max(

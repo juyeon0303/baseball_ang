@@ -1,16 +1,28 @@
-# Render.com — GitHub 연결 후 Blueprint Deploy
+# Render Blueprint — 서버 1개, URL 2개 (플레이볼 + 야구주식)
 # https://dashboard.render.com → New → Blueprint
 
 services:
   - type: web
-    name: kbo-stock-mvp
+    name: playball-kbo
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci && npm run build:render
     startCommand: npm run start:prod
-    healthCheckPath: /amm/status
+    healthCheckPath: /amm/health
     envVars:
       - key: NODE_ENV
         value: production
-      # Supabase 쓸 때 Render 대시보드에서 추가:
-      # STORAGE_MODE=postgres, DATABASE_URL=..., DB_SYNCHRONIZE=true
+      - key: STORAGE_MODE
+        value: postgres
+      # DATABASE_URL — Supabase URI를 Render 대시보드에서 직접 입력
+      - key: DB_SYNCHRONIZE
+        value: true
+      - key: LIVE_STATS_ENABLED
+        value: true
+      - key: GAMES_SYNC_ENABLED
+        value: true
+      - key: MEME_SYNC_ENABLED
+        value: true
+      # 배포 후 실제 URL로 바꾸기 (예: https://playball-kbo.onrender.com)
+      - key: PUBLIC_URL
+        value: https://playball-kbo.onrender.com

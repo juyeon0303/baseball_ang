@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="KBO·MLB 선수 기록과 팬 화제에 가상 포인트로 「된다 / 안 된다」를 겨루는 야구 팬 게임. 실제 주식이 아닙니다.">
+    <meta name="theme-color" content="#1a5c3a">
+    <meta property="og:title" content="야구주식">
+    <meta property="og:description" content="선수 스탯·밈 화제에 포인트로 겨루는 야구 팬 게임">
+    <title>야구주식</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚾</text></svg>">
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg: #f7f7f5;
+            --surface: #ffffff;
+            --border: #e8e8e4;
+            --text: #1a1a1a;
+            --muted: #6b6b6b;
+            --faint: #9a9a9a;
+            --accent: #1a5c3a;
+            --accent-soft: #e8f3ec;
+            --down: #b33a3a;
+            --down-soft: #fceaea;
+            --highlight: #c9a227;
+            --radius: 12px;
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrap {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 20px 16px 32px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .sync {
+            font-size: 0.72rem;
+            color: var(--faint);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .dot.live { background: #3dba6a; }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-flat {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 16px;
+        }
+
+        .label {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .hero-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .hero-name {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        .hero-sub {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .hero-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        .hero-stat {
+            margin-top: 14px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .hero-stat-val {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: var(--text);
+        }
+
+        .hero-stat-unit {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .spark {
+            height: 36px;
+            margin-top: 14px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .spark span {
+            flex: 1;
+            background: var(--accent-soft);
+            border-radius: 2px 2px 0 0;
+            min-height: 4px;
+            transition: height 0.3s;
+        }
+
+        .crowd {
+            margin-top: 16px;
+        }
+
+        .crowd-bar {
+            height: 6px;
+            background: var(--down-soft);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .crowd-long {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        .crowd-text {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .row-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .game-score {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .game-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: var(--border);
+            color: var(--muted);
+        }
+
+        .game-badge.live {
+            background: #e8f5e9;
+            color: #1b7a2b;
+        }
+
+        .game-badge.final {
+            background: #f3f4f6;
+            color: var(--faint);
+        }
+
+        .play-ticker {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: #f8faf9;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: var(--text);
+            min-height: 2.4em;
+        }
+
+        .play-ticker .impact {
+            color: var(--highlight);
+            font-weight: 600;
+        }
+
+        .game-card-link {
+            cursor: pointer;
+        }
+
+        .meme-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .meme-item {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .meme-item.active {
+            border-color: var(--highlight);
+            background: #fffaf5;
+        }
+
+        .meme-title {
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .meme-narrative {
+            font-size: 0.74rem;
+            color: var(--muted);
+            margin-top: 3px;
+            line-height: 1.35;
+        }
+
+        .meme-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            font-size: 0.76rem;
+            color: var(--faint);
+        }
+
+        .meme-meta strong {
+            color: var(--highlight);
+            font-weight: 600;
+        }
+
+        .layer-badge {
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .bet-cta {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.45;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .bet-cta em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .progress-panel .progress-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .progress-item:last-child { border-bottom: none; }
+
+        .progress-item.done { color: var(--text); }
+
+        .progress-item.todo { color: var(--faint); }
+
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #ddd;
+        }
+
+        .progress-item.done .progress-dot { background: #3dba6a; }
+
+        .progress-item.todo .progress-dot { background: #e0c060; }
+
+        .api-pill {
+            margin-top: 10px;
+            font-size: 0.74rem;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: #f5f5f3;
+        }
+
+        .api-pill.ok { background: var(--accent-soft); color: var(--accent); }
+
+        .api-pill.err { background: var(--down-soft); color: var(--down); }
+
+        .meme-bet-cta {
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--text);
+        }
+
+        .meme-bet-btns {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 0.72rem;
+        }
+
+        .meme-bet-btns span {
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .meme-bet-btns span.no {
+            background: var(--down-soft);
+            color: var(--down);
+        }
+
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.72rem;
+            cursor: pointer;
+        }
+
+        .meta {
+            font-size: 0.78rem;
+            color: var(--faint);
+            margin-top: 4px;
+        }
+
+        .king-line {
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+
+        .king-line strong {
+            color: var(--highlight);
+            font-weight: 600;
+        }
+
+        .feed-list {
+            list-style: none;
+        }
+
+        .feed-list li {
+            font-size: 0.82rem;
+            color: var(--muted);
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .feed-list li:last-child { border-bottom: none; }
+
+        .feed-action {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .trade-form label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .field {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .field:focus {
+            border-color: var(--accent);
+            background: #fff;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 72px;
+            gap: 8px;
+        }
+
+        .btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .btn {
+            border: none;
+            padding: 13px;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .btn:active { opacity: 0.85; }
+
+        .btn-long {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-short {
+            background: var(--down-soft);
+            color: var(--down);
+            border: 1px solid #f0d0d0;
+        }
+
+        .me-line {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .section-toggle {
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.82rem;
+            padding: 10px 0;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .lineup {
+            display: none;
+        }
+
+        .lineup.open { display: block; }
+
+        .lineup-item {
+            display: grid;
+            grid-template-columns: 44px 1fr auto;
+            gap: 8px;
+            align-items: center;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .lineup-item:last-child { border-bottom: none; }
+
+        .lineup-item.active .lineup-name { color: var(--accent); font-weight: 600; }
+
+        .lineup-team {
+            font-size: 0.72rem;
+            color: var(--faint);
+        }
+
+        .lineup-name {
+            font-size: 0.88rem;
+        }
+
+        .lineup-stat {
+            font-size: 0.82rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(8px);
+            background: var(--text);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .guide-panel {
+            border-color: #dce8e0;
+            background: linear-gradient(180deg, #fafdfb 0%, #fff 100%);
+        }
+
+        .guide-lead {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.5;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .guide-lead span {
+            color: var(--accent);
+        }
+
+        .guide-block {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .guide-block:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .guide-h {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .guide-p, .guide-list li {
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .guide-list {
+            list-style: none;
+            margin-top: 6px;
+        }
+
+        .guide-list li {
+            padding: 5px 0 5px 14px;
+            position: relative;
+        }
+
+        .guide-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 12px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0.55;
+        }
+
+        .guide-steps {
+            counter-reset: step;
+            list-style: none;
+            margin-top: 6px;
+        }
+
+        .guide-steps li {
+            counter-increment: step;
+            font-size: 0.82rem;
+            color: var(--muted);
+            padding: 8px 0 8px 28px;
+            position: relative;
+            line-height: 1.5;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .guide-steps li:last-child { border-bottom: none; }
+
+        .guide-steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 0.68rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .guide-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .guide-tag {
+            font-size: 0.72rem;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: #f3f4f2;
+            color: var(--muted);
+        }
+
+        .guide-note {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #fff8e8;
+            border: 1px solid #f0e4c8;
+            font-size: 0.76rem;
+            color: #7a6520;
+            line-height: 1.5;
+        }
+
+        .guide-body.collapsed { display: none; }
+
+        .boot-error {
+            display: none;
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius);
+            background: var(--down-soft);
+            border: 1px solid #f0d0d0;
+            font-size: 0.82rem;
+            color: var(--down);
+            line-height: 1.5;
+        }
+
+        .boot-error.show { display: block; }
+
+        .site-footer {
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--faint);
+            padding: 20px 0 8px;
+            line-height: 1.6;
+        }
+
+        .site-footer a {
+            color: var(--muted);
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="boot-error" id="boot-error">
+            서버에 연결하지 못했습니다. API가 실행 중인지 확인해 주세요.
+            <br>로컬 개발: 프로젝트 루트에서 <code>npm run start:dev</code> 실행 후 새로고침.
+        </div>
+
+        <header>
+            <div class="logo">야구주식</div>
+            <div class="sync"><span class="dot" id="sync-dot"></span><span id="sync-text">연결 중</span></div>
+        </header>
+
+        <section class="panel guide-panel" id="guide-panel">
+            <div class="row-between">
+                <div class="label" style="margin:0">야구주식이 뭐예요?</div>
+                <button type="button" class="link-btn" id="guide-toggle" onclick="toggleGuide()">접기</button>
+            </div>
+            <div class="guide-body" id="guide-body">
+                <p class="guide-lead">
+                    KBO·MLB 선수 기록과 <span>팬 화제</span>에 가상 포인트로
+                    <span>「된다 / 안 된다」</span>를 겨루는 야구 팬 게임이에요.
+                    진짜 주식은 아닙니다.
+                </p>
+
+                <div class="guide-block">
+                    <div class="guide-h">무엇에 베팅하나요?</div>
+                    <ul class="guide-list">
+                        <li><strong>구단 대표 종목 10개</strong> — 팀별 화제 선수 (OPS·ERA 기준 시세)</li>
+                        <li><strong>이정후 (MLB)</strong> — KBO 10구단과 별도 종목, MLB OPS 반영</li>
+                        <li><strong>밈·화제 베팅</strong> — 예: 김서현 직구 제구, 강백호 50홈런 달성</li>
+                    </ul>
+                    <div class="guide-tags">
+                        <span class="guide-tag">선수 기록 자동 반영</span>
+                        <span class="guide-tag">경기 점수 연동</span>
+                        <span class="guide-tag">주간 랭킹</span>
+                    </div>
+                </div>
+
+                <div class="guide-block">
+                    <div class="guide-h">이렇게 쓰면 됩니다</div>
+                    <ol class="guide-steps">
+                        <li>닉네임 입력 → 시작 포인트 10만 P</li>
+                        <li>종목이나 밈 카드를 눌러 「지금 베팅」 영역 확인</li>
+                        <li><strong>된다!</strong> = 잘 될 것 같다 · <strong>안 된다</strong> = 아닐 것 같다</li>
+                        <li>경기 카드에서 라이브 경기·타석 소식 확인 (연동 종목 자동 전환)</li>
+                        <li>주간 수익률 랭킹으로 1위 경쟁</li>
+                    </ol>
+                </div>
+
+                <div class="guide-block">
+                    <div class="guide-h">가격은 왜 움직이나요?</div>
+                    <ul class="guide-list">
+                        <li><strong>기록 반영</strong> — KBO/MLB 공식 기록 (하루 1회 갱신)</li>
+                        <li><strong>된다 쪽</strong> — 「된다」 베팅이 많아지면 시세 상승</li>
+                        <li><strong>경기 소식</strong> — 득점·타석 흐름에 따라 해당 종목이 잠깐 반응</li>
+                    </ul>
+                </div>
+
+                <div class="guide-note">
+                    ⚠️ 가상 포인트 게임입니다. 실제 돈·증권 거래가 아닙니다.
+                    모바일 앱은 준비 중이며, 지금은 웹 버전입니다.
+                </div>
+            </div>
+        </section>
+
+        <section class="panel progress-panel" id="progress-panel">
+            <div class="row-between">
+                <div class="label" style="margin:0">개발 진행 (중간체크)</div>
+                <button type="button" class="link-btn" onclick="toggleProgress()">펼치기</button>
+            </div>
+            <ul class="progress-list" id="progress-list" style="display:none"></ul>
+            <div class="api-pill" id="api-pill" style="display:none">API 확인 중...</div>
+        </section>
+
+        <section class="panel" id="hero">
+            <div class="label">지금 베팅</div>
+            <div class="bet-cta" id="bet-cta">대한건아 <em>이정후의 OPS에 베팅하세요!</em></div>
+            <div class="hero-top">
+                <div>
+                    <div class="hero-name" id="hero-name">이정후</div>
+                    <div class="hero-sub" id="hero-sub">MLB</div>
+                </div>
+                <div class="hero-price" id="hero-price">—</div>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-val" id="hero-ops">—</span>
+                <span class="hero-stat-unit" id="hero-metric">OPS</span>
+            </div>
+            <div class="spark" id="spark"></div>
+            <div class="crowd">
+                <div class="label" style="margin-bottom:0">된다 쪽 vs 안 된다 쪽</div>
+                <div class="crowd-bar"><div class="crowd-long" id="crowd-long" style="width:50%"></div></div>
+                <div class="crowd-text" id="crowd-text">된다 50% · 안 된다 50%</div>
+            </div>
+        </section>
+
+        <section class="panel game-card-link" id="game-card" onclick="followFeaturedGame()">
+            <div class="row-between">
+                <span id="game-line">오늘의 경기</span>
+                <span style="display:flex;align-items:center;gap:6px">
+                    <span class="game-badge" id="game-badge">—</span>
+                    <span class="game-score" id="game-score">—</span>
+                </span>
+            </div>
+            <div class="play-ticker" id="play-ticker">타석 소식 대기 중</div>
+            <div class="meta" id="live-line">접속 —명 · 탭하면 연동 종목 보기</div>
+        </section>
+
+        <section class="panel" id="meme-panel">
+            <div class="label">밈·화제 베팅</div>
+            <div class="meme-list" id="meme-list"></div>
+        </section>
+
+        <section class="panel">
+            <div class="label">이번 주 1위</div>
+            <div class="king-line" id="crown">—</div>
+        </section>
+
+        <section class="panel">
+            <div class="label">최근 체결</div>
+            <ul class="feed-list" id="feed"></ul>
+        </section>
+
+        <section class="panel trade-form">
+            <div class="field-row">
+                <div>
+                    <label for="user-id">닉네임</label>
+                    <input class="field" id="user-id" value="guest" onchange="onUserChange()">
+                </div>
+                <div>
+                    <label for="qty">수량</label>
+                    <input class="field" type="number" id="qty" value="5" min="1">
+                </div>
+            </div>
+            <div class="btns">
+                <button class="btn btn-long" id="btn-yes" onclick="order('buy','long')">된다!</button>
+                <button class="btn btn-short" id="btn-no" onclick="order('sell','short')">안 된다</button>
+            </div>
+            <div class="me-line" id="me-line">내 주간 수익 —</div>
+        </section>
+
+        <button class="section-toggle" id="toggle-lineup" onclick="toggleLineup()">10개 종목 보기</button>
+        <section class="panel lineup" id="lineup-panel">
+            <div id="lineup-list"></div>
+        </section>
+
+        <footer class="site-footer">
+            가상 포인트 게임 · 실제 투자가 아닙니다<br>
+            <a href="#" onclick="toggleGuide(); return false;">이용 가이드</a>
+        </footer>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = '';
+        const IS_LOCAL_DEV = location.hostname === 'localhost' && location.port === '5173';
+        let selectedId = 'lee-jung-hoo';
+        let hub = null;
+        let lineupOpen = false;
+        if (!IS_LOCAL_DEV) {
+            const prog = document.getElementById('progress-panel');
+            if (prog) prog.style.display = 'none';
+        }
+
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2200);
+        }
+
+        function userId() {
+            return document.getElementById('user-id').value.trim() || 'guest';
+        }
+
+        function fmtPct(n) {
+            const v = Number(n);
+            return (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+        }
+
+        function fmtOracle(inst) {
+            if (!inst) return '—';
+            if (inst.metric === 'hype' || inst.kind === 'meme') {
+                return Number(inst.oracleValue).toFixed(0) + '%';
+            }
+            return Number(inst.oracleValue).toFixed(3);
+        }
+
+        function actionKo(a) {
+            return {
+                open_long: '된다',
+                close_long: '청산',
+                open_short: '안 된다',
+                close_short: '숏 청산',
+            }[a] || a;
+        }
+
+        function betCta(inst) {
+            if (!inst) return '베팅할 종목을 골라 주세요';
+            if (inst.betCta) return inst.betCta;
+            if (inst.id === 'lee-jung-hoo') {
+                return '대한건아 이정후의 OPS에 베팅하세요!';
+            }
+            const metric = inst.metricLabel || 'OPS';
+            return `${inst.playerName} ${metric}, 걸어볼 거야?`;
+        }
+
+        function renderBetCta(inst) {
+            const raw = betCta(inst);
+            const el = document.getElementById('bet-cta');
+            if (inst?.id === 'lee-jung-hoo') {
+                el.innerHTML = '대한건아 <em>이정후의 OPS에 베팅하세요!</em>';
+            } else if (raw.includes('베팅하세요!')) {
+                el.innerHTML = raw.replace(/(.+)(베팅하세요!)/, '$1<em>$2</em>');
+            } else {
+                const parts = raw.match(/^(.+?,)\s*(.+)$/);
+                if (parts) {
+                    el.innerHTML = `${parts[1]} <em>${parts[2]}</em>`;
+                } else {
+                    el.innerHTML = raw.replace(/(걸어볼 거야\?)/, '<em>$1</em>');
+                }
+            }
+            const yes = inst?.yesBet || inst?.longThesis || '된다!';
+            const no = inst?.noBet || inst?.shortThesis || '안 된다';
+            document.getElementById('btn-yes').textContent = yes;
+            document.getElementById('btn-no').textContent = no;
+        }
+
+        function toggleGuide() {
+            const body = document.getElementById('guide-body');
+            const btn = document.getElementById('guide-toggle');
+            const hidden = body.classList.toggle('collapsed');
+            btn.textContent = hidden ? '펼치기' : '접기';
+            try { localStorage.setItem('guide-collapsed', hidden ? '1' : '0'); } catch (_) {}
+        }
+
+        function toggleProgress() {
+            const list = document.getElementById('progress-list');
+            const pill = document.getElementById('api-pill');
+            const btn = list.parentElement.querySelector('.link-btn');
+            const hidden = list.style.display === 'none';
+            list.style.display = hidden ? '' : 'none';
+            pill.style.display = hidden ? '' : 'none';
+            if (btn) btn.textContent = hidden ? '접기' : '펼치기';
+        }
+
+        function renderProgress(roadmap, apiOk) {
+            const staticItems = [
+                { id: 'repo', label: 'API 서버 (baseball-backend)', status: 'done' },
+                { id: 'web', label: '웹 프론트 (web/)', status: 'done' },
+                { id: 'app', label: '모바일 앱 (app/) — 별도 예정', status: 'todo' },
+            ];
+            const fromApi = (roadmap || []).map(r => ({
+                id: r.id,
+                label: r.label,
+                status: r.status,
+            }));
+            const items = [...staticItems, ...fromApi.filter(r =>
+                !['web-frontend', 'mobile-app'].includes(r.id))];
+            document.getElementById('progress-list').innerHTML = items.map(it => `
+                <li class="progress-item ${it.status}">
+                    <span class="progress-dot"></span>
+                    <span>${it.label}</span>
+                </li>`).join('');
+            const pill = document.getElementById('api-pill');
+            pill.className = 'api-pill ' + (apiOk ? 'ok' : 'err');
+            pill.textContent = apiOk
+                ? 'API 연결됨 (데이터 :3000 · 화면 :5173)'
+                : 'API 미연결 — 루트에서 npm run start:dev 를 실행하세요';
+        }
+
+        function renderSpark(history) {
+            const el = document.getElementById('spark');
+            const prices = (history || []).map(h => h.price).slice(-24);
+            if (prices.length < 2) {
+                el.innerHTML = '';
+                return;
+            }
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const range = max - min || 1;
+            el.innerHTML = prices.map(p => {
+                const h = 8 + Math.round(((p - min) / range) * 28);
+                return `<span style="height:${h}px"></span>`;
+            }).join('');
+        }
+
+        function renderHub(data) {
+            hub = data;
+            const inst = data.instrument;
+            selectedId = data.featuredId;
+
+            document.getElementById('hero-name').textContent = inst.playerName;
+            document.getElementById('hero-sub').textContent =
+                inst.kind === 'meme' && inst.narrative
+                    ? `${inst.teamShort} · ${inst.narrative}`
+                    : `${inst.teamShort} · ${inst.metricLabel}`;
+            document.getElementById('hero-price').textContent =
+                inst.price.toLocaleString() + ' P';
+            document.getElementById('hero-ops').textContent = fmtOracle(inst);
+            document.getElementById('hero-metric').textContent = inst.metricLabel;
+            renderBetCta(inst);
+
+            const lp = data.crowd.longPct;
+            document.getElementById('crowd-long').style.width = lp + '%';
+            document.getElementById('crowd-text').textContent =
+                `된다 ${lp}% · 안 된다 ${data.crowd.shortPct}%`;
+
+            const g = data.game;
+            document.getElementById('game-line').textContent =
+                `${g.awayTeam} vs ${g.homeTeam} · ${g.inning}`;
+            document.getElementById('game-score').textContent =
+                `${g.awayScore} : ${g.homeScore}`;
+            const badge = document.getElementById('game-badge');
+            badge.textContent = g.status === 'live' ? 'LIVE' : g.status === 'final' ? '종료' : '예정';
+            badge.className = 'game-badge' + (g.status === 'live' ? ' live' : g.status === 'final' ? ' final' : '');
+            const play = (data.plays && data.plays[0]) || null;
+            document.getElementById('play-ticker').innerHTML = play
+                ? `<span class="impact">${play.team || 'KBO'}</span> ${play.text}`
+                : (g.status === 'live' ? '경기 진행 중 — 타석 소식 대기' : '오늘 경기 일정');
+            document.getElementById('live-line').textContent =
+                `${data.liveCount}명 접속 · ${g.status === 'live' ? '연동 종목: ' + (data.instrument?.playerName || '') : '탭하면 종목 보기'}`;
+
+            const king = data.weekKing;
+            document.getElementById('crown').innerHTML = king
+                ? `<strong>${king.userId}</strong> · 주간 ${fmtPct(king.weeklyReturnPct)}`
+                : '아직 없음';
+
+            const feed = document.getElementById('feed');
+            feed.innerHTML = data.recentTrades.length
+                ? data.recentTrades.map(t => `
+                    <li>
+                        <span>${t.userId.slice(0, 10)}</span>
+                        <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.price.toLocaleString()}P</span>
+                    </li>`).join('')
+                : '<li>아직 체결 없음</li>';
+
+            if (data.me) {
+                document.getElementById('me-line').textContent =
+                    `주간 수익 ${fmtPct(data.me.weeklyReturnPct)} · ${data.me.rank ?? '—'}위 · 총 자산 ${data.me.equity.toLocaleString()}P`;
+            }
+        }
+
+        function renderLineup(items) {
+            document.getElementById('lineup-list').innerHTML = items.map(i => `
+                <div class="lineup-item ${i.instrumentId === selectedId ? 'active' : ''}"
+                     onclick="selectStock('${i.instrumentId}')">
+                    <span class="lineup-team">${i.teamShort}</span>
+                    <span class="lineup-name">${i.playerName}</span>
+                    <span class="lineup-stat">${Number(i.oracleValue).toFixed(3)}</span>
+                </div>`).join('');
+        }
+
+        function renderMemes(memes) {
+            const el = document.getElementById('meme-list');
+            if (!memes?.length) {
+                el.innerHTML = '<div class="meta">밈 종목 불러오는 중</div>';
+                return;
+            }
+            el.innerHTML = memes.map(m => `
+                <div class="meme-item ${m.id === selectedId ? 'active' : ''}"
+                     onclick="selectStock('${m.id}')">
+                    <div class="meme-bet-cta">${m.betCta || betCta(m)}</div>
+                    <div class="meme-narrative">${m.narrative || ''}</div>
+                    <div class="meme-bet-btns">
+                        <span>${m.yesBet || m.longThesis || '된다'}</span>
+                        <span class="no">${m.noBet || m.shortThesis || '안 된다'}</span>
+                    </div>
+                    <div class="meme-meta">
+                        <span>${m.metricLabel || '밈지수'}</span>
+                        <strong>${fmtOracle(m)} · ${Number(m.price).toLocaleString()}P</strong>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function loadSpark(instrumentId) {
+            try {
+                const res = await fetch(`${API}/amm/status?instrumentId=${instrumentId}`);
+                const data = await res.json();
+                renderSpark(data.priceHistory);
+            } catch (_) {}
+        }
+
+        async function refresh() {
+            let apiOk = false;
+            let roadmap = [];
+            try {
+                const statusRes = await fetch(`${API}/amm/status?instrumentId=lee-jung-hoo`);
+                if (statusRes.ok) {
+                    apiOk = true;
+                    const statusData = await statusRes.json();
+                    roadmap = statusData.roadmap || [];
+                }
+            } catch (_) {}
+            renderProgress(roadmap, apiOk);
+
+            const [hubRes, lineupRes, syncRes] = await Promise.all([
+                fetch(`${API}/amm/hub?userId=${encodeURIComponent(userId())}`).catch(() => null),
+                fetch(`${API}/amm/lineup`).catch(() => null),
+                fetch(`${API}/amm/live-stats`).catch(() => null),
+            ]);
+            if (!hubRes?.ok) {
+                document.getElementById('boot-error').classList.add('show');
+                renderProgress(roadmap, false);
+                return;
+            }
+            document.getElementById('boot-error').classList.remove('show');
+            apiOk = true;
+            const hubData = await hubRes.json();
+            const lineup = lineupRes?.ok ? await lineupRes.json() : [];
+            renderHub(hubData);
+            renderLineup(lineup);
+            renderMemes(hubData.memes || []);
+            await loadSpark(selectedId);
+
+            if (syncRes?.ok) {
+                const sync = await syncRes.json();
+                const kboN = sync.lastKbo?.updated?.length ?? sync.last?.kbo?.updated?.length ?? 0;
+                const mlbN = sync.lastMlb?.updated?.length ?? sync.last?.mlb?.updated?.length ?? 0;
+                const dot = document.getElementById('sync-dot');
+                const txt = document.getElementById('sync-text');
+                const kboSched = sync.schedule?.kbo;
+                const mlbSched = sync.schedule?.mlb;
+                const kboDone = kboSched?.alreadySyncedToday;
+                const mlbDone = mlbSched?.alreadySyncedToday;
+                const kboOff = !kboSched?.isGameDay;
+                if (kboOff && mlbDone) {
+                    dot.classList.add('live');
+                    txt.textContent = `MLB ${mlbN}종 갱신 · KBO 경기 없음`;
+                } else if (kboDone && mlbDone) {
+                    dot.classList.add('live');
+                    txt.textContent = `KBO ${kboN}종 · MLB ${mlbN}종 갱신 완료`;
+                } else if (kboN > 0 || mlbN > 0) {
+                    dot.classList.add('live');
+                    const parts = [];
+                    if (kboN) parts.push(`KBO ${kboN}종`);
+                    if (mlbN) parts.push(`MLB ${mlbN}종`);
+                    txt.textContent = parts.join(' · ');
+                } else if (kboOff) {
+                    dot.classList.remove('live');
+                    txt.textContent = 'KBO 경기 없음 · MLB 10:00 갱신';
+                } else {
+                    txt.textContent = 'KBO 09:00 · MLB 10:00 갱신 예정';
+                }
+            }
+        }
+
+        async function selectStock(instrumentId) {
+            selectedId = instrumentId;
+            const res = await fetch(`${API}/amm/market/${instrumentId}`);
+            const inst = await res.json();
+            document.getElementById('hero-name').textContent = inst.playerName;
+            document.getElementById('hero-sub').textContent =
+                inst.kind === 'meme' && inst.narrative
+                    ? `${inst.teamShort} · ${inst.narrative}`
+                    : `${inst.teamShort} · ${inst.metricLabel}`;
+            document.getElementById('hero-price').textContent =
+                inst.price.toLocaleString() + ' P';
+            document.getElementById('hero-ops').textContent = fmtOracle(inst);
+            document.getElementById('hero-metric').textContent = inst.metricLabel;
+            renderBetCta(inst);
+            const lineup = await (await fetch(`${API}/amm/lineup`)).json();
+            renderLineup(lineup);
+            if (hub?.memes) renderMemes(hub.memes);
+            await loadSpark(instrumentId);
+            toast(betCta(inst));
+        }
+
+        async function order(type, side) {
+            const qty = parseInt(document.getElementById('qty').value, 10);
+            const res = await fetch(`${API}/amm/${type}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId(),
+                    instrumentId: selectedId,
+                    quantity: qty,
+                    side,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) return toast(data.message || '베팅에 실패했어요');
+            toast(`${side === 'long' ? '된다!' : '안 된다'} 쪽에 베팅 완료`);
+            refresh();
+        }
+
+        function onUserChange() { refresh(); }
+
+        function followFeaturedGame() {
+            if (!hub?.featuredId) return;
+            selectStock(hub.featuredId);
+            toast(hub.game?.status === 'live' ? '경기 연동 종목으로 바뀌었어요' : '오늘의 경기 종목이에요');
+        }
+
+        function renderPlay(play) {
+            if (!play?.text) return;
+            document.getElementById('play-ticker').innerHTML =
+                `<span class="impact">${play.team || 'KBO'}</span> ${play.text}`;
+            if (play.instrumentId && hub?.game?.status === 'live') {
+                selectedId = play.instrumentId;
+                document.getElementById('hero-name').textContent = play.team || '';
+            }
+        }
+
+        function renderGameSnapshot(snapshot) {
+            if (!snapshot?.games?.length) return;
+            const g = snapshot.games.find(x => x.id === snapshot.featuredGameId) || snapshot.games[0];
+            document.getElementById('game-line').textContent =
+                `${g.awayTeam} vs ${g.homeTeam} · ${g.inning}`;
+            document.getElementById('game-score').textContent =
+                `${g.awayScore} : ${g.homeScore}`;
+            const badge = document.getElementById('game-badge');
+            badge.textContent = g.status === 'live' ? 'LIVE' : g.status === 'final' ? '종료' : '예정';
+            badge.className = 'game-badge' + (g.status === 'live' ? ' live' : g.status === 'final' ? ' final' : '');
+        }
+
+        function toggleLineup() {
+            lineupOpen = !lineupOpen;
+            document.getElementById('lineup-panel').classList.toggle('open', lineupOpen);
+            document.getElementById('toggle-lineup').textContent =
+                lineupOpen ? '종목 접기' : '10개 종목 보기';
+        }
+
+        const socket = io(IS_LOCAL_DEV ? undefined : { path: '/socket.io' });
+        socket.on('presence', p => {
+            document.getElementById('live-line').textContent = `${p.liveCount}명 접속`;
+        });
+        socket.on('tradeFeed', () => refresh());
+        socket.on('gameUpdate', snapshot => renderGameSnapshot(snapshot));
+        socket.on('playFeed', play => {
+            renderPlay(play);
+            if (play.instrumentId && hub?.game?.status === 'live') {
+                fetch(`${API}/amm/market/${play.instrumentId}`)
+                    .then(r => r.json())
+                    .then(inst => {
+                        document.getElementById('hero-price').textContent =
+                            inst.price.toLocaleString() + ' P';
+                        document.getElementById('hero-ops').textContent =
+                            Number(inst.oracleValue).toFixed(3);
+                        document.getElementById('hero-name').textContent = inst.playerName;
+                    })
+                    .catch(() => {});
+            }
+        });
+        socket.on('priceUpdate', item => {
+            if (item.id !== selectedId && item.id !== hub?.featuredId) return;
+            document.getElementById('hero-price').textContent =
+                item.price.toLocaleString() + ' P';
+            if (item.oracleValue != null && hub?.instrument) {
+                const probe = { ...hub.instrument, id: item.id, oracleValue: item.oracleValue };
+                document.getElementById('hero-ops').textContent = fmtOracle(probe);
+            }
+        });
+
+        try {
+            if (localStorage.getItem('guide-collapsed') === '1') {
+                document.getElementById('guide-body').classList.add('collapsed');
+                document.getElementById('guide-toggle').textContent = '펼치기';
+            }
+        } catch (_) {}
+
+        refresh();
+        setInterval(refresh, 30000);
+    </script>
+</body>
+
+</html>

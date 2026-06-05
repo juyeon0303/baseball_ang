@@ -14,6 +14,8 @@ import { LEE_JUNG_HOO_OPS_ID } from './market/market-lineup';
 import { OrderSide } from './market/market.types';
 import { HubService } from './hub/hub.service';
 import { LiveStatsSyncService } from './stats/live-stats-sync.service';
+import { MemeSyncService } from './stats/meme-sync.service';
+import { DatabaseHealthService } from './database/database-health.service';
 
 @Controller('amm')
 export class AmmController {
@@ -22,23 +24,93 @@ export class AmmController {
     private readonly market: MarketService,
     private readonly hub: HubService,
     private readonly liveStats: LiveStatsSyncService,
+    private readonly memeSync: MemeSyncService,
+    private readonly dbHealth: DatabaseHealthService,
   ) {}
+
+  @Get('health')
+  async getHealth() {
+    const storageMode = process.env.STORAGE_MODE ?? 'memory';
+    const db =
+      storageMode === 'postgres'
+        ? await this.dbHealth.ping().then(() => this.dbHealth.getStatus())
+        : { enabled: false, connected: false, error: null };
+    const stats =
+      storageMode === 'postgres' && db.connected
+        ? await this.market.getStoreStats()
+        : null;
+    return {
+      ok: storageMode !== 'postgres' || db.connected,
+      storageMode,
+      database: db,
+      stats,
+      serverTime: new Date().toISOString(),
+    };
+  }
+
+  @Get('memes')
+  async getMemes() {
+    const items = await this.market.getMemeLineup();
+    return {
+      enabled: this.memeSync.isEnabled(),
+      last: this.memeSync.getLastSnapshot(),
+      items: items.map((m) => ({
+        instrumentId: m.id,
+        title: m.name,
+        betCta: m.betCta,
+        narrative: m.narrative,
+        longThesis: m.longThesis,
+        shortThesis: m.shortThesis,
+        yesBet: m.yesBet,
+        noBet: m.noBet,
+        teamShort: m.teamShort,
+        metricLabel: m.metricLabel,
+        oracleValue: m.oracleValue,
+        price: m.price,
+        sentiment: m.sentiment,
+        accent: m.accent,
+      })),
+    };
+  }
+
+  @Post('sync-memes')
+  async syncMemesNow(@Query('force') force?: string) {
+    const snapshot = await this.memeSync.syncAll(
+      force === '1' || force === 'true',
+    );
+    return {
+      success: true,
+      snapshot,
+      memes: await this.market.getMemeLineup(),
+    };
+  }
 
   @Get('live-stats')
   getLiveStatsStatus() {
     const last = this.liveStats.getLastSnapshot();
     return {
       enabled: this.liveStats.isEnabled(),
-      intervalSec: 300,
+      schedule: this.liveStats.getScheduleInfo(),
       last,
+      lastKbo: this.liveStats.getLastKboSnapshot(),
+      lastMlb: this.liveStats.getLastMlbSnapshot(),
     };
   }
 
   @Post('sync-stats')
-  async syncStatsNow() {
-    const snapshot = await this.liveStats.syncAll();
+  async syncStatsNow(
+    @Query('force') force?: string,
+    @Query('scope') scope?: string,
+  ) {
+    const safeScope =
+      scope === 'kbo' || scope === 'mlb' || scope === 'all' ? scope : 'all';
+    const snapshot = await this.liveStats.syncAll(
+      force === '1' || force === 'true',
+      safeScope,
+    );
     return {
       success: true,
+      scope: safeScope,
       snapshot,
       lineup: await this.market.getLineup(),
     };

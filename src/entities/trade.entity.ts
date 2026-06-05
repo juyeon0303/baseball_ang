@@ -41,6 +41,6 @@ export class TradeEntity {
   createdAt: Date;
 
   @ManyToOne(() => UserEntity, (u) => u.trades, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'externalId' })
   user: UserEntity;
 }

@@ -9,6 +9,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { CommunityService } from '../community/community.service';
 import { PresenceService } from '../presence/presence.service';
 
 @WebSocketGateway({
@@ -18,7 +19,10 @@ export class StockStreamGateway implements OnGatewayConnection, OnGatewayDisconn
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly presence: PresenceService) {}
+  constructor(
+    private readonly presence: PresenceService,
+    private readonly community: CommunityService,
+  ) {}
 
   handleConnection(client: Socket) {
     const liveCount = this.presence.join();
@@ -69,5 +73,47 @@ export class StockStreamGateway implements OnGatewayConnection, OnGatewayDisconn
   }): void {
     if (!this.server) return;
     this.server.emit('tradeFeed', trade);
+  }
+
+  broadcastGameUpdate(snapshot: unknown): void {
+    if (!this.server) return;
+    this.server.emit('gameUpdate', snapshot);
+  }
+
+  broadcastPlayFeed(play: unknown): void {
+    if (!this.server) return;
+    this.server.emit('playFeed', play);
+  }
+
+  broadcastCommunity(message: unknown): void {
+    if (!this.server) return;
+    this.server.emit('community', message);
+  }
+
+  @SubscribeMessage('sendChat')
+  async handleSendChat(@MessageBody() data: Record<string, unknown>) {
+    try {
+      const msg = await this.community.postChat(
+        String(data.userId ?? 'guest'),
+        String(data.text ?? ''),
+        data.gameId ? String(data.gameId) : undefined,
+      );
+      return { ok: true, message: msg };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  }
+
+  @SubscribeMessage('sendReaction')
+  async handleSendReaction(@MessageBody() data: Record<string, unknown>) {
+    try {
+      const msg = await this.community.postReaction(
+        String(data.userId ?? 'guest'),
+        String(data.emoji ?? '🔥'),
+      );
+      return { ok: true, message: msg };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
   }
 }
