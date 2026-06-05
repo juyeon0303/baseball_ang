@@ -1,0 +1,16 @@
+# Render.com — GitHub 연결 후 Blueprint Deploy
+# https://dashboard.render.com → New → Blueprint
+
+services:
+  - type: web
+    name: kbo-stock-mvp
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /amm/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Supabase 쓸 때 Render 대시보드에서 추가:
+      # STORAGE_MODE=postgres, DATABASE_URL=..., DB_SYNCHRONIZE=true

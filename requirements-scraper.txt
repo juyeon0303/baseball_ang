@@ -1,0 +1,8 @@
+pandas>=2.0
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+html5lib>=1.1
+
+# 네이버 스포츠 등 JS 렌더 페이지가 필요할 때만
+# playwright>=1.40
