@@ -8,8 +8,8 @@
   "scripts": {
     "build": "nest build && npm run build:app",
     "build:render": "nest build && npm run build:app && npm run build:web:subpath",
-    "build:app": "npm install --prefix app && npm run build --prefix app",
-    "build:web": "npm install --prefix web && npm run build --prefix web",
+    "build:app": "npm install --prefix app --include=dev && npm run build --prefix app",
+    "build:web": "npm install --prefix web --include=dev && npm run build --prefix web",
     "build:web:subpath": "node scripts/build-stock.mjs",
     "build:all": "nest build && npm run build:app && npm run build:web",
     "build:api": "nest build",
