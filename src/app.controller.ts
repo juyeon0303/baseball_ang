@@ -1,8 +1,22 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Req, Res } from '@nestjs/common';
+import { join } from 'path';
+import type { Request, Response } from 'express';
 import { resolveAppDist, resolveWebDist } from './web-ui.util';
 
 @Controller()
 export class AppController {
+  @Get(['stock', 'stock/'])
+  serveStock(@Req() req: Request, @Res() res: Response) {
+    const webDist = resolveWebDist();
+    if (!webDist) {
+      return res.status(404).json({ message: 'stock web not built' });
+    }
+    if (req.path === '/stock') {
+      return res.redirect(302, '/stock/');
+    }
+    return res.sendFile(join(webDist, 'index.html'));
+  }
+
   @Get('api')
   getApiInfo() {
     return {

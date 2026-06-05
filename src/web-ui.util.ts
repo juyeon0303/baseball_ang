@@ -34,20 +34,10 @@ export function mountProductionUis(app: NestExpressApplication): {
   const http = app.getHttpAdapter().getInstance();
 
   if (webDist) {
-    app.useStaticAssets(webDist, { prefix: '/stock', index: false });
-    http.get('/stock', (_req: Request, res: Response) =>
-      res.redirect(301, '/stock/'),
-    );
-    http.use((req: Request, res: Response, next: NextFunction) => {
-      if (
-        req.method !== 'GET' ||
-        !req.path.startsWith('/stock') ||
-        req.path.startsWith('/stock/assets') ||
-        req.path.includes('.')
-      ) {
-        return next();
-      }
-      return res.sendFile(join(webDist, 'index.html'));
+    app.useStaticAssets(webDist, {
+      prefix: '/stock/assets',
+      index: false,
+      redirect: false,
     });
   }
 

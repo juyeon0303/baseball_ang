@@ -292,11 +292,20 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
     }
   }
 
-  /** 재배포 시 duplicate key 방지 — 있으면 건너뜀 */
+  /** 재배포·동시 기동 시 duplicate key 방지 */
   private async upsertInstrument(entity: InstrumentEntity): Promise<void> {
-    const exists = await this.instrumentRepo.exists({ where: { id: entity.id } });
-    if (exists) return;
-    await this.instrumentRepo.save(entity);
+    const found = await this.instrumentRepo.findOne({
+      where: { id: entity.id },
+      select: { id: true },
+    });
+    if (found) return;
+    try {
+      await this.instrumentRepo.insert(entity);
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code;
+      if (code === '23505') return;
+      throw e;
+    }
   }
 
   private async ensurePriceSnapshot(instrumentId: string): Promise<void> {
