@@ -56,19 +56,13 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const count = await this.instrumentRepo.count();
-    if (count === 0) {
-      for (const seed of ALL_INSTRUMENT_SEEDS) {
-        await this.instrumentRepo.save(this.seedToEntity(seed));
-        await this.pushPriceSnapshot(seed.id);
-      }
+    for (const seed of ALL_INSTRUMENT_SEEDS) {
+      await this.upsertInstrument(this.seedToEntity(seed));
+      await this.ensurePriceSnapshot(seed.id);
     }
     for (const meme of MEME_STOCKS) {
-      const exists = await this.instrumentRepo.count({ where: { id: meme.id } });
-      if (!exists) {
-        await this.instrumentRepo.save(this.memeToEntity(meme));
-        await this.pushPriceSnapshot(meme.id);
-      }
+      await this.upsertInstrument(this.memeToEntity(meme));
+      await this.ensurePriceSnapshot(meme.id);
     }
     const stats = await this.getStats();
     this.logger.log(
@@ -296,6 +290,18 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
       row.opsTradeCount += 1;
       await this.weekStatRepo.save(row);
     }
+  }
+
+  /** 재배포 시 duplicate key 방지 — 있으면 건너뜀 */
+  private async upsertInstrument(entity: InstrumentEntity): Promise<void> {
+    const exists = await this.instrumentRepo.exists({ where: { id: entity.id } });
+    if (exists) return;
+    await this.instrumentRepo.save(entity);
+  }
+
+  private async ensurePriceSnapshot(instrumentId: string): Promise<void> {
+    const n = await this.snapshotRepo.count({ where: { instrumentId } });
+    if (n === 0) await this.pushPriceSnapshot(instrumentId);
   }
 
   private memeToEntity(seed: MemeStockSeed): InstrumentEntity {
