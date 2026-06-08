@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { assertValidDatabaseUrl } from './database-url.util';
 
 export function buildTypeOrmOptions(
   config: ConfigService,
@@ -28,6 +29,7 @@ export function buildTypeOrmOptions(
   }
 
   if (url) {
+    assertValidDatabaseUrl(url);
     return { ...base, url };
   }
 

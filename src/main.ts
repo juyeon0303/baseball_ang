@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { assertValidDatabaseUrl } from './database/database-url.util';
 import { mountProductionUis } from './web-ui.util';
 
 async function bootstrap() {
@@ -8,6 +9,13 @@ async function bootstrap() {
     console.error(
       '[boot] STORAGE_MODE=postgres 이지만 DATABASE_URL이 없습니다. Render Environment에 Supabase URI를 설정하세요.',
     );
+  } else if (process.env.STORAGE_MODE === 'postgres' && process.env.DATABASE_URL) {
+    try {
+      assertValidDatabaseUrl(process.env.DATABASE_URL);
+    } catch (e) {
+      console.error('[boot]', e instanceof Error ? e.message : e);
+      process.exit(1);
+    }
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
