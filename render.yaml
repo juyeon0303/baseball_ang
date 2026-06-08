@@ -16,8 +16,9 @@ services:
       - key: STORAGE_MODE
         value: postgres
       # DATABASE_URL — Supabase URI를 Render 대시보드에서 직접 입력
+      # 최초 1회: scripts/supabase-reset.sql 실행 후 true → 배포 → false
       - key: DB_SYNCHRONIZE
-        value: true
+        value: false
       - key: LIVE_STATS_ENABLED
         value: true
       - key: GAMES_SYNC_ENABLED
