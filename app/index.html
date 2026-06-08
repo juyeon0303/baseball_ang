@@ -202,7 +202,36 @@
         .tl-item:last-child { border-bottom: none; }
         .tl-time { font-size: 0.65rem; color: var(--muted); margin-right: 6px; }
         .tl-team { color: var(--highlight); font-weight: 700; }
-        .tl-impact.run { border-left: 2px solid var(--danger); padding-left: 8px; }
+        .tl-impact.run { border-left: 2px solid var(--danger); padding-left: 8px; background: rgba(232,93,93,0.08); }
+        .tl-impact.game_end { border-left: 2px solid var(--highlight); padding-left: 8px; font-weight: 600; }
+        .tl-impact.game_start { border-left: 2px solid var(--live); padding-left: 8px; }
+        .tl-impact.inning { opacity: 0.92; }
+        .play-now.impact-run { border-left-color: var(--danger); background: rgba(232,93,93,0.12); }
+        .play-now.impact-score { animation: pulse-once 0.6s ease; }
+        @keyframes pulse-once { 0%,100%{opacity:1} 50%{opacity:0.85} }
+        .sync-pill {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #1a2535;
+            color: var(--muted);
+        }
+        .sync-pill.live { background: #1a2e22; color: var(--live); }
+        .sync-pill.off { background: #2a1a1a; color: var(--danger); }
+        .team-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .hero-card { --away-color: var(--accent); --home-color: var(--live); }
+        .hero-card .team-score.away { color: var(--away-color); }
+        .hero-card .team-score.home { color: var(--home-color); }
+        .team-pick.on { border-color: var(--pick-color, var(--accent)); color: var(--pick-color, var(--accent)); background: color-mix(in srgb, var(--pick-color, var(--accent)) 12%, transparent); }
         .team-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -283,13 +312,8 @@
             padding: 24px 12px;
         }
         .stock-link {
-            display: block;
-            text-align: center;
-            margin: 8px 0 4px;
-            font-size: 0.72rem;
-            color: var(--muted);
+            display: none;
         }
-        .stock-link a { color: var(--accent); text-decoration: none; }
         nav.bottom-nav {
             position: fixed;
             left: 0; right: 0; bottom: 0;
@@ -338,6 +362,7 @@
             <div class="head-meta">
                 <div class="date-line" id="date-line">—</div>
                 <span class="live-pill" id="presence">—명 접속</span>
+                <div class="sync-pill live" id="sync-status">실시간 연결</div>
             </div>
         </header>
 
@@ -394,7 +419,7 @@
                 <div class="timeline" id="play-timeline"></div>
             </div>
             <div class="panel">
-                <div class="label">가가존 · 실시간 중계창</div>
+                <div class="label">이 경기 중계창</div>
                 <input class="nick-input" id="nick" value="guest" placeholder="닉네임" style="margin-bottom:8px;width:100%">
                 <div class="gaga-feed" id="gaga-feed"></div>
                 <div class="emoji-bar">
@@ -445,6 +470,10 @@
         document.getElementById('stock-link').href = STOCK_URL;
 
         const KBO_TEAMS = ['KIA', 'LG', 'KT', 'SSG', 'NC', '두산', '삼성', '롯데', '한화', '키움'];
+        const TEAM_COLORS = {
+            KIA: '#EA0029', LG: '#C30452', KT: '#000000', SSG: '#CE0E2D', NC: '#315288',
+            '두산': '#131230', '삼성': '#074CA1', '롯데': '#041E42', '한화': '#FF6600', '키움': '#570514',
+        };
         let snapshot = null;
         let plays = [];
         let watchId = null;
@@ -530,13 +559,35 @@
                 || games[0];
         }
 
+        function teamColor(name) {
+            return TEAM_COLORS[name] || 'var(--accent)';
+        }
+
+        function setSyncStatus(state, label) {
+            const el = document.getElementById('sync-status');
+            el.textContent = label;
+            el.className = 'sync-pill ' + state;
+        }
+
+        function impactClass(impact) {
+            if (!impact || impact === 'none') return '';
+            return ' tl-impact ' + impact;
+        }
+
         function renderHero(g) {
             if (!g) return;
             watchId = g.id;
-            document.getElementById('away-name').textContent = g.awayTeam;
-            document.getElementById('home-name').textContent = g.homeTeam;
+            const card = document.getElementById('hero-card');
+            card.style.setProperty('--away-color', teamColor(g.awayTeam));
+            card.style.setProperty('--home-color', teamColor(g.homeTeam));
+            document.getElementById('away-name').innerHTML =
+                `<span class="team-dot" style="background:${teamColor(g.awayTeam)}"></span>${g.awayTeam}`;
+            document.getElementById('home-name').innerHTML =
+                `<span class="team-dot" style="background:${teamColor(g.homeTeam)}"></span>${g.homeTeam}`;
             document.getElementById('away-score').textContent = g.awayScore;
             document.getElementById('home-score').textContent = g.homeScore;
+            document.getElementById('away-score').className = 'team-score away';
+            document.getElementById('home-score').className = 'team-score home';
             document.getElementById('hero-inning').textContent = g.inning || '—';
             const badge = document.getElementById('hero-badge');
             badge.textContent = statusKo(g.status);
@@ -559,8 +610,9 @@
 
         function renderPlayBox(play) {
             if (!play?.text) return;
-            document.getElementById('play-now').innerHTML =
-                `<span class="team">${play.team || 'KBO'}</span> ${play.text}`;
+            const el = document.getElementById('play-now');
+            el.className = 'play-now' + (play.impact === 'run' ? ' impact-run impact-score' : play.impact === 'game_end' ? ' impact-score' : '');
+            el.innerHTML = `<span class="team">${play.team || 'KBO'}</span> ${play.text}`;
         }
 
         function renderLiveStrip() {
@@ -614,7 +666,7 @@
                         <span class="status-badge ${g.status === 'live' ? 'live' : g.status === 'final' ? 'final' : ''}">${statusKo(g.status)}</span>
                     </div>
                     <div class="game-card-body">
-                        <span>${g.awayTeam} vs ${g.homeTeam}</span>
+                        <span><span class="team-dot" style="background:${teamColor(g.awayTeam)}"></span>${g.awayTeam} vs <span class="team-dot" style="background:${teamColor(g.homeTeam)}"></span>${g.homeTeam}</span>
                         <span class="game-card-score">${g.awayScore}:${g.homeScore}</span>
                     </div>
                 </button>`;
@@ -636,6 +688,9 @@
             plays = plays.slice(0, 50);
             if (play.gameId === watchId || !watchId) renderPlayBox(play);
             renderTimeline();
+            if (play.gameId === watchId && (play.impact === 'run' || play.impact === 'game_end')) {
+                toast(play.impact === 'run' ? '⚡ 득점!' : '🏁 경기 종료');
+            }
         }
 
         function renderTimeline() {
@@ -646,7 +701,7 @@
                 return;
             }
             el.innerHTML = list.map(p => `
-                <div class="tl-item ${p.impact === 'run' ? 'run' : ''}">
+                <div class="tl-item${impactClass(p.impact)}">
                     <span class="tl-time">${fmtTime(p.at)}</span>
                     ${p.team ? `<span class="tl-team">${p.team}</span> ` : ''}${p.text}
                 </div>`).join('');
@@ -666,6 +721,7 @@
 
         function appendGaga(msg) {
             if (!msg?.id || gagaSeen.has(msg.id)) return;
+            if (watchId && msg.gameId && msg.gameId !== watchId && msg.kind !== 'system') return;
             gagaSeen.add(msg.id);
             const el = document.getElementById('gaga-feed');
             el.insertAdjacentHTML('beforeend', gagaHtml(msg));
@@ -676,12 +732,15 @@
         function renderGagaList(messages) {
             gagaSeen.clear();
             document.getElementById('gaga-feed').innerHTML = '';
-            (messages || []).slice().reverse().forEach(appendGaga);
+            const filtered = (messages || []).filter(m =>
+                !watchId || !m.gameId || m.gameId === watchId || m.kind === 'system');
+            filtered.slice().reverse().forEach(appendGaga);
         }
 
         function renderTeamGrid() {
             document.getElementById('team-grid').innerHTML = KBO_TEAMS.map(t => `
                 <button type="button" class="team-pick ${t === myTeam ? 'on' : ''}"
+                    style="--pick-color:${teamColor(t)}"
                     onclick="setMyTeam('${t}')">${t}</button>`).join('');
             const g = myTeam
                 ? (snapshot?.games || []).find(x => x.homeTeam === myTeam || x.awayTeam === myTeam)
@@ -713,6 +772,9 @@
             if (!snap) return;
             snapshot = snap;
             document.getElementById('date-line').textContent = fmtDate(snap.updatedAt || snap.date);
+            if (snap.updatedAt) {
+                setSyncStatus('live', `업데이트 ${fmtTime(snap.updatedAt)}`);
+            }
             const g = resolveWatchGame();
             if (g) renderHero(g);
             renderLiveStrip();
@@ -784,6 +846,9 @@
         });
 
         const socket = io(IS_DEV ? undefined : { path: '/socket.io' });
+        socket.on('connect', () => setSyncStatus('live', '실시간 연결'));
+        socket.on('disconnect', () => setSyncStatus('off', '연결 끊김 · 폴링 중'));
+        socket.on('connect_error', () => setSyncStatus('off', '재연결 중…'));
         socket.on('presence', p => {
             document.getElementById('presence').textContent = `${p.liveCount}명 접속`;
         });
@@ -798,7 +863,7 @@
         watchId = localStorage.getItem('watch-game');
         renderTeamGrid();
         refresh();
-        setInterval(refresh, 45000);
+        setInterval(refresh, 30000);
     </script>
 </body>
 </html>

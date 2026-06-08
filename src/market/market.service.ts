@@ -152,10 +152,8 @@ export class MarketService {
     }
 
     entries.sort((a, b) => b.weeklyReturnPct - a.weeklyReturnPct);
-    const rankings = entries.slice(0, limit).map((e, i) => ({
-      ...e,
-      rank: i + 1,
-    }));
+    const ranked = entries.map((e, i) => ({ ...e, rank: i + 1 }));
+    const rankings = ranked.slice(0, limit);
 
     const opsCandidates = entries.filter((e) => e.opsTradeCount > 0);
     opsCandidates.sort((a, b) => {
@@ -176,6 +174,7 @@ export class MarketService {
       weekKey,
       weekLabel: getWeekLabel(weekKey),
       updatedAt: new Date().toISOString(),
+      totalParticipants: ranked.length,
       opsKing,
       rankings,
     };
@@ -208,10 +207,10 @@ export class MarketService {
     };
     const longValue = pos.longShares * instrument.price;
     const shortLiability = pos.shortShares * instrument.price;
-    const leaderboard = await this.getLeaderboard(10);
     const currentEquity = await this.calcEquity(wallet);
+    const lbAll = await this.getLeaderboard(9999);
     const myRank =
-      leaderboard.rankings.find((r) => r.userId === userId)?.rank ?? null;
+      lbAll.rankings.find((r) => r.userId === userId)?.rank ?? null;
 
     const holdings: Array<{
       instrumentId: string;
@@ -246,8 +245,10 @@ export class MarketService {
       equity: currentEquity,
       weeklyReturnPct: this.calcReturnPct(weekStat.startEquity, currentEquity),
       weekLabel: getWeekLabel(weekStat.weekKey),
+      startEquity: weekStat.startEquity,
+      totalParticipants: lbAll.totalParticipants,
       myRank,
-      isOpsKing: leaderboard.opsKing?.userId === userId,
+      isOpsKing: lbAll.opsKing?.userId === userId,
       holdings,
       recentTrades: await Promise.resolve(
         this.store.getRecentTrades(10, instrumentId),

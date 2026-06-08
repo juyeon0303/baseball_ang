@@ -95,6 +95,7 @@ export interface LeaderboardResult {
   weekKey: string;
   weekLabel: string;
   updatedAt: string;
+  totalParticipants?: number;
   opsKing: LeaderboardEntry | null;
   rankings: LeaderboardEntry[];
 }

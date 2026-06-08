@@ -20,8 +20,8 @@ export class HubService {
         : LEE_JUNG_HOO_OPS_ID;
     const [instrument, leaderboard, trades, crowd, memes] = await Promise.all([
       this.market.getMarket(featuredId),
-      this.market.getLeaderboard(5),
-      this.market.getRecentTrades(3),
+      this.market.getLeaderboard(15),
+      this.market.getRecentTrades(8),
       this.market.getCrowdRatio(featuredId),
       this.market.getMemeLineup(),
     ]);
@@ -32,6 +32,11 @@ export class HubService {
       weeklyReturnPct: number;
       points: number;
       equity: number;
+      startEquity: number;
+      weekLabel: string;
+      totalParticipants: number;
+      holdingsCount: number;
+      isOpsKing: boolean;
     } | null = null;
 
     if (userId) {
@@ -41,6 +46,11 @@ export class HubService {
         weeklyReturnPct: port.weeklyReturnPct,
         points: port.wallet.points,
         equity: port.equity,
+        startEquity: port.startEquity,
+        weekLabel: port.weekLabel,
+        totalParticipants: port.totalParticipants ?? leaderboard.totalParticipants ?? 0,
+        holdingsCount: port.holdings.length,
+        isOpsKing: port.isOpsKing,
       };
     }
 
@@ -55,6 +65,11 @@ export class HubService {
       weekKing: leaderboard.opsKing ?? top,
       topReturn: top,
       recentTrades: trades,
+      leaderboard: {
+        weekLabel: leaderboard.weekLabel,
+        totalParticipants: leaderboard.totalParticipants ?? leaderboard.rankings.length,
+        rankings: leaderboard.rankings,
+      },
       me,
     };
   }
