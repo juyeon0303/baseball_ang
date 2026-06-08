@@ -20,6 +20,8 @@ export function buildTypeOrmOptions(
       connectionTimeoutMillis: Number(
         config.get('DB_CONNECT_TIMEOUT_MS') ?? 10_000,
       ),
+      // Render 등 IPv6 미지원 호스트 → Supabase direct(db.*.co) ENETUNREACH 방지
+      ...(config.get('DB_FORCE_IPV4') !== 'false' ? { family: 4 as const } : {}),
     },
   };
 
