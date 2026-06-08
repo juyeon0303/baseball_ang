@@ -1659,7 +1659,7 @@
     </style>
 </head>
 
-<body class="boot-lock">
+<body>
     <div class="boot-screen" id="boot-screen">
         <div class="boot-art">⚾ 🏟️ 📈</div>
         <div class="boot-msg" id="boot-msg">야스닥 개장 준비 중...</div>
@@ -1667,6 +1667,11 @@
         <div class="boot-bar"><span></span></div>
         <div class="boot-timer" id="boot-timer">서버 깨우는 중…</div>
     </div>
+    <script>
+        if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+            document.getElementById('boot-screen').classList.add('hide');
+        }
+    </script>
     <div class="yas-strip" id="yas-strip" onclick="scrollToTrade()" role="button" tabindex="0">
         <span class="yas-strip-dot" id="yas-strip-dot"></span>
         <div class="yas-strip-body">
@@ -2228,6 +2233,34 @@
             el.className = 'session-pill' + (session.isTradeHot ? ' hot' : '');
         }
 
+        function setSyncStatus(connected, label, title) {
+            const dot = document.getElementById('sync-dot');
+            const txt = document.getElementById('sync-text');
+            dot.classList.toggle('live', !!connected);
+            txt.textContent = label || (connected ? '연결됨' : '연결 중');
+            txt.title = title || '';
+        }
+
+        function liveStatsSyncLabel(sync) {
+            const kboN = sync.lastKbo?.updated?.length ?? sync.last?.kbo?.updated?.length ?? 0;
+            const mlbN = sync.lastMlb?.updated?.length ?? sync.last?.mlb?.updated?.length ?? 0;
+            const kboSched = sync.schedule?.kbo;
+            const mlbSched = sync.schedule?.mlb;
+            const kboDone = kboSched?.alreadySyncedToday;
+            const mlbDone = mlbSched?.alreadySyncedToday;
+            const kboOff = !kboSched?.isGameDay;
+            if (kboOff && mlbDone) return `MLB ${mlbN}종 갱신 · KBO 경기 없음`;
+            if (kboDone && mlbDone) return `KBO ${kboN}종 · MLB ${mlbN}종 갱신 완료`;
+            if (kboN > 0 || mlbN > 0) {
+                const parts = [];
+                if (kboN) parts.push(`KBO ${kboN}종`);
+                if (mlbN) parts.push(`MLB ${mlbN}종`);
+                return parts.join(' · ');
+            }
+            if (kboOff) return 'KBO 경기 없음 · MLB 10:00 갱신';
+            return 'KBO 09:00 · MLB 10:00 갱신 예정';
+        }
+
         function renderDisclosures(items) {
             const el = document.getElementById('disc-list');
             if (!items?.length) {
@@ -2304,6 +2337,20 @@
         let bootTick = 0;
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        function isPageReload() {
+            return performance.getEntriesByType('navigation')[0]?.type === 'reload';
+        }
+
+        async function bootAppFast() {
+            finishBoot(false);
+            try {
+                await ensureSession();
+                await refresh();
+            } catch (_) {
+                document.getElementById('boot-error').classList.add('show');
+            }
+        }
 
         function updateBootUi(startMs) {
             document.getElementById('boot-msg').textContent =
@@ -2685,6 +2732,7 @@
             ]);
             if (!hubRes?.ok) {
                 hubLoaded = false;
+                setSyncStatus(false);
                 document.getElementById('boot-error').classList.add('show');
                 renderProgress(roadmap, false);
                 return;
@@ -2692,6 +2740,7 @@
             document.getElementById('boot-error').classList.remove('show');
             apiOk = true;
             hubLoaded = true;
+            setSyncStatus(true, '연결됨');
             const hubData = await hubRes.json();
             const lineup = lineupRes?.ok ? await lineupRes.json() : lineupCache;
             renderHub(hubData);
@@ -2701,33 +2750,7 @@
 
             if (syncRes?.ok) {
                 const sync = await syncRes.json();
-                const kboN = sync.lastKbo?.updated?.length ?? sync.last?.kbo?.updated?.length ?? 0;
-                const mlbN = sync.lastMlb?.updated?.length ?? sync.last?.mlb?.updated?.length ?? 0;
-                const dot = document.getElementById('sync-dot');
-                const txt = document.getElementById('sync-text');
-                const kboSched = sync.schedule?.kbo;
-                const mlbSched = sync.schedule?.mlb;
-                const kboDone = kboSched?.alreadySyncedToday;
-                const mlbDone = mlbSched?.alreadySyncedToday;
-                const kboOff = !kboSched?.isGameDay;
-                if (kboOff && mlbDone) {
-                    dot.classList.add('live');
-                    txt.textContent = `MLB ${mlbN}종 갱신 · KBO 경기 없음`;
-                } else if (kboDone && mlbDone) {
-                    dot.classList.add('live');
-                    txt.textContent = `KBO ${kboN}종 · MLB ${mlbN}종 갱신 완료`;
-                } else if (kboN > 0 || mlbN > 0) {
-                    dot.classList.add('live');
-                    const parts = [];
-                    if (kboN) parts.push(`KBO ${kboN}종`);
-                    if (mlbN) parts.push(`MLB ${mlbN}종`);
-                    txt.textContent = parts.join(' · ');
-                } else if (kboOff) {
-                    dot.classList.remove('live');
-                    txt.textContent = 'KBO 경기 없음 · MLB 10:00 갱신';
-                } else {
-                    txt.textContent = 'KBO 09:00 · MLB 10:00 갱신 예정';
-                }
+                document.getElementById('sync-text').title = liveStatsSyncLabel(sync);
             }
         }
 
@@ -2939,7 +2962,8 @@
         } catch (_) {}
 
         setInterval(refresh, 30000);
-        wakeServer();
+        if (isPageReload()) bootAppFast();
+        else wakeServer();
     </script>
 </body>
 
