@@ -10,34 +10,50 @@
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
     <style>
         :root {
-            --bg: #070b10;
-            --surface: #121a26;
-            --surface2: #1a2433;
-            --surface-inset: #0d131c;
-            --border: #334155;
-            --text: #eef2f7;
+            --bg: #05080d;
+            --surface: rgba(18, 26, 38, 0.72);
+            --surface2: rgba(26, 36, 51, 0.85);
+            --surface-inset: rgba(8, 12, 20, 0.65);
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(148, 163, 184, 0.22);
+            --border: rgba(51, 65, 85, 0.55);
+            --text: #f1f5f9;
             --muted: #b8c5d6;
             --faint: #8fa3bc;
             --accent: #5eb8ff;
-            --accent-soft: rgba(94, 184, 255, 0.14);
+            --accent-neon: #38bdf8;
+            --accent-soft: rgba(94, 184, 255, 0.16);
             --live: #4ade80;
+            --live-neon: #34d399;
             --final: #cbd5e1;
             --highlight: #fcd34d;
             --danger: #fb7185;
             --nav-h: 58px;
-            --radius: 14px;
+            --strip-h: 46px;
+            --radius: 16px;
             --text-on-accent: #061018;
+            --glow-accent: 0 0 24px rgba(94, 184, 255, 0.35);
+            --glow-live: 0 0 20px rgba(74, 222, 128, 0.35);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: var(--bg);
+            background:
+                radial-gradient(ellipse 90% 55% at 50% -10%, rgba(94, 184, 255, 0.12), transparent 55%),
+                radial-gradient(ellipse 60% 40% at 100% 20%, rgba(74, 222, 128, 0.06), transparent 50%),
+                var(--bg);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
             font-size: 15px;
             line-height: 1.5;
             padding-bottom: calc(var(--nav-h) + 12px);
+            -webkit-font-smoothing: antialiased;
         }
-        .wrap { max-width: 440px; margin: 0 auto; padding: 14px 14px 0; }
+        .wrap {
+            max-width: 440px;
+            margin: 0 auto;
+            padding: 14px 14px 0;
+            padding-top: calc(14px + var(--strip-h) + 6px);
+        }
         header {
             display: flex;
             justify-content: space-between;
@@ -60,13 +76,25 @@
         }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
+        .glass-panel {
+            background: linear-gradient(145deg, var(--glass), transparent 60%), var(--surface);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
         .panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: linear-gradient(145deg, var(--glass), transparent 55%), var(--surface);
+            border: 1px solid var(--glass-border);
             border-radius: var(--radius);
             padding: 14px;
             margin-bottom: 10px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
+        .panel:active { transform: scale(0.995); }
         .label {
             font-size: 0.66rem;
             font-weight: 700;
@@ -76,14 +104,29 @@
             margin-bottom: 8px;
         }
         .hero-card {
-            background: linear-gradient(160deg, #1e3050 0%, var(--surface) 60%);
-            border: 1px solid #3d5278;
+            background:
+                linear-gradient(135deg, rgba(94, 184, 255, 0.14) 0%, transparent 45%),
+                linear-gradient(160deg, rgba(30, 48, 80, 0.9) 0%, var(--surface) 65%);
+            border: 1px solid rgba(94, 184, 255, 0.28);
             border-radius: var(--radius);
             padding: 16px;
             margin-bottom: 10px;
             cursor: pointer;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: var(--glow-accent), 0 12px 40px rgba(0, 0, 0, 0.4);
+            transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.25s ease;
         }
-        .hero-card.watching { box-shadow: 0 0 0 2px var(--accent); }
+        .hero-card.watching {
+            box-shadow: 0 0 0 1px var(--accent-neon), var(--glow-accent), 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        .hero-card:active { transform: scale(0.985); }
+        .team-score.micro-pop { animation: scorePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes scorePop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.18); filter: brightness(1.2); }
+            100% { transform: scale(1); }
+        }
         .hero-top {
             display: flex;
             justify-content: space-between;
@@ -374,23 +417,25 @@
             cursor: pointer;
         }
         nav.bottom-nav button .ico { display: block; font-size: 1.15rem; margin-bottom: 2px; }
-        nav.bottom-nav button.on { color: var(--accent); font-weight: 700; }
+        nav.bottom-nav button.on { color: var(--accent-neon); font-weight: 700; text-shadow: 0 0 12px rgba(94, 184, 255, 0.45); }
         .toast {
             position: fixed;
             bottom: calc(var(--nav-h) + 12px);
             left: 50%;
             transform: translateX(-50%) translateY(8px);
-            background: var(--surface2);
+            background: rgba(15, 23, 42, 0.92);
             color: var(--text);
-            border: 1px solid var(--border);
-            padding: 9px 16px;
-            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 10px 18px;
+            border-radius: 999px;
             font-size: 0.82rem;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+            font-weight: 600;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(16px);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s, transform 0.2s;
-            z-index: 20;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+            z-index: 80;
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -720,24 +765,28 @@
             gap: 8px;
         }
         .pick-btns button {
-            border: 1px solid var(--border);
+            border: 1px solid var(--glass-border);
             background: var(--surface2);
             color: var(--text);
-            border-radius: 10px;
-            padding: 10px 8px;
+            border-radius: 12px;
+            padding: 12px 8px;
             font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.15s ease, border-color 0.15s;
         }
+        .pick-btns button:active { transform: scale(0.94); }
         .pick-btns button.on-away {
-            border-color: var(--accent);
-            background: rgba(94, 184, 255, 0.12);
-            color: var(--accent);
+            border-color: var(--accent-neon);
+            background: rgba(94, 184, 255, 0.16);
+            color: var(--accent-neon);
+            box-shadow: var(--glow-accent);
         }
         .pick-btns button.on-home {
-            border-color: var(--live);
-            background: rgba(74, 222, 128, 0.12);
-            color: var(--live);
+            border-color: var(--live-neon);
+            background: rgba(74, 222, 128, 0.14);
+            color: var(--live-neon);
+            box-shadow: var(--glow-live);
         }
         .review-box {
             padding: 12px;
@@ -801,10 +850,230 @@
             cursor: pointer;
         }
         .hidden { display: none !important; }
+
+        /* Zero-click live strip */
+        .zero-strip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 45;
+            height: var(--strip-h);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 14px;
+            background: rgba(8, 12, 20, 0.88);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            cursor: pointer;
+            max-width: 440px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .zero-strip-live {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            flex-shrink: 0;
+        }
+        .zero-strip-live.on {
+            background: var(--live-neon);
+            box-shadow: 0 0 10px var(--live-neon);
+            animation: pulseDot 1.4s ease infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.55; transform: scale(0.85); }
+        }
+        .zero-strip-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 0.78rem;
+        }
+        .zero-strip-body strong {
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--highlight);
+        }
+        .zero-strip-cta {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--accent-neon);
+            white-space: nowrap;
+        }
+
+        /* Bento + story */
+        .bento-home {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .bento-home .panel { margin-bottom: 0; }
+        .bento-home .bento-wide { grid-column: 1 / -1; }
+        .story-card {
+            grid-column: 1 / -1;
+            padding: 14px 16px;
+            border-radius: var(--radius);
+            background:
+                linear-gradient(120deg, rgba(252, 211, 77, 0.12), transparent 40%),
+                linear-gradient(145deg, var(--glass), transparent 50%), var(--surface);
+            border: 1px solid rgba(252, 211, 77, 0.25);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+        }
+        .story-card-badge {
+            font-size: 0.58rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: var(--highlight);
+            margin-bottom: 6px;
+        }
+        .story-card-head {
+            font-size: 0.95rem;
+            font-weight: 800;
+            line-height: 1.35;
+            letter-spacing: -0.02em;
+        }
+        .story-card-sub {
+            margin-top: 4px;
+            font-size: 0.72rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .micro-pop { animation: microPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes microPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+        .rating-stars button.on { animation: starBurst 0.4s ease; }
+        @keyframes starBurst {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); filter: brightness(1.3); }
+            100% { transform: scale(1); }
+        }
+        header {
+            position: sticky;
+            top: var(--strip-h);
+            z-index: 30;
+            background: rgba(5, 8, 13, 0.75);
+            backdrop-filter: blur(12px);
+            margin: -6px -4px 12px;
+            padding: 6px 4px;
+        }
+
+        body.boot-lock { overflow: hidden; }
+        .boot-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(94, 184, 255, 0.15), transparent 55%),
+                #05080d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .boot-screen.hide { display: none; }
+        .boot-art {
+            font-size: 2.5rem;
+            letter-spacing: 0.15em;
+            animation: boot-bounce 1.2s ease infinite;
+        }
+        @keyframes boot-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .boot-msg {
+            margin-top: 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-neon);
+        }
+        .boot-quiz {
+            margin-top: 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        .boot-bar {
+            margin-top: 20px;
+            width: 160px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .boot-bar span {
+            display: block;
+            height: 100%;
+            width: 40%;
+            background: var(--accent-neon);
+            animation: boot-load 1.4s ease infinite;
+        }
+        @keyframes boot-load {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(350%); }
+        }
+        .boot-timer {
+            margin-top: 10px;
+            font-size: 0.72rem;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+        }
+        .boot-error {
+            display: none;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: var(--radius);
+            background: rgba(251, 113, 133, 0.12);
+            border: 1px solid rgba(251, 113, 133, 0.35);
+            color: var(--text);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+        .boot-error.show { display: block; }
+        .boot-error code {
+            font-size: 0.78rem;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body>
+<body class="boot-lock">
+    <div class="boot-screen" id="boot-screen">
+        <div class="boot-art">📻 ⚾ 🔥</div>
+        <div class="boot-msg" id="boot-msg">플레이볼 중계 기지 기상 중...</div>
+        <div class="boot-quiz" id="boot-quiz">Ruta++ — 점수·타석·WPA·응원 한 화면</div>
+        <div class="boot-bar"><span></span></div>
+        <div class="boot-timer" id="boot-timer">서버 깨우는 중…</div>
+    </div>
+    <div class="zero-strip hidden" id="zero-strip" onclick="openFromStrip()" role="button" tabindex="0">
+        <span class="zero-strip-live" id="zero-strip-dot"></span>
+        <div class="zero-strip-body">
+            <span id="zero-strip-match">—</span>
+            <strong id="zero-strip-score">0 : 0</strong>
+        </div>
+        <span class="zero-strip-cta" id="zero-strip-cta">중계 →</span>
+    </div>
     <div class="wrap">
+        <div class="boot-error" id="boot-error">
+            서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.
+            <br>로컬 개발: 프로젝트 루트에서 <code>npm run start:dev</code>
+            <br><button type="button" class="pref-chip" style="margin-top:10px" onclick="wakeServer()">다시 연결</button>
+        </div>
         <header>
             <div class="logo">플레이<span>볼</span></div>
             <div class="head-meta">
@@ -891,6 +1160,13 @@
                 </div>
             </div>
 
+            <div class="bento-home" id="bento-home">
+                <div class="story-card" id="pulse-story" style="display:none">
+                    <div class="story-card-badge">MY PULSE</div>
+                    <div class="story-card-head" id="pulse-head">오늘도 플레이볼 ⚾</div>
+                    <div class="story-card-sub" id="pulse-sub">경기 고르고 한 줄 응원 남겨보세요</div>
+                </div>
+
             <div class="panel" id="live-section" style="display:none">
                 <div class="label">라이브 NOW</div>
                 <div id="live-list"></div>
@@ -901,10 +1177,11 @@
                 <div id="myteam-home-body"></div>
             </div>
 
-            <div class="panel" id="recap-section" style="display:none">
+            <div class="panel bento-wide" id="recap-section" style="display:none">
                 <div class="label" id="recap-label">지난 경기 결과</div>
                 <div class="recap-stats" id="recap-stats"></div>
                 <div id="recap-list"></div>
+            </div>
             </div>
         </div>
 
@@ -1032,6 +1309,21 @@
 
     <script>
         const API = '';
+        const BOOT_MSGS = [
+            '플레이볼 중계 기지 기상 중...',
+            '오늘 KBO 경기표 불러오는 중...',
+            '실시간 타석·WPA 라인 연결 중...',
+            '가가존·응원 채널 예열 중...',
+            'Render 서버 기상 중 — 잠만 기다려!',
+        ];
+        const BOOT_QUIZZES = [
+            '월요일은 KBO 휴식 — 리뷰·스탠딩·지난 경기 정리하는 날',
+            'MY PULSE — 내 구단 경기만 골라 한 줄 응원',
+            'LIVE 탭에서 타석 뜨면 햅틱 ON 추천 📳',
+            '무료 호스팅 sleep 후 첫 접속은 30초 걸릴 수 있어요 — 아래 한 줄 읽고 기다리기 ㄱㄱ',
+        ];
+        const BOOT_MIN_MS = 2200;
+        let bootTick = 0;
         const DEVICE_KEY = 'yamgu-device-id';
         const SESSION_TOKEN_KEY = 'yamgu-session-token';
         const SESSION_ACCOUNT_KEY = 'yamgu-session-account';
@@ -1187,6 +1479,89 @@
             { id: 'clutch', label: '돈값짐', emoji: '💰' },
         ];
         let audioCtx = null;
+        let lastAwayScore = null;
+        let lastHomeScore = null;
+
+        function microTap(pattern = [14]) {
+            if (prefs.haptic && navigator.vibrate) navigator.vibrate(pattern);
+        }
+
+        function popEl(id) {
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if (!el) return;
+            el.classList.remove('micro-pop');
+            void el.offsetWidth;
+            el.classList.add('micro-pop');
+        }
+
+        function updateZeroStrip(g) {
+            const strip = document.getElementById('zero-strip');
+            if (!strip) return;
+            if (!g) {
+                strip.classList.add('hidden');
+                return;
+            }
+            strip.classList.remove('hidden');
+            document.getElementById('zero-strip-match').textContent =
+                `${g.awayTeam} vs ${g.homeTeam}`;
+            document.getElementById('zero-strip-score').textContent =
+                `${g.awayScore} : ${g.homeScore}`;
+            const dot = document.getElementById('zero-strip-dot');
+            dot.className = 'zero-strip-live' + (g.status === 'live' ? ' on' : '');
+            document.getElementById('zero-strip-cta').textContent =
+                g.status === 'live' ? 'LIVE · 중계' :
+                g.status === 'final' ? '리뷰 →' : '프리뷰 →';
+        }
+
+        function openFromStrip() {
+            microTap([10]);
+            if (gamePhase === 'review' || findGame(watchId)?.status === 'final') {
+                setGamePhase('review', true);
+                goTab('feed');
+            } else if (findGame(watchId)?.status === 'live') {
+                setGamePhase('live', true);
+                goTab('feed');
+            } else {
+                setGamePhase('preview', true);
+                goTab('home');
+            }
+        }
+
+        function renderPulseStory() {
+            const el = document.getElementById('pulse-story');
+            if (!el) return;
+            const g = findGame(watchId);
+            const pick = winPickSnap?.myPick;
+            let head = '오늘도 플레이볼 ⚾';
+            let sub = '경기 고르고 한 줄 응원 남겨보세요';
+            if (g && myTeam && (g.homeTeam === myTeam || g.awayTeam === myTeam)) {
+                if (g.status === 'final') {
+                    const w = winnerTeam(g);
+                    const won = w === myTeam;
+                    head = won ? `${myTeam} 팬, 오늘 웃었네 📈` : `${myTeam} 팬, 내일이 있어 💙`;
+                    sub = `${winnerLabel(g)} · 리뷰 탭에서 복기`;
+                } else if (g.status === 'live') {
+                    head = `${myTeam} 경기 LIVE 🔥`;
+                    sub = `${g.inning} · ${g.awayScore}:${g.homeScore} · 중계 탭으로`;
+                } else {
+                    head = `${myTeam} 경기 프리뷰`;
+                    sub = '승부 예측하고 팬들이랑 맞춰보세요';
+                }
+            } else if (pick && g) {
+                const team = pick === 'away' ? g.awayTeam : g.homeTeam;
+                head = `${team} 승 예측 중 🎯`;
+                sub = `팬 ${winPickSnap?.totalPicks || 0}명이 같이 맞춰봤어요`;
+            } else if (myTeam) {
+                head = `${myTeam} 팬 모드 ON 💙`;
+                sub = '내 구단 경기가 홈에서 먼저 떠요';
+            } else if (showRecapMode && recap?.games?.length) {
+                head = `어제 ${recap.games.length}경기 · ${recap.totalRuns || 0}득점`;
+                sub = recap.highlightId ? '⚡ 명경기부터 훑어보세요' : '종료 경기 리뷰 모드';
+            }
+            document.getElementById('pulse-head').textContent = head;
+            document.getElementById('pulse-sub').textContent = sub;
+            el.style.display = '';
+        }
 
         function toast(msg) {
             const el = document.getElementById('toast');
@@ -1199,6 +1574,8 @@
             prefs[key] = !prefs[key];
             localStorage.setItem('pb-' + key, prefs[key] ? '1' : '0');
             document.getElementById('pref-' + key).classList.toggle('on', prefs[key]);
+            microTap(prefs[key] ? [8, 20, 8] : [12]);
+            popEl('pref-' + key);
         }
 
         function flashScreen(kind) {
@@ -1484,7 +1861,10 @@
             if (!res.ok) return toast(data.message || '예측 실패');
             winPickSnap = data;
             renderWinPick(g);
-            toast(`${side === 'away' ? g?.awayTeam : g?.homeTeam} 승 예측 반영`);
+            microTap([12, 30, 12]);
+            popEl(side === 'away' ? 'pick-away' : 'pick-home');
+            renderPulseStory();
+            toast(`${side === 'away' ? g?.awayTeam : g?.homeTeam} 승 예측 반영 🎯`);
         }
 
         function allGamesList() {
@@ -1617,7 +1997,8 @@
             if (!res.ok) return toast(data.message || '투표 실패');
             sentimentSnap = data;
             renderSentiment(data);
-            toast('민심 반영됨');
+            microTap([10, 18, 10]);
+            toast('민심 반영됨 ✨');
         }
 
         async function loadWpaNotes(playId) {
@@ -1693,7 +2074,8 @@
             });
             if (!res.ok) return toast('평점 실패');
             const data = await res.json();
-            toast(`${playerName} ${((data.rating?.avg ?? rating) / 2).toFixed(1)}/5`);
+            microTap([8, 16, 8]);
+            toast(`${playerName} ${((data.rating?.avg ?? rating) / 2).toFixed(1)}/5 ⭐`);
             loadLiveExtras();
         }
 
@@ -1905,6 +2287,13 @@
                 `<span class="team-dot" style="background:${teamDotColor(g.homeTeam)}"></span>${g.homeTeam}`;
             document.getElementById('away-score').textContent = g.awayScore;
             document.getElementById('home-score').textContent = g.homeScore;
+            if (lastAwayScore !== null &&
+                (g.awayScore !== lastAwayScore || g.homeScore !== lastHomeScore)) {
+                popEl('away-score');
+                popEl('home-score');
+            }
+            lastAwayScore = g.awayScore;
+            lastHomeScore = g.homeScore;
             document.getElementById('away-score').className = 'team-score away';
             document.getElementById('home-score').className = 'team-score home';
             document.getElementById('hero-inning').textContent = g.inning || '—';
@@ -1948,6 +2337,8 @@
             if (feedTitle) {
                 feedTitle.textContent = `${g.awayTeam} vs ${g.homeTeam} · ${statusKo(g.status)}`;
             }
+            updateZeroStrip(g);
+            renderPulseStory();
         }
 
         function renderPlayBox(play) {
@@ -2127,7 +2518,9 @@
                 g = recap.games.find(x => x.homeTeam === team || x.awayTeam === team);
             }
             if (g) pickGame(g.id);
-            toast(`${team} 응원 구단으로 설정`);
+            renderPulseStory();
+            microTap([12, 24, 12]);
+            toast(`${team} 응원 구단 💙`);
         }
 
         function applySnapshot(snap, recapPayload, showRecap) {
@@ -2163,6 +2556,53 @@
                 if (fakePlay.impact) triggerDopamine(fakePlay, g2);
             }
             if (g2) lastScores = { away: g2.awayScore, home: g2.homeScore };
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        function updateBootUi(startMs) {
+            document.getElementById('boot-msg').textContent =
+                BOOT_MSGS[bootTick % BOOT_MSGS.length];
+            document.getElementById('boot-quiz').textContent =
+                BOOT_QUIZZES[bootTick % BOOT_QUIZZES.length];
+            const sec = Math.max(1, Math.round((Date.now() - startMs) / 1000));
+            document.getElementById('boot-timer').textContent =
+                `서버 깨우는 중… ${sec}초 · Render sleep이면 최대 1분`;
+            bootTick++;
+        }
+
+        function finishBoot(showError) {
+            document.getElementById('boot-screen').classList.add('hide');
+            document.body.classList.remove('boot-lock');
+            document.getElementById('boot-error').classList.toggle('show', !!showError);
+        }
+
+        async function wakeServer() {
+            const screen = document.getElementById('boot-screen');
+            const started = Date.now();
+            screen.classList.remove('hide');
+            document.body.classList.add('boot-lock');
+            updateBootUi(started);
+            for (let attempt = 0; attempt < 30; attempt++) {
+                if (attempt > 0) updateBootUi(started);
+                try {
+                    await ensureSession();
+                    const res = await fetch(`${API}/amm/health`, {
+                        signal: AbortSignal.timeout(12000),
+                    });
+                    if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (data.ok === false) throw new Error('warming');
+                        const wait = BOOT_MIN_MS - (Date.now() - started);
+                        if (wait > 0) await sleep(wait);
+                        finishBoot(false);
+                        await refresh();
+                        return;
+                    }
+                } catch (_) {}
+                await sleep(2000);
+            }
+            finishBoot(true);
         }
 
         async function refresh() {
@@ -2212,6 +2652,7 @@
             if (!ensureNick()) return;
             socket.emit('sendChat', { token: sessionToken(), text, gameId: watchId }, res => {
                 if (res && !res.ok) toast(res.error || '전송 실패');
+                else { microTap([10]); popEl('chat-input'); }
             });
             input.value = '';
         }
@@ -2220,6 +2661,7 @@
             if (!ensureNick()) return;
             socket.emit('sendReaction', { token: sessionToken(), emoji }, res => {
                 if (res && !res.ok) toast('잠시 후 다시 시도해 주세요');
+                else microTap([6, 12, 6]);
             });
         }
 
@@ -2286,15 +2728,8 @@
         }, { passive: true });
         window.addEventListener('resize', () => drawWpaChart());
         renderTeamGrid();
-        (async () => {
-            try {
-                await ensureSession();
-            } catch (_) {
-                toast('계정 연결 실패 — 새로고침해 주세요');
-            }
-            refresh();
-            setInterval(refresh, 30000);
-        })();
+        setInterval(refresh, 30000);
+        wakeServer();
     </script>
 </body>
 </html>

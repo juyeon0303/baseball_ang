@@ -968,9 +968,98 @@
             margin: -6px -4px 12px;
             padding: 6px 4px;
         }
+
+        body.boot-lock { overflow: hidden; }
+        .boot-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(94, 184, 255, 0.15), transparent 55%),
+                #05080d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .boot-screen.hide { display: none; }
+        .boot-art {
+            font-size: 2.5rem;
+            letter-spacing: 0.15em;
+            animation: boot-bounce 1.2s ease infinite;
+        }
+        @keyframes boot-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .boot-msg {
+            margin-top: 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-neon);
+        }
+        .boot-quiz {
+            margin-top: 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        .boot-bar {
+            margin-top: 20px;
+            width: 160px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .boot-bar span {
+            display: block;
+            height: 100%;
+            width: 40%;
+            background: var(--accent-neon);
+            animation: boot-load 1.4s ease infinite;
+        }
+        @keyframes boot-load {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(350%); }
+        }
+        .boot-timer {
+            margin-top: 10px;
+            font-size: 0.72rem;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+        }
+        .boot-error {
+            display: none;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: var(--radius);
+            background: rgba(251, 113, 133, 0.12);
+            border: 1px solid rgba(251, 113, 133, 0.35);
+            color: var(--text);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+        .boot-error.show { display: block; }
+        .boot-error code {
+            font-size: 0.78rem;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body>
+<body class="boot-lock">
+    <div class="boot-screen" id="boot-screen">
+        <div class="boot-art">📻 ⚾ 🔥</div>
+        <div class="boot-msg" id="boot-msg">플레이볼 중계 기지 기상 중...</div>
+        <div class="boot-quiz" id="boot-quiz">Ruta++ — 점수·타석·WPA·응원 한 화면</div>
+        <div class="boot-bar"><span></span></div>
+        <div class="boot-timer" id="boot-timer">서버 깨우는 중…</div>
+    </div>
     <div class="zero-strip hidden" id="zero-strip" onclick="openFromStrip()" role="button" tabindex="0">
         <span class="zero-strip-live" id="zero-strip-dot"></span>
         <div class="zero-strip-body">
@@ -980,6 +1069,11 @@
         <span class="zero-strip-cta" id="zero-strip-cta">중계 →</span>
     </div>
     <div class="wrap">
+        <div class="boot-error" id="boot-error">
+            서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.
+            <br>로컬 개발: 프로젝트 루트에서 <code>npm run start:dev</code>
+            <br><button type="button" class="pref-chip" style="margin-top:10px" onclick="wakeServer()">다시 연결</button>
+        </div>
         <header>
             <div class="logo">플레이<span>볼</span></div>
             <div class="head-meta">
@@ -1215,6 +1309,21 @@
 
     <script>
         const API = '';
+        const BOOT_MSGS = [
+            '플레이볼 중계 기지 기상 중...',
+            '오늘 KBO 경기표 불러오는 중...',
+            '실시간 타석·WPA 라인 연결 중...',
+            '가가존·응원 채널 예열 중...',
+            'Render 서버 기상 중 — 잠만 기다려!',
+        ];
+        const BOOT_QUIZZES = [
+            '월요일은 KBO 휴식 — 리뷰·스탠딩·지난 경기 정리하는 날',
+            'MY PULSE — 내 구단 경기만 골라 한 줄 응원',
+            'LIVE 탭에서 타석 뜨면 햅틱 ON 추천 📳',
+            '무료 호스팅 sleep 후 첫 접속은 30초 걸릴 수 있어요 — 아래 한 줄 읽고 기다리기 ㄱㄱ',
+        ];
+        const BOOT_MIN_MS = 2200;
+        let bootTick = 0;
         const DEVICE_KEY = 'yamgu-device-id';
         const SESSION_TOKEN_KEY = 'yamgu-session-token';
         const SESSION_ACCOUNT_KEY = 'yamgu-session-account';
@@ -2449,6 +2558,53 @@
             if (g2) lastScores = { away: g2.awayScore, home: g2.homeScore };
         }
 
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        function updateBootUi(startMs) {
+            document.getElementById('boot-msg').textContent =
+                BOOT_MSGS[bootTick % BOOT_MSGS.length];
+            document.getElementById('boot-quiz').textContent =
+                BOOT_QUIZZES[bootTick % BOOT_QUIZZES.length];
+            const sec = Math.max(1, Math.round((Date.now() - startMs) / 1000));
+            document.getElementById('boot-timer').textContent =
+                `서버 깨우는 중… ${sec}초 · Render sleep이면 최대 1분`;
+            bootTick++;
+        }
+
+        function finishBoot(showError) {
+            document.getElementById('boot-screen').classList.add('hide');
+            document.body.classList.remove('boot-lock');
+            document.getElementById('boot-error').classList.toggle('show', !!showError);
+        }
+
+        async function wakeServer() {
+            const screen = document.getElementById('boot-screen');
+            const started = Date.now();
+            screen.classList.remove('hide');
+            document.body.classList.add('boot-lock');
+            updateBootUi(started);
+            for (let attempt = 0; attempt < 30; attempt++) {
+                if (attempt > 0) updateBootUi(started);
+                try {
+                    await ensureSession();
+                    const res = await fetch(`${API}/amm/health`, {
+                        signal: AbortSignal.timeout(12000),
+                    });
+                    if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (data.ok === false) throw new Error('warming');
+                        const wait = BOOT_MIN_MS - (Date.now() - started);
+                        if (wait > 0) await sleep(wait);
+                        finishBoot(false);
+                        await refresh();
+                        return;
+                    }
+                } catch (_) {}
+                await sleep(2000);
+            }
+            finishBoot(true);
+        }
+
         async function refresh() {
             const [gamesRes, playsRes, commRes] = await Promise.all([
                 fetch(`${API}/amm/games/today`).catch(() => null),
@@ -2572,15 +2728,8 @@
         }, { passive: true });
         window.addEventListener('resize', () => drawWpaChart());
         renderTeamGrid();
-        (async () => {
-            try {
-                await ensureSession();
-            } catch (_) {
-                toast('계정 연결 실패 — 새로고침해 주세요');
-            }
-            refresh();
-            setInterval(refresh, 30000);
-        })();
+        setInterval(refresh, 30000);
+        wakeServer();
     </script>
 </body>
 </html>

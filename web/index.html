@@ -1130,10 +1130,12 @@
 
         .boot-error.show { display: block; }
 
+        body.boot-lock { overflow: hidden; }
+
         .boot-screen {
             position: fixed;
             inset: 0;
-            z-index: 100;
+            z-index: 99999;
             background: #0f1419;
             display: flex;
             flex-direction: column;
@@ -1143,6 +1145,12 @@
             text-align: center;
         }
         .boot-screen.hide { display: none; }
+        .boot-timer {
+            margin-top: 10px;
+            font-size: 0.72rem;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+        }
         .boot-art {
             font-size: 2.5rem;
             letter-spacing: 0.2em;
@@ -1651,7 +1659,14 @@
     </style>
 </head>
 
-<body>
+<body class="boot-lock">
+    <div class="boot-screen" id="boot-screen">
+        <div class="boot-art">⚾ 🏟️ 📈</div>
+        <div class="boot-msg" id="boot-msg">야스닥 개장 준비 중...</div>
+        <div class="boot-quiz" id="boot-quiz">KBO는 월요일에 경기가 없어요 — 그날은 프리마켓·찌라시 장!</div>
+        <div class="boot-bar"><span></span></div>
+        <div class="boot-timer" id="boot-timer">서버 깨우는 중…</div>
+    </div>
     <div class="yas-strip" id="yas-strip" onclick="scrollToTrade()" role="button" tabindex="0">
         <span class="yas-strip-dot" id="yas-strip-dot"></span>
         <div class="yas-strip-body">
@@ -1662,12 +1677,6 @@
         <span class="yas-strip-cta">탭 → 베팅</span>
     </div>
     <div class="deal-flash" id="deal-flash"></div>
-    <div class="boot-screen" id="boot-screen">
-        <div class="boot-art">⚾ 🏟️ 📈</div>
-        <div class="boot-msg" id="boot-msg">야스닥 개장 준비 중...</div>
-        <div class="boot-quiz" id="boot-quiz">KBO는 월요일에 경기가 없어요 — 그날은 프리마켓·찌라시 장!</div>
-        <div class="boot-bar"><span></span></div>
-    </div>
     <div class="wrap">
         <div class="boot-error" id="boot-error">
             서버에 연결하지 못했습니다. API가 실행 중인지 확인해 주세요.
@@ -2283,41 +2292,63 @@
             '전광판 호가 세팅 중...',
             '프리마켓 종목 상장 중...',
             'KBO 공시 크롤러 기상 중...',
+            'Render 서버 기상 중 — 잠만 기다려!',
         ];
         const BOOT_QUIZZES = [
             'YASDAQ = NASDAQ + 야구 — 「너 오늘 야스닥 뭐 삼?」',
             'KBO는 월요일 경기 없음 → 그날은 찌라시·프리마켓 장!',
             '「안 된다」 베팅 = 숏(공매도) — 라이벌 슬럼프에 올인 ㄱㄱ',
+            '무료 호스팅 sleep 후 첫 접속은 30초 걸릴 수 있어요 — 아래 퀴즈 읽고 기다리기 ㄱㄱ',
         ];
+        const BOOT_MIN_MS = 2200;
         let bootTick = 0;
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+        function updateBootUi(startMs) {
+            document.getElementById('boot-msg').textContent =
+                BOOT_MSGS[bootTick % BOOT_MSGS.length];
+            document.getElementById('boot-quiz').textContent =
+                BOOT_QUIZZES[bootTick % BOOT_QUIZZES.length];
+            const sec = Math.max(1, Math.round((Date.now() - startMs) / 1000));
+            document.getElementById('boot-timer').textContent =
+                `서버 깨우는 중… ${sec}초 · Render sleep이면 최대 1분`;
+            bootTick++;
+        }
+
+        function finishBoot(showError) {
+            const screen = document.getElementById('boot-screen');
+            screen.classList.add('hide');
+            document.body.classList.remove('boot-lock');
+            document.getElementById('boot-error').classList.toggle('show', !!showError);
+        }
+
         async function wakeServer() {
             const screen = document.getElementById('boot-screen');
+            const started = Date.now();
             screen.classList.remove('hide');
-            for (let attempt = 0; attempt < 25; attempt++) {
-                document.getElementById('boot-msg').textContent =
-                    BOOT_MSGS[bootTick % BOOT_MSGS.length];
-                document.getElementById('boot-quiz').textContent =
-                    BOOT_QUIZZES[bootTick % BOOT_QUIZZES.length];
-                bootTick++;
+            document.body.classList.add('boot-lock');
+            updateBootUi(started);
+            for (let attempt = 0; attempt < 30; attempt++) {
+                if (attempt > 0) updateBootUi(started);
                 try {
                     await ensureSession();
                     const res = await fetch(`${API}/amm/health`, {
                         signal: AbortSignal.timeout(12000),
                     });
                     if (res.ok) {
-                        screen.classList.add('hide');
-                        document.getElementById('boot-error').classList.remove('show');
+                        const data = await res.json().catch(() => ({}));
+                        if (data.ok === false) throw new Error('warming');
+                        const wait = BOOT_MIN_MS - (Date.now() - started);
+                        if (wait > 0) await sleep(wait);
+                        finishBoot(false);
                         await refresh();
                         return;
                     }
                 } catch (_) {}
                 await sleep(2000);
             }
-            screen.classList.add('hide');
-            document.getElementById('boot-error').classList.add('show');
+            finishBoot(true);
         }
 
         function renderLeaderboard(lb, me) {
