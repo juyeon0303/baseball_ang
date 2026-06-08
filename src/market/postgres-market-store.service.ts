@@ -55,7 +55,13 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
     private readonly snapshotRepo: Repository<PriceSnapshotEntity>,
   ) {}
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
+    void this.seedMarket().catch((e) =>
+      this.logger.error(`Postgres 마켓 시드 실패: ${e}`),
+    );
+  }
+
+  private async seedMarket(): Promise<void> {
     for (const seed of ALL_INSTRUMENT_SEEDS) {
       await this.upsertInstrument(this.seedToEntity(seed));
       await this.ensurePriceSnapshot(seed.id);

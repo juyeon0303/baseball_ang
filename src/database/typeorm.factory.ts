@@ -13,6 +13,13 @@ export function buildTypeOrmOptions(
     entities,
     synchronize,
     logging: config.get('DB_LOGGING') === 'true',
+    retryAttempts: Number(config.get('DB_RETRY_ATTEMPTS') ?? 10),
+    retryDelay: Number(config.get('DB_RETRY_DELAY_MS') ?? 3000),
+    extra: {
+      connectionTimeoutMillis: Number(
+        config.get('DB_CONNECT_TIMEOUT_MS') ?? 10_000,
+      ),
+    },
   };
 
   const ssl = resolveSsl(config, url);

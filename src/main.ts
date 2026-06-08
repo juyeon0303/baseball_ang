@@ -4,6 +4,12 @@ import { AppModule } from './app.module';
 import { mountProductionUis } from './web-ui.util';
 
 async function bootstrap() {
+  if (process.env.STORAGE_MODE === 'postgres' && !process.env.DATABASE_URL) {
+    console.error(
+      '[boot] STORAGE_MODE=postgres 이지만 DATABASE_URL이 없습니다. Render Environment에 Supabase URI를 설정하세요.',
+    );
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const ui = mountProductionUis(app);
 
@@ -33,4 +39,7 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('[boot] Nest 시작 실패:', err);
+  process.exit(1);
+});

@@ -9,7 +9,7 @@ services:
     # build:render 스크립트가 devDeps 설치 + nest/vite 빌드를 한 번에 처리
     buildCommand: npm run build:render
     startCommand: npm run start:prod
-    healthCheckPath: /amm/health
+    healthCheckPath: /amm/health/live
     envVars:
       - key: NODE_ENV
         value: production

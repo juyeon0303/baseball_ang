@@ -38,6 +38,15 @@ export class AmmController {
     private readonly auth: SessionAuthService,
   ) {}
 
+  /** Render deploy liveness — DB 없이 즉시 200 */
+  @Get('health/live')
+  getHealthLive() {
+    return {
+      ok: true,
+      serverTime: new Date().toISOString(),
+    };
+  }
+
   @Get('health')
   async getHealth() {
     const storageMode = process.env.STORAGE_MODE ?? 'memory';
