@@ -2,7 +2,7 @@
   "name": "baseball-web",
   "private": true,
   "version": "0.1.0",
-  "description": "야구주식 웹 프론트 (API는 baseball-backend)",
+  "description": "YASDAQ(야스닥) 웹 프론트 (API는 baseball-backend)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

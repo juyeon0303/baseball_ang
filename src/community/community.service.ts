@@ -75,7 +75,12 @@ export class CommunityService implements OnModuleInit {
 
 
 
-  async postChat(userId: string, text: string, gameId?: string): Promise<CommunityMessage> {
+  async postChat(
+    userId: string,
+    text: string,
+    gameId?: string,
+    displayName?: string,
+  ): Promise<CommunityMessage> {
 
     const safeUser = this.safeUserId(userId);
 
@@ -89,6 +94,8 @@ export class CommunityService implements OnModuleInit {
 
       userId: safeUser,
 
+      displayName: displayName?.trim().slice(0, 24) || undefined,
+
       text: safeText,
 
       gameId,
@@ -99,7 +106,11 @@ export class CommunityService implements OnModuleInit {
 
 
 
-  async postReaction(userId: string, emoji: string): Promise<CommunityMessage> {
+  async postReaction(
+    userId: string,
+    emoji: string,
+    displayName?: string,
+  ): Promise<CommunityMessage> {
 
     const safeUser = this.safeUserId(userId);
 
@@ -112,6 +123,8 @@ export class CommunityService implements OnModuleInit {
       kind: 'reaction',
 
       userId: safeUser,
+
+      displayName: displayName?.trim().slice(0, 24) || undefined,
 
       text: safeEmoji,
 
@@ -213,7 +226,7 @@ export class CommunityService implements OnModuleInit {
 
   private safeUserId(userId: string): string {
 
-    const trimmed = (userId ?? 'guest').trim().slice(0, 16);
+    const trimmed = (userId ?? 'guest').trim().slice(0, 64);
 
     if (!trimmed) return 'guest';
 

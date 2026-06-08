@@ -14,7 +14,7 @@ export function resolveAppDist(): string | null {
   );
 }
 
-/** 야구주식 웹 (web/dist) — 배포 시 /stock/ */
+/** YASDAQ 웹 (web/dist) — 배포 시 /stock/ */
 export function resolveWebDist(): string | null {
   const candidates = [
     join(process.cwd(), 'web', 'dist'),

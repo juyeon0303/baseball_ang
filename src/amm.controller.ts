@@ -2,12 +2,15 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Post,
   Query,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AmmEngineService } from './amm/amm-engine.service';
+import { SessionAuthService } from './auth/session-auth.service';
 import { resolveInstrumentId } from './market/market-lineup';
 import { MarketService } from './market/market.service';
 import { LEE_JUNG_HOO_OPS_ID } from './market/market-lineup';
@@ -16,6 +19,9 @@ import { HubService } from './hub/hub.service';
 import { LiveStatsSyncService } from './stats/live-stats-sync.service';
 import { MemeSyncService } from './stats/meme-sync.service';
 import { DatabaseHealthService } from './database/database-health.service';
+import { DisclosureService } from './market/disclosure.service';
+import { OffDayDemoService } from './market/off-day-demo.service';
+import { ShareholderService } from './market/shareholder.service';
 
 @Controller('amm')
 export class AmmController {
@@ -26,6 +32,10 @@ export class AmmController {
     private readonly liveStats: LiveStatsSyncService,
     private readonly memeSync: MemeSyncService,
     private readonly dbHealth: DatabaseHealthService,
+    private readonly disclosure: DisclosureService,
+    private readonly shareholders: ShareholderService,
+    private readonly offDayDemo: OffDayDemoService,
+    private readonly auth: SessionAuthService,
   ) {}
 
   @Get('health')
@@ -117,15 +127,45 @@ export class AmmController {
   }
 
   @Get('hub')
-  async getHub(@Query('userId') userId?: string) {
-    const safe = userId ? this.toSafeUserId(userId) : undefined;
-    return this.hub.getHub(safe);
+  async getHub(@Headers('authorization') authorization?: string) {
+    const session = this.auth.fromBearer(authorization);
+    return this.hub.getHub(
+      session?.accountId,
+      session ? (id) => this.auth.getDisplayName(id) : undefined,
+    );
   }
 
-  private toSafeUserId(userId: string): string {
-    const trimmed = (userId ?? 'guest').trim();
-    if (!trimmed) return 'guest';
-    return trimmed.slice(0, 64);
+  @Get('disclosures')
+  getDisclosures(@Query('limit') limit?: string) {
+    const n = Math.min(30, Math.max(1, parseInt(limit ?? '12', 10) || 12));
+    return { disclosures: this.disclosure.getFeed(n) };
+  }
+
+  @Post('disclosures/pulse')
+  async pulseDisclosure() {
+    const item = await this.disclosure.pulse('manual');
+    return { success: !!item, item };
+  }
+
+  @Post('demo/pulse')
+  async pulseDemo() {
+    await this.offDayDemo.pulse('manual');
+    return {
+      success: true,
+      demoMode: this.offDayDemo.isActive(),
+      message: this.offDayDemo.getLastMessage(),
+    };
+  }
+
+  @Get('shareholders')
+  async getShareholders(@Headers('authorization') authorization?: string) {
+    const session = this.auth.fromBearer(authorization);
+    return this.shareholders.getBoard(session?.accountId);
+  }
+
+  @Get('etfs')
+  async getEtfs() {
+    return { etfs: await this.market.getEtfBaskets() };
   }
 
   @Get('status')
@@ -176,30 +216,35 @@ export class AmmController {
   @Get('portfolio/:userId')
   async getPortfolio(
     @Param('userId') userId: string,
+    @Headers('authorization') authorization: string | undefined,
     @Query('instrumentId') instrumentId?: string,
   ) {
+    const session = this.auth.requireBearer(authorization);
+    if (session.accountId !== userId) {
+      throw new ForbiddenException('본인 포트폴리오만 조회할 수 있습니다.');
+    }
     return this.market.getPortfolio(
-      this.toSafeUserId(userId),
+      session.accountId,
       instrumentId ?? LEE_JUNG_HOO_OPS_ID,
     );
   }
 
   @Post('buy')
   async buyStock(
+    @Headers('authorization') authorization: string | undefined,
     @Body()
     orderDto: {
-      userId: string;
       playerId?: number | string;
       instrumentId?: string;
       quantity: number;
       side?: OrderSide;
     },
   ) {
-    const userId = this.toSafeUserId(orderDto.userId);
+    const session = this.auth.requireBearer(authorization);
     const instrumentId = this.resolveInstrument(orderDto);
     const side = orderDto.side ?? 'long';
     return this.market.executeBuy(
-      userId,
+      session.accountId,
       instrumentId,
       orderDto.quantity,
       side,
@@ -208,20 +253,20 @@ export class AmmController {
 
   @Post('sell')
   async sellStock(
+    @Headers('authorization') authorization: string | undefined,
     @Body()
     orderDto: {
-      userId: string;
       playerId?: number | string;
       instrumentId?: string;
       quantity: number;
       side?: OrderSide;
     },
   ) {
-    const userId = this.toSafeUserId(orderDto.userId);
+    const session = this.auth.requireBearer(authorization);
     const instrumentId = this.resolveInstrument(orderDto);
     const side = orderDto.side ?? 'long';
     return this.market.executeSell(
-      userId,
+      session.accountId,
       instrumentId,
       orderDto.quantity,
       side,

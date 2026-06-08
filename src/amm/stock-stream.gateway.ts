@@ -11,6 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { CommunityService } from '../community/community.service';
 import { PresenceService } from '../presence/presence.service';
+import { SessionAuthService } from '../auth/session-auth.service';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -22,6 +23,7 @@ export class StockStreamGateway implements OnGatewayConnection, OnGatewayDisconn
   constructor(
     private readonly presence: PresenceService,
     private readonly community: CommunityService,
+    private readonly auth: SessionAuthService,
   ) {}
 
   handleConnection(client: Socket) {
@@ -90,13 +92,23 @@ export class StockStreamGateway implements OnGatewayConnection, OnGatewayDisconn
     this.server.emit('community', message);
   }
 
+  broadcastLiveEvent(event: string, payload: unknown): void {
+    if (!this.server) return;
+    this.server.emit(event, payload);
+  }
+
   @SubscribeMessage('sendChat')
   async handleSendChat(@MessageBody() data: Record<string, unknown>) {
     try {
+      const session = this.auth.validateToken(String(data.token ?? ''));
+      if (!session) {
+        return { ok: false, error: '세션이 필요합니다. 페이지를 새로고침하세요.' };
+      }
       const msg = await this.community.postChat(
-        String(data.userId ?? 'guest'),
+        session.accountId,
         String(data.text ?? ''),
         data.gameId ? String(data.gameId) : undefined,
+        session.displayName,
       );
       return { ok: true, message: msg };
     } catch (e) {
@@ -107,9 +119,14 @@ export class StockStreamGateway implements OnGatewayConnection, OnGatewayDisconn
   @SubscribeMessage('sendReaction')
   async handleSendReaction(@MessageBody() data: Record<string, unknown>) {
     try {
+      const session = this.auth.validateToken(String(data.token ?? ''));
+      if (!session) {
+        return { ok: false, error: '세션이 필요합니다. 페이지를 새로고침하세요.' };
+      }
       const msg = await this.community.postReaction(
-        String(data.userId ?? 'guest'),
+        session.accountId,
         String(data.emoji ?? '🔥'),
+        session.displayName,
       );
       return { ok: true, message: msg };
     } catch (e) {

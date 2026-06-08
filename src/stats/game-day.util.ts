@@ -9,6 +9,29 @@ export function todayKey(timeZone = 'Asia/Seoul', date = new Date()): string {
   }).format(date);
 }
 
+/** KST 기준 N일 전후 날짜 키 (YYYY-MM-DD) */
+export function dateKeyOffset(
+  offsetDays: number,
+  timeZone = 'Asia/Seoul',
+  date = new Date(),
+): string {
+  const ms = date.getTime() + offsetDays * 86_400_000;
+  return todayKey(timeZone, new Date(ms));
+}
+
+export function formatDateLabel(
+  dateKey: string,
+  timeZone = 'Asia/Seoul',
+): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const wd = new Intl.DateTimeFormat('ko-KR', {
+    timeZone,
+    weekday: 'short',
+  }).format(dt);
+  return `${m}/${d} (${wd})`;
+}
+
 export function weekdayInTz(
   timeZone = 'Asia/Seoul',
   date = new Date(),

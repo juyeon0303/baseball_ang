@@ -27,6 +27,7 @@ import {
 import { KboRawGame, KboScoreProvider } from './kbo-score.provider';
 
 import { GamesService } from './games.service';
+import { GameLiveService } from './game-live.service';
 
 
 
@@ -75,6 +76,8 @@ export class GamesSyncService implements OnModuleInit {
     private readonly stream: StockStreamGateway,
 
     private readonly community: CommunityService,
+
+    private readonly live: GameLiveService,
 
   ) {}
 
@@ -257,6 +260,10 @@ export class GamesSyncService implements OnModuleInit {
       };
 
       this.games.setSnapshot(this.snapshot);
+
+      for (const g of games) {
+        this.live.recordGameState(g);
+      }
 
       this.stream.broadcastGameUpdate(this.snapshot);
 
@@ -543,6 +550,11 @@ export class GamesSyncService implements OnModuleInit {
     this.plays.unshift(play);
 
     this.plays = this.plays.slice(0, 40);
+
+    const game = this.snapshot?.games.find((g) => g.id === input.gameId);
+    if (game) {
+      this.live.recordGameState(game, play);
+    }
 
     this.stream.broadcastPlayFeed(play);
 

@@ -26,7 +26,7 @@ async function bootstrap() {
 
   const publicUrl = process.env.PUBLIC_URL ?? `http://localhost:${port}`;
   if (ui.app) console.log(`플레이볼 — ${publicUrl}`);
-  if (ui.stock) console.log(`야구주식 — ${publicUrl}/stock/`);
+  if (ui.stock) console.log(`YASDAQ(야스닥) — ${publicUrl}/stock/`);
   if (!ui.app && !ui.stock) {
     console.log(`API — http://localhost:${port}`);
     console.log(`로컬: npm run dev:app (:5174) · npm run dev:web (:5173)`);

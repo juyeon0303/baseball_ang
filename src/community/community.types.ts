@@ -10,6 +10,7 @@ export interface CommunityMessage {
   at: string;
   kind: CommunityMessageKind;
   userId?: string;
+  displayName?: string;
   text: string;
   gameId?: string;
   instrumentId?: string;

@@ -29,6 +29,7 @@ import {
 } from './market.types';
 import { getWeekKey, getWeekLabel } from './week.util';
 import { PricingService } from './pricing.service';
+import { THEME_ETFS } from './etf-lineup';
 
 @Injectable()
 export class MarketService {
@@ -352,6 +353,58 @@ export class MarketService {
       wallet,
       sentimentAction: 'bearish',
     });
+  }
+
+  /** 공시·프리마켓 — ±1~5% 미세 변동 */
+  async applyDisclosureShock(
+    instrumentId: string,
+    sentimentDelta: number,
+  ): Promise<InstrumentState | null> {
+    return this.applyPlaySentiment(instrumentId, sentimentDelta);
+  }
+
+  async getEtfBaskets() {
+    const rows: Array<{
+      id: string;
+      name: string;
+      tagline: string;
+      memberIds: string[];
+      accent: string;
+      leverage?: number;
+      basketPrice: number;
+      members: Array<{
+        instrumentId: string;
+        playerName: string;
+        teamShort: string;
+        price: number;
+      }>;
+    }> = [];
+    for (const etf of THEME_ETFS) {
+      let sum = 0;
+      const members: Array<{
+        instrumentId: string;
+        playerName: string;
+        teamShort: string;
+        price: number;
+      }> = [];
+      for (const id of etf.memberIds) {
+        if (!(await Promise.resolve(this.store.hasInstrument(id)))) continue;
+        const inst = await Promise.resolve(this.store.getInstrument(id));
+        sum += inst.price;
+        members.push({
+          instrumentId: id,
+          playerName: inst.playerName,
+          teamShort: inst.teamShort,
+          price: inst.price,
+        });
+      }
+      rows.push({
+        ...etf,
+        basketPrice: members.length ? Math.round(sum / members.length) : 0,
+        members,
+      });
+    }
+    return rows;
   }
 
   /** 경기 플레이 → 군중 심리( sentiment ) 미세 반영 — 시즌 OPS와 별도 */

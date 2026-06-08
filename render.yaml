@@ -1,4 +1,4 @@
-# Render Blueprint — 서버 1개, URL 2개 (플레이볼 + 야구주식)
+# Render Blueprint — 서버 1개, URL 2개 (플레이볼 + YASDAQ)
 # https://dashboard.render.com → New → Blueprint
 
 services:

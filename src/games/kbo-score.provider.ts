@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { todayKey } from '../stats/game-day.util';
-import { GameStatus, TodayGame } from './games.types';
+import { GameSituation, GameStatus, TodayGame } from './games.types';
 
 const KBO_UA =
   'Mozilla/5.0 (compatible; BaseballStockBot/1.0; +kbo-scoreboard)';
@@ -39,6 +39,12 @@ export interface KboRawGame {
   B_P_NM?: string;
   T_PIT_P_NM?: string;
   B_PIT_P_NM?: string;
+  BALL_CN?: number | string | null;
+  STRIKE_CN?: number | string | null;
+  OUT_CN?: number | string | null;
+  B1_BAT_ORDER_NO?: number | string | null;
+  B2_BAT_ORDER_NO?: number | string | null;
+  B3_BAT_ORDER_NO?: number | string | null;
 }
 
 @Injectable()
@@ -65,6 +71,7 @@ export class KboScoreProvider {
     const awayScore = parseInt(raw.T_SCORE_CN, 10) || 0;
     const homeScore = parseInt(raw.B_SCORE_CN, 10) || 0;
     const status = this.resolveStatus(raw);
+    const situation = this.parseSituation(raw, status);
     return {
       id: raw.G_ID,
       awayTeam,
@@ -80,6 +87,31 @@ export class KboScoreProvider {
       homePitcher: raw.B_PIT_P_NM?.trim(),
       batter: raw.T_P_NM?.trim(),
       pitcher: raw.B_P_NM?.trim(),
+      situation,
+    };
+  }
+
+  private parseIntField(v: unknown): number {
+    if (v == null || v === '') return 0;
+    const n = parseInt(String(v), 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  parseSituation(raw: KboRawGame, status: GameStatus): GameSituation | undefined {
+    if (status !== 'live') return undefined;
+    const balls = Math.min(3, Math.max(0, this.parseIntField(raw.BALL_CN)));
+    const strikes = Math.min(2, Math.max(0, this.parseIntField(raw.STRIKE_CN)));
+    const outs = Math.min(2, Math.max(0, this.parseIntField(raw.OUT_CN)));
+    return {
+      balls,
+      strikes,
+      outs,
+      bases: {
+        first: this.parseIntField(raw.B1_BAT_ORDER_NO) > 0,
+        second: this.parseIntField(raw.B2_BAT_ORDER_NO) > 0,
+        third: this.parseIntField(raw.B3_BAT_ORDER_NO) > 0,
+      },
+      countText: `${balls}-${strikes}`,
     };
   }
 

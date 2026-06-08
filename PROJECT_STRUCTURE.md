@@ -3,7 +3,7 @@
 | 포트 | 제품 | 폴더 | 내용 |
 |------|------|------|------|
 | **3000** | **실시간 야구 앱** (Ruta++) | `app/` | 점수·타석·가가존. **주식 없음** |
-| **5173** | **야구주식 웹** | `web/` | 베팅·시세·밈. **커뮤 풀기능 없음** |
+| **5173** | **YASDAQ(야스닥)** | `web/` | 베팅·시세·밈. **커뮤 풀기능 없음** |
 | **5174** | 앱 개발용 (핫리로드) | `app/` | API는 3000에 프록시 |
 
 ## 로컬 실행 (3터미널)
@@ -19,7 +19,7 @@ npm install
 npm run dev
 → http://localhost:5174
 
-REM 3) 야구주식 웹
+REM 3) YASDAQ(야스닥)
 cd web
 npm run dev
 → http://localhost:5173
@@ -37,4 +37,4 @@ npm run dev
 
 - `/amm/games/*` — 앱
 - `/amm/community/*` — 앱
-- `/amm/hub`, buy/sell — 야구주식 웹만
+- `/amm/hub`, buy/sell — YASDAQ 웹만
