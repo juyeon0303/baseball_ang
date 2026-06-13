@@ -72,18 +72,18 @@ export class GamesRecapService {
     return null;
   }
 
-  /** 오늘 라이브가 없을 때 리캡을 보여줄지 */
+  /** 오늘 라이브가 없을 때 리캡을 보여줄지 (개막 전·휴무일만) */
   shouldShowRecap(): boolean {
     const tz = this.config.get('GAMES_TZ') ?? 'Asia/Seoul';
     const games = this.games.getTodayGames();
     const hasLive = games.some((g) => g.status === 'live');
     if (hasLive) return false;
+    const hasFinalToday = games.some((g) => g.status === 'final');
+    if (hasFinalToday) return false;
     if (!isKboGameDay(tz)) return true;
     const hasScheduled = games.some((g) => g.status === 'scheduled');
-    const hasFinalToday = games.some((g) => g.status === 'final');
     if (!games.length) return true;
-    if (!hasScheduled && !hasLive) return true;
-    if (hasScheduled && !hasLive && !hasFinalToday) return true;
+    if (hasScheduled && !hasLive) return true;
     return false;
   }
 

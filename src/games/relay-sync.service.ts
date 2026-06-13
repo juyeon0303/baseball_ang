@@ -112,7 +112,7 @@ export class RelaySyncService {
     }
   }
 
-  @Interval(15_000)
+  @Interval(10_000)
   async relayPoll(): Promise<void> {
     if (!this.isEnabled()) return;
     const snap = this.gamesSync.getSnapshot();
@@ -260,6 +260,8 @@ export class RelaySyncService {
     }
     if (parsed.batter) game.batter = parsed.batter;
     if (parsed.pitcher) game.pitcher = parsed.pitcher;
+    if (parsed.awayScore != null) game.awayScore = parsed.awayScore;
+    if (parsed.homeScore != null) game.homeScore = parsed.homeScore;
 
     parsed.situation.basesLabel = formatBasesLabel(parsed.situation.bases);
     parsed.situation.inning = parsed.inningLabel ?? game.inning;
@@ -282,6 +284,8 @@ export class RelaySyncService {
       batter: game.batter,
       pitcher: game.pitcher,
       inning: game.inning,
+      awayScore: game.awayScore,
+      homeScore: game.homeScore,
       relay: game.relay,
     });
 

@@ -1982,7 +1982,11 @@
             } else if (myTeam) {
                 head = `${myTeam}`;
                 sub = '내 구단 경기가 홈에 표시됩니다';
-            } else if (showRecapMode && recap?.games?.length) {
+            } else if (hasFinalToday()) {
+                const n = (snapshot?.games || []).filter(g => g.status === 'final').length;
+                head = `오늘 ${n}경기 종료`;
+                sub = '경기 탭에서 결과·중계를 확인하세요';
+            } else if (shouldUseRecapPrimary()) {
                 head = `${recap.dateLabel || '지난'} ${recap.games.length}경기`;
                 sub = recap.highlightId ? '하이라이트 경기부터 확인해 보세요' : '종료 경기 리뷰';
             }
@@ -2714,6 +2718,18 @@
             return (snapshot?.games || []).some(g => g.status === 'live');
         }
 
+        function hasFinalToday() {
+            return (snapshot?.games || []).some(g => g.status === 'final');
+        }
+
+        function shouldUseRecapPrimary() {
+            return showRecapMode
+                && recap?.games?.length
+                && !hasLiveToday()
+                && !hasFinalToday()
+                && !(snapshot?.games || []).some(g => g.status === 'scheduled');
+        }
+
         function winnerLabel(g) {
             if (!g) return '';
             if (g.homeScore > g.awayScore) return `${g.homeTeam} ${g.homeScore}:${g.awayScore} ${g.awayTeam}`;
@@ -2730,7 +2746,7 @@
 
         function renderOffDayBanner() {
             const el = document.getElementById('offday-banner');
-            if (!showRecapMode || !recap?.games?.length) {
+            if (!showRecapMode || !recap?.games?.length || hasFinalToday()) {
                 el.style.display = 'none';
                 return;
             }
@@ -2792,7 +2808,18 @@
                 if (g) return g;
             }
 
-            if (showRecapMode && recap?.games?.length && !hasLiveToday()) {
+            if (games.length) {
+                if (myTeam) {
+                    const mine = games.find(g => g.homeTeam === myTeam || g.awayTeam === myTeam);
+                    if (mine) return mine;
+                }
+                return games.find(g => g.status === 'live')
+                    || games.find(g => g.id === snapshot?.featuredGameId)
+                    || games.find(g => g.status === 'final')
+                    || games[0];
+            }
+
+            if (shouldUseRecapPrimary()) {
                 if (myTeam) {
                     const mine = recap.games.find(g => g.homeTeam === myTeam || g.awayTeam === myTeam);
                     if (mine) return mine;
@@ -2800,14 +2827,7 @@
                 return recap.games.find(g => g.id === recap.highlightId) || recap.games[0];
             }
 
-            if (!games.length) return null;
-            if (myTeam) {
-                const mine = games.find(g => g.homeTeam === myTeam || g.awayTeam === myTeam);
-                if (mine) return mine;
-            }
-            return games.find(g => g.status === 'live')
-                || games.find(g => g.id === snapshot?.featuredGameId)
-                || games[0];
+            return null;
         }
 
         function teamColor(name) {
@@ -2954,6 +2974,8 @@
             if (payload.batter) g.batter = payload.batter;
             if (payload.pitcher) g.pitcher = payload.pitcher;
             if (payload.inning) g.inning = payload.inning;
+            if (payload.awayScore != null) g.awayScore = payload.awayScore;
+            if (payload.homeScore != null) g.homeScore = payload.homeScore;
             if (payload.relay) g.relay = payload.relay;
             if (gameId === watchId) {
                 renderHero(g);
@@ -3004,8 +3026,8 @@
             const heroLabel = document.getElementById('hero-label');
             if (g.status === 'final') {
                 const hasArchive = !!g.relay?.archived || g.relay?.source === 'naver_relay';
-                wpaBar.style.display = hasArchive ? '' : (showRecapMode && !hasLiveToday() ? 'none' : '');
-                heroLabel.textContent = hasArchive ? '종료 경기 중계' : '지난 경기 다시보기';
+                wpaBar.style.display = hasArchive ? '' : (shouldUseRecapPrimary() ? 'none' : '');
+                heroLabel.textContent = hasArchive ? '종료 경기 중계' : (hasFinalToday() ? '오늘 경기 결과' : '지난 경기 다시보기');
                 if (g.relay?.lastPlay) {
                     renderPlayBox({
                         text: g.relay.lastPlay,
@@ -3080,7 +3102,7 @@
             const el = document.getElementById('myteam-home-body');
             if (!myTeam) { sec.style.display = 'none'; return; }
             let g = (snapshot?.games || []).find(x => x.homeTeam === myTeam || x.awayTeam === myTeam);
-            if (!g && showRecapMode && recap?.games?.length) {
+            if (!g && shouldUseRecapPrimary()) {
                 g = recap.games.find(x => x.homeTeam === myTeam || x.awayTeam === myTeam);
             }
             if (!g) {
@@ -3117,7 +3139,7 @@
 
         function renderGamesList() {
             let games = snapshot?.games || [];
-            if (showRecapMode && recap?.games?.length && !hasLiveToday()) {
+            if (showRecapMode && recap?.games?.length && !hasLiveToday() && !hasFinalToday()) {
                 const liveOrSoon = games.filter(g => g.status === 'live' || g.status === 'scheduled');
                 games = liveOrSoon.length
                     ? [...liveOrSoon, ...recap.games]
@@ -3257,7 +3279,7 @@
                 box.textContent = '구단을 골라 주세요';
             } else {
                 let g = (snapshot?.games || []).find(x => x.homeTeam === myTeam || x.awayTeam === myTeam);
-                if (!g && showRecapMode && recap?.games?.length) {
+                if (!g && shouldUseRecapPrimary()) {
                     g = recap.games.find(x => x.homeTeam === myTeam || x.awayTeam === myTeam);
                 }
                 if (!g) {
@@ -3308,7 +3330,7 @@
                     toast(`${g.awayTeam} vs ${g.homeTeam} — 링크로 들어왔습니다`);
                 }
             }
-            else if (showRecapMode && recap?.games?.length) {
+            else if (shouldUseRecapPrimary()) {
                 renderHero(recap.games[0]);
                 watchId = recap.games[0].id;
             }
@@ -3435,7 +3457,10 @@
         });
         socket.on('gameUpdate', snap => {
             const prevStatus = findGame(watchId)?.status;
-            applySnapshot(snap, recap, showRecapMode);
+            const todayGames = snap?.games || [];
+            const recapActive = showRecapMode
+                && !todayGames.some(g => g.status === 'live' || g.status === 'final');
+            applySnapshot(snap, recap, recapActive);
             const g = findGame(watchId);
             if (g && prevStatus && prevStatus !== g.status) phaseManual = false;
             const last = plays.find(p => p.gameId === watchId);

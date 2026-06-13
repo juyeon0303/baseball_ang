@@ -196,8 +196,6 @@ export class GamesSyncService implements OnModuleInit {
 
   }
 
-
-
   async refresh(trigger: string): Promise<ScoreboardSnapshot> {
 
     if (this.syncing) {
@@ -239,6 +237,8 @@ export class GamesSyncService implements OnModuleInit {
         this.kbo.mapRawGame(raw, (team) => this.games.resolveInstrumentForTeam(team)),
 
       );
+
+      this.preserveNaverLiveState(games);
 
 
 
@@ -676,6 +676,24 @@ export class GamesSyncService implements OnModuleInit {
 
     return hour >= 14 && hour <= 23;
 
+  }
+
+  /** KBO 점수 갱신 시 네이버 중계 카운트·주자를 덮어쓰지 않음 */
+  private preserveNaverLiveState(games: TodayGame[]): void {
+    if (!this.relay.isEnabled()) return;
+    const prevGames = this.snapshot?.games ?? [];
+    for (const game of games) {
+      if (game.status !== 'live') continue;
+      const prev = prevGames.find((p) => p.id === game.id);
+      if (!prev) {
+        game.situation = undefined;
+        continue;
+      }
+      if (prev.situation) game.situation = prev.situation;
+      if (prev.batter) game.batter = prev.batter;
+      if (prev.pitcher) game.pitcher = prev.pitcher;
+      if (prev.relay) game.relay = prev.relay;
+    }
   }
 
 }

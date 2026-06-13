@@ -40,6 +40,8 @@ export interface NaverRelayParseResult {
   situation: GameSituation;
   batter?: string;
   pitcher?: string;
+  awayScore?: number;
+  homeScore?: number;
   inningLabel?: string;
   lastPitch?: string;
   recentPitches: string[];
@@ -191,6 +193,9 @@ export class NaverRelayProvider {
     const situation = this.parseSituation(current, inningLabel);
     if (!situation) return null;
 
+    let awayScore = this.parseScores(current).awayScore;
+    let homeScore = this.parseScores(current).homeScore;
+
     let batter = this.findActiveName(data, 'batter');
     let pitcher = this.findActiveName(data, 'pitcher');
     let lastPitch: string | undefined;
@@ -215,6 +220,13 @@ export class NaverRelayProvider {
         const classified = this.classifyPlayText(text, kind);
 
         if (opt.type === 1) {
+          if (opt.currentGameState) {
+            const gs = this.parseSituation(opt.currentGameState, inningLabel);
+            if (gs) Object.assign(situation, gs);
+            const scores = this.parseScores(opt.currentGameState);
+            if (scores.awayScore != null) awayScore = scores.awayScore;
+            if (scores.homeScore != null) homeScore = scores.homeScore;
+          }
           lastPitch = text;
           recentPitches.push(text);
           continue;
@@ -234,6 +246,9 @@ export class NaverRelayProvider {
         if (opt.currentGameState) {
           const gs = this.parseSituation(opt.currentGameState, inningLabel);
           if (gs) Object.assign(situation, gs);
+          const scores = this.parseScores(opt.currentGameState);
+          if (scores.awayScore != null) awayScore = scores.awayScore;
+          if (scores.homeScore != null) homeScore = scores.homeScore;
         }
 
         const impact = this.mapImpact(classified.kind);
@@ -263,6 +278,8 @@ export class NaverRelayProvider {
       situation,
       batter,
       pitcher,
+      awayScore,
+      homeScore,
       inningLabel,
       lastPitch,
       recentPitches,
@@ -323,6 +340,13 @@ export class NaverRelayProvider {
         const classified = this.classifyPlayText(text, kind);
 
         if (opt.type === 1) {
+          if (opt.currentGameState) {
+            const gs = this.parseSituation(opt.currentGameState, inningLabel);
+            if (gs) {
+              situation = gs;
+              situation.inning = inningLabel;
+            }
+          }
           lastPitch = text;
           recentPitches.push(text);
           allPlays.push({
@@ -405,6 +429,19 @@ export class NaverRelayProvider {
       maxSeqno,
       newPlays: allPlays,
       allPlays,
+    };
+  }
+
+  private parseScores(raw: NaverGameState | undefined): {
+    awayScore?: number;
+    homeScore?: number;
+  } {
+    if (!raw) return {};
+    const away = parseInt(String(raw.awayScore ?? ''), 10);
+    const home = parseInt(String(raw.homeScore ?? ''), 10);
+    return {
+      awayScore: Number.isFinite(away) ? away : undefined,
+      homeScore: Number.isFinite(home) ? home : undefined,
     };
   }
 
