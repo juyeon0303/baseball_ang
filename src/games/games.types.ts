@@ -38,6 +38,18 @@ export interface GameRelayBundle {
   archived?: boolean;
 }
 
+export interface TeamStandingRow {
+  rank: number;
+  team: string;
+  games: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  pct: number;
+  gb: number;
+  streak?: string;
+}
+
 export interface TodayGame {
   id: string;
   awayTeam: string;

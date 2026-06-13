@@ -40,7 +40,7 @@ export class HubService {
       isGameDay: gameDay,
     });
 
-    const [instrument, leaderboard, trades, crowd, memes, etfs, shareholderBoard] =
+    const [instrument, leaderboard, trades, crowd, memeLineup, etfs, shareholderBoard] =
       await Promise.all([
         this.market.getMarket(featuredId),
         this.market.getLeaderboard(15),
@@ -50,6 +50,9 @@ export class HubService {
         this.market.getEtfBaskets(),
         this.shareholders.getBoard(userId),
       ]);
+    const memes = [...memeLineup].sort(
+      (a, b) => b.oracleValue - a.oracleValue || b.price - a.price,
+    );
 
     const top = leaderboard.rankings[0] ?? null;
     const rankings = leaderboard.rankings.map((row) => ({

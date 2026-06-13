@@ -59,19 +59,52 @@ export class NaverRelayProvider {
   private readonly logger = new Logger(NaverRelayProvider.name);
 
   async fetchRelay(naverGameId: string): Promise<unknown | null> {
+    return this.fetchRelayInning(naverGameId);
+  }
+
+  /** Fetch relay for every inning (Naver default returns only the latest inning). */
+  async fetchRelayFull(naverGameId: string): Promise<Record<string, unknown> | null> {
+    const latest = await this.fetchRelayInning(naverGameId);
+    if (!latest) return null;
+
+    const maxInning = this.resolveMaxInning(latest);
+    const inningData = await Promise.all(
+      Array.from({ length: maxInning }, (_, i) =>
+        this.fetchRelayInning(naverGameId, i + 1),
+      ),
+    );
+
+    const relayChunks = inningData
+      .filter((d): d is Record<string, unknown> => !!d && typeof d === 'object')
+      .map((d) => (d.textRelays as NaverTextRelay[]) ?? []);
+
+    return {
+      ...latest,
+      textRelays: this.mergeTextRelays(relayChunks),
+    };
+  }
+
+  private async fetchRelayInning(
+    naverGameId: string,
+    inning?: number,
+  ): Promise<Record<string, unknown> | null> {
     try {
+      const qs =
+        inning != null && inning > 0
+          ? `?inning=${encodeURIComponent(String(inning))}`
+          : '';
       const res = await fetch(
-        `https://api-gw.sports.naver.com/schedule/games/${encodeURIComponent(naverGameId)}/relay`,
+        `https://api-gw.sports.naver.com/schedule/games/${encodeURIComponent(naverGameId)}/relay${qs}`,
         {
           headers: {
             'User-Agent': NAVER_UA,
             Accept: 'application/json',
           },
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(35_000),
         },
       );
       if (!res.ok) {
-        this.logger.debug(`Naver relay HTTP ${res.status} ${naverGameId}`);
+        this.logger.debug(`Naver relay HTTP ${res.status} ${naverGameId}${qs}`);
         return null;
       }
       const body = (await res.json()) as {
@@ -84,6 +117,57 @@ export class NaverRelayProvider {
       this.logger.debug(`Naver relay fetch failed ${naverGameId}: ${e}`);
       return null;
     }
+  }
+
+  private resolveMaxInning(data: Record<string, unknown>): number {
+    let max = Math.max(9, Number(data.inn) || 0);
+    const inningScore = data.inningScore as
+      | { home?: Record<string, string>; away?: Record<string, string> }
+      | undefined;
+    for (const side of [inningScore?.home, inningScore?.away]) {
+      if (!side) continue;
+      for (const key of Object.keys(side)) {
+        const n = parseInt(key, 10);
+        if (Number.isFinite(n)) max = Math.max(max, n);
+      }
+    }
+    return Math.min(max, 15);
+  }
+
+  private mergeTextRelays(relayChunks: NaverTextRelay[][]): NaverTextRelay[] {
+    const relayKey = (r: NaverTextRelay) =>
+      `${r.inn ?? 0}:${r.homeOrAway ?? ''}:${r.title ?? ''}`;
+    const relayMap = new Map<string, NaverTextRelay>();
+
+    for (const relays of relayChunks) {
+      for (const relay of relays) {
+        const key = relayKey(relay);
+        let merged = relayMap.get(key);
+        if (!merged) {
+          merged = { ...relay, textOptions: [] };
+          relayMap.set(key, merged);
+        }
+        const seen = new Set((merged.textOptions ?? []).map((o) => o.seqno));
+        for (const opt of relay.textOptions ?? []) {
+          if (opt.seqno == null || seen.has(opt.seqno)) continue;
+          merged.textOptions!.push(opt);
+          seen.add(opt.seqno);
+        }
+      }
+    }
+
+    return Array.from(relayMap.values())
+      .sort((a, b) => {
+        const innDiff = (a.inn ?? 0) - (b.inn ?? 0);
+        if (innDiff) return innDiff;
+        return String(a.homeOrAway ?? '').localeCompare(String(b.homeOrAway ?? ''));
+      })
+      .map((relay) => ({
+        ...relay,
+        textOptions: [...(relay.textOptions ?? [])].sort(
+          (a, b) => (a.seqno ?? 0) - (b.seqno ?? 0),
+        ),
+      }));
   }
 
   parseRelay(

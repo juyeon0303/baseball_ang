@@ -70,12 +70,17 @@ export class AmmController {
   @Get('memes')
   async getMemes() {
     const items = await this.market.getMemeLineup();
+    const sorted = [...items].sort(
+      (a, b) => b.oracleValue - a.oracleValue || b.price - a.price,
+    );
     return {
       enabled: this.memeSync.isEnabled(),
       last: this.memeSync.getLastSnapshot(),
-      items: items.map((m) => ({
+      items: sorted.map((m) => ({
+        id: m.id,
         instrumentId: m.id,
         title: m.name,
+        playerName: m.playerName,
         betCta: m.betCta,
         narrative: m.narrative,
         longThesis: m.longThesis,

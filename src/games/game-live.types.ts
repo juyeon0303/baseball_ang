@@ -9,11 +9,11 @@ export const SENTIMENT_VOTE_META: Record<
   SentimentVoteKind,
   { label: string; emoji: string }
 > = {
-  coach_out: { label: '감독 경질', emoji: '😤' },
-  to_farm: { label: '2군으로', emoji: '⬇️' },
-  hero: { label: '오늘의 영웅', emoji: '👑' },
-  clutch: { label: '돈값짐', emoji: '💰' },
-  rage: { label: '킹받음', emoji: '🔥' },
+  coach_out: { label: '감독 교체', emoji: '😤' },
+  to_farm: { label: '2군 보내기', emoji: '⬇️' },
+  hero: { label: '영웅', emoji: '👑' },
+  clutch: { label: '결정적', emoji: '💰' },
+  rage: { label: '불만', emoji: '🔥' },
 };
 
 export interface WpaPoint {

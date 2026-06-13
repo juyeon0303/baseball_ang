@@ -6,14 +6,14 @@
     <meta name="description" content="KBO 실시간 점수·중계·팬 커뮤니티">
     <meta name="theme-color" content="#0d3d56">
     <meta property="og:title" content="플레이볼 — 실시간 KBO">
-    <meta property="og:description" content="오늘 경기 LIVE · 승부 예측 · 팬들이랑 같이 중계">
+    <meta property="og:description" content="KBO 실시간 점수·중계·승부 예측">
     <meta property="og:site_name" content="Playball">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://kbo-stock-mvp.onrender.com/">
     <meta property="og:image" content="https://kbo-stock-mvp.onrender.com/og-playball.svg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="플레이볼 — 실시간 KBO">
-    <meta name="twitter:description" content="오늘 경기 LIVE · 승부 예측 · 팬 중계">
+    <meta name="twitter:description" content="KBO 실시간 점수·중계·승부 예측">
     <title>플레이볼 — 실시간 KBO</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📻</text></svg>">
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
@@ -267,9 +267,31 @@
         .tl-impact.game_start { border-left: 2px solid var(--live); padding-left: 8px; }
         .tl-impact.inning { color: var(--faint); }
         .timeline {
-            max-height: 300px;
+            max-height: 480px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+        }
+        .inning-filter {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .inn-chip {
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            font: inherit;
+            font-size: 0.72rem;
+            padding: 4px 8px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .inn-chip.on {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(94, 184, 255, 0.12);
         }
         .play-now.impact-run { border-left-color: var(--danger); background: rgba(251, 113, 133, 0.1); }
         .play-now.impact-score { animation: pulse-once 0.6s ease; }
@@ -1252,8 +1274,8 @@
                 <span class="live-pill" id="presence">—명 접속</span>
                 <div class="sync-pill live" id="sync-status">실시간 연결</div>
                 <div class="pref-row">
-                    <button type="button" class="pref-chip on" id="pref-haptic" onclick="togglePref('haptic')">📳 햅틱</button>
-                    <button type="button" class="pref-chip on" id="pref-sound" onclick="togglePref('sound')">🔊 사운드</button>
+                    <button type="button" class="pref-chip on" id="pref-haptic" onclick="togglePref('haptic')">📳 진동</button>
+                    <button type="button" class="pref-chip on" id="pref-sound" onclick="togglePref('sound')">🔊 효과음</button>
                 </div>
             </div>
         </header>
@@ -1348,8 +1370,8 @@
             <div class="bento-home" id="bento-home">
                 <div class="story-card" id="pulse-story" style="display:none">
                     <div class="story-card-badge">MY PULSE</div>
-                    <div class="story-card-head" id="pulse-head">오늘도 플레이볼 ⚾</div>
-                    <div class="story-card-sub" id="pulse-sub">경기 고르고 한 줄 응원 남겨보세요</div>
+                    <div class="story-card-head" id="pulse-head">오늘의 경기</div>
+                    <div class="story-card-sub" id="pulse-sub">경기를 선택하고 응원 메시지를 남겨 보세요</div>
                     <div class="share-row">
                         <button type="button" class="share-chip" onclick="shareMyGame()">🔗 경기 공유</button>
                         <button type="button" class="share-chip" onclick="sharePlayballInvite()">친구 초대</button>
@@ -1441,17 +1463,17 @@
             <div class="panel" id="feed-live-stack">
                 <div class="label">승률 그래프 · 하이라이트 터치</div>
                 <div class="wpa-chart"><canvas id="wpa-canvas"></canvas></div>
-                <div class="wpa-tip" id="wpa-tip">그래프를 터치하면 그 순간 중계·한 줄 드립이 나옵니다</div>
+                <div class="wpa-tip" id="wpa-tip">그래프를 터치하면 해당 순간의 중계와 코멘트를 볼 수 있습니다</div>
                 <div class="wpa-recap-hint" id="wpa-recap-hint" style="display:none"></div>
                 <div class="input-row wpa-note-input">
-                    <input class="chat-input" id="wpa-note-input" maxlength="80" placeholder="이 순간 한 줄 (밈·드립)"
+                    <input class="chat-input" id="wpa-note-input" maxlength="80" placeholder="이 순간 코멘트 (80자)"
                         onkeydown="if(event.key==='Enter')postWpaNote()">
-                    <button type="button" class="chat-send" onclick="postWpaNote()">박기</button>
+                    <button type="button" class="chat-send" onclick="postWpaNote()">등록</button>
                 </div>
             </div>
             <div class="panel" id="sentiment-panel">
-                <div class="label">실시간 민심 투표</div>
-                <div class="sentiment-hot" id="sentiment-hot">투표하면 팬들 기분이 여기에 모입니다</div>
+                <div class="label">팬 반응 투표</div>
+                <div class="sentiment-hot" id="sentiment-hot">타석마다 버튼을 눌러 반응을 남길 수 있습니다</div>
                 <div class="sentiment-gauge" id="sentiment-gauge"></div>
                 <div class="sentiment-btns" id="sentiment-btns"></div>
             </div>
@@ -1464,7 +1486,8 @@
                 <div class="review-box" id="feed-review-body">—</div>
             </div>
             <div class="panel" id="timeline-panel">
-                <div class="label">문자 중계 · 타석·투구·득점</div>
+                <div class="label">문자 중계 · 1~9회 전체</div>
+                <div class="inning-filter" id="inning-filter"></div>
                 <div class="timeline" id="play-timeline"></div>
             </div>
             <div class="panel" id="chat-panel">
@@ -1472,7 +1495,7 @@
                 <div class="auth-account-tag" id="account-tag">@—</div>
                 <input class="nick-input" id="nick" value="" placeholder="표시 이름 (채팅·랭킹용)" style="margin-bottom:4px;width:100%" onblur="onDisplayNameBlur()">
                 <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
-                    로그인 없이도 중계는 볼 수 있어요 · 채팅·예측은 <button type="button" class="link-btn" style="padding:0;font-size:inherit" onclick="goTab('account')">계정 탭</button>에서 로그인
+                    로그인 없이도 중계는 볼 수 있습니다 · 채팅·예측은 <button type="button" class="link-btn" style="padding:0;font-size:inherit" onclick="goTab('account')">계정 탭</button>에서 로그인
                 </p>
                 <div class="gaga-feed" id="gaga-feed"></div>
                 <div class="emoji-bar">
@@ -1497,7 +1520,7 @@
         <div class="tab-panel" id="tab-account">
             <div class="panel auth-panel">
                 <div class="label">로그인 · 가입</div>
-                <p class="auth-guest-hint">로그인 없이도 홈·경기·중계는 그대로 볼 수 있어요. 채팅·승부예측·평점만 계정이 필요합니다.</p>
+                <p class="auth-guest-hint">로그인 없이도 홈·경기·중계는 볼 수 있습니다. 채팅·승부 예측·평점만 계정이 필요합니다.</p>
                 <div id="account-signed-out">
                     <div class="auth-sub">닉네임 + PIN 4자리 · 다른 기기에서도 내 기록 유지</div>
                     <div id="auth-login-panel">
@@ -1526,7 +1549,7 @@
                             <input id="auth-reg-pin2" type="password" maxlength="4" inputmode="numeric" placeholder="●●●●">
                         </div>
                         <button type="button" class="auth-btn" onclick="submitAuthRegister()">가입하고 시작</button>
-                        <button type="button" class="auth-btn secondary" onclick="showAuthLogin()">이미 계정 있어요</button>
+                        <button type="button" class="auth-btn secondary" onclick="showAuthLogin()">로그인</button>
                     </div>
                 </div>
                 <div id="account-signed-in" style="display:none">
@@ -1559,8 +1582,8 @@
                 <div class="mini-list" id="myteam-schedule-list"></div>
             </div>
             <div class="panel" id="myteam-standings-panel">
-                <div class="label">최근 경기 기준 순위</div>
-                <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">앱에 쌓인 종료 경기만 반영 · 공식 순위와 다를 수 있음</p>
+                <div class="label">KBO 팀 순위</div>
+                <p id="standings-sub" style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">2026 정규시즌 · KBO 공식 기록실 연동</p>
                 <div id="myteam-standings-wrap"></div>
             </div>
         </div>
@@ -1577,7 +1600,7 @@
     </nav>
     <div class="toast" id="toast"></div>
     <div class="share-prompt" id="share-prompt">
-        <span id="share-prompt-text">예측했어 — 단톡에 자랑 ㄱㄱ</span>
+        <span id="share-prompt-text">예측을 저장했습니다 — 공유해 보세요</span>
         <button type="button" id="share-prompt-go">공유</button>
         <button type="button" class="dismiss" id="share-prompt-x">×</button>
     </div>
@@ -1692,7 +1715,7 @@
             localStorage.removeItem(SESSION_ACCOUNT_KEY);
             sessionReady = false;
             renderAccountTab();
-            toast('로그아웃됨 · 경기·중계는 계속 볼 수 있어요');
+            toast('로그아웃되었습니다 · 경기·중계는 계속 볼 수 있습니다');
         }
 
         async function onAccountDisplayNameBlur() {
@@ -1866,17 +1889,20 @@
         let phaseManual = false;
         let shareDeepGameToast = null;
         let winPickSnap = null;
+        let timelineInning = 'all';
+        let standingsRows = [];
+        let standingsMeta = null;
         const relayCache = {};
         const prefs = {
             haptic: localStorage.getItem('pb-haptic') !== '0',
             sound: localStorage.getItem('pb-sound') !== '0',
         };
         const SENTIMENT_BTNS = [
-            { id: 'rage', label: '킹받음', emoji: '🔥' },
-            { id: 'coach_out', label: '감독 경질', emoji: '😤' },
-            { id: 'to_farm', label: '2군으로', emoji: '⬇️' },
-            { id: 'hero', label: '오늘의 영웅', emoji: '👑' },
-            { id: 'clutch', label: '돈값짐', emoji: '💰' },
+            { id: 'rage', label: '불만', emoji: '🔥' },
+            { id: 'coach_out', label: '감독 교체', emoji: '😤' },
+            { id: 'to_farm', label: '2군 보내기', emoji: '⬇️' },
+            { id: 'hero', label: '영웅', emoji: '👑' },
+            { id: 'clutch', label: '결정적', emoji: '💰' },
         ];
         let audioCtx = null;
         let lastAwayScore = null;
@@ -1923,7 +1949,7 @@
             } else {
                 setGamePhase('preview', true);
             }
-            goTab('home');
+            goTab('feed');
             if (g && (g.status === 'live' || g.status === 'final')) {
                 void loadGameRelay(g.id);
             }
@@ -1934,31 +1960,31 @@
             if (!el) return;
             const g = findGame(watchId);
             const pick = winPickSnap?.myPick;
-            let head = '오늘도 플레이볼 ⚾';
-            let sub = '경기 고르고 한 줄 응원 남겨보세요';
+            let head = '오늘의 경기';
+            let sub = '경기를 선택하고 응원 메시지를 남겨 보세요';
             if (g && myTeam && (g.homeTeam === myTeam || g.awayTeam === myTeam)) {
                 if (g.status === 'final') {
                     const w = winnerTeam(g);
                     const won = w === myTeam;
-                    head = won ? `${myTeam} 팬, 오늘 웃었네 📈` : `${myTeam} 팬, 내일이 있어 💙`;
-                    sub = `${winnerLabel(g)} · 리뷰 탭에서 복기`;
+                    head = won ? `${myTeam} 승리` : `${myTeam} 패배`;
+                    sub = `${winnerLabel(g)} · 리뷰 탭에서 결과 확인`;
                 } else if (g.status === 'live') {
-                    head = `${myTeam} 경기 LIVE 🔥`;
-                    sub = `${g.inning} · ${g.awayScore}:${g.homeScore} · 중계 탭으로`;
+                    head = `${myTeam} 경기 LIVE`;
+                    sub = `${g.inning} · ${g.awayScore}:${g.homeScore} · 중계 탭에서 확인`;
                 } else {
-                    head = `${myTeam} 경기 프리뷰`;
-                    sub = '승부 예측하고 팬들이랑 맞춰보세요';
+                    head = `${myTeam} 경기 예정`;
+                    sub = `${g.startTime || '개막'} · 승부 예측 가능`;
                 }
             } else if (pick && g) {
                 const team = pick === 'away' ? g.awayTeam : g.homeTeam;
-                head = `${team} 승 예측 중 🎯`;
-                sub = `팬 ${winPickSnap?.totalPicks || 0}명이 같이 맞춰봤어요`;
+                head = `${team} 승리 예측`;
+                sub = `참여 ${winPickSnap?.totalPicks || 0}명 · 결과와 비교해 보세요`;
             } else if (myTeam) {
-                head = `${myTeam} 팬 모드 ON 💙`;
-                sub = '내 구단 경기가 홈에서 먼저 떠요';
+                head = `${myTeam}`;
+                sub = '내 구단 경기가 홈에 표시됩니다';
             } else if (showRecapMode && recap?.games?.length) {
-                head = `어제 ${recap.games.length}경기 · ${recap.totalRuns || 0}득점`;
-                sub = recap.highlightId ? '⚡ 명경기부터 훑어보세요' : '종료 경기 리뷰 모드';
+                head = `${recap.dateLabel || '지난'} ${recap.games.length}경기`;
+                sub = recap.highlightId ? '하이라이트 경기부터 확인해 보세요' : '종료 경기 리뷰';
             }
             document.getElementById('pulse-head').textContent = head;
             document.getElementById('pulse-sub').textContent = sub;
@@ -1986,7 +2012,7 @@
             const pickLine = pick
                 ? ` · 내 예측 ${pick === 'away' ? g.awayTeam : g.homeTeam} 승`
                 : '';
-            return `⚾ ${score} (${status})${pickLine} — 플레이볼에서 같이 볼래?`;
+            return `${score} (${status})${pickLine} — Playball에서 함께 보기`;
         }
 
         async function shareOut(text, url) {
@@ -1994,7 +2020,7 @@
             if (navigator.share) {
                 try {
                     await navigator.share({ title: '플레이볼', text, url });
-                    toast('공유했어요');
+                    toast('공유했습니다');
                     return;
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
@@ -2002,7 +2028,7 @@
             }
             try {
                 await navigator.clipboard.writeText(full);
-                toast('링크 복사됨 — 카톡에 붙여넣기');
+                toast('링크가 복사되었습니다');
             } catch {
                 prompt('아래 링크를 복사해서 공유하세요', full);
             }
@@ -2014,7 +2040,7 @@
         }
 
         function sharePlayballInvite() {
-            shareOut('⚾ 플레이볼 — KBO 실시간 점수·중계·승부 예측. 무료!', PLAYBALL_SHARE_BASE);
+            shareOut('Playball — KBO 실시간 점수·중계·승부 예측', PLAYBALL_SHARE_BASE);
         }
 
         function showSharePrompt(text) {
@@ -2097,8 +2123,8 @@
             }
             el.style.display = 'block';
             el.textContent = wpaTimeline.length >= 2
-                ? '📋 리캡 모드 · 저장된 승률 흐름을 훑어볼 수 있어요'
-                : '📋 리캡 모드 · WPA 그래프는 라이브 경기 때만 기록됩니다. 홈에서 지난 경기를 고른 뒤 타임라인·평점을 확인하세요.';
+                ? '리캡 모드 · 저장된 승률 흐름을 확인할 수 있습니다'
+                : '리캡 모드 · WPA 그래프는 라이브 경기 중에만 기록됩니다. 종료 경기는 타임라인·평점을 확인하세요.';
         }
 
         function drawWpaChart() {
@@ -2180,10 +2206,14 @@
                 }
                 return;
             }
-            if (gameId === watchId) renderSituation(g);
+            if (gameId === watchId) renderTimeline();
             try {
                 const res = await fetch(`${API}/amm/games/${encodeURIComponent(gameId)}/relay`);
-                if (!res.ok) return;
+                if (!res.ok) {
+                    relayCache[gameId] = { plays: [], error: true };
+                    if (gameId === watchId) renderTimeline();
+                    return;
+                }
                 const data = await res.json();
                 relayCache[gameId] = data;
                 applyRelayBundle(g, data);
@@ -2192,7 +2222,10 @@
                     renderSituation(g);
                     renderTimeline();
                 }
-            } catch (_) { /* ignore */ }
+            } catch (_) {
+                relayCache[gameId] = { plays: [], error: true };
+                if (gameId === watchId) renderTimeline();
+            }
         }
 
         function applyRelayBundle(g, bundle) {
@@ -2384,8 +2417,8 @@
             microTap([12, 30, 12]);
             popEl(side === 'away' ? 'pick-away' : 'pick-home');
             renderPulseStory();
-            toast(`${side === 'away' ? g?.awayTeam : g?.homeTeam} 승 예측 반영 🎯`);
-            showSharePrompt(`${side === 'away' ? g?.awayTeam : g?.homeTeam} 승 예측 — 단톡에 자랑 ㄱㄱ`);
+            toast(`${side === 'away' ? g?.awayTeam : g?.homeTeam} 승리 예측이 저장되었습니다`);
+            showSharePrompt(`${side === 'away' ? g?.awayTeam : g?.homeTeam} 승 예측 — 공유해 보세요`);
         }
 
         function allGamesList() {
@@ -2399,44 +2432,41 @@
             return out;
         }
 
-        function computeStandings() {
-            const map = {};
-            for (const t of KBO_TEAMS) map[t] = { team: t, w: 0, l: 0, rf: 0, ra: 0 };
-            for (const g of allGamesList()) {
-                if (g.status !== 'final') continue;
-                const away = map[g.awayTeam];
-                const home = map[g.homeTeam];
-                if (!away || !home) continue;
-                away.rf += g.awayScore;
-                away.ra += g.homeScore;
-                home.rf += g.homeScore;
-                home.ra += g.awayScore;
-                if (g.homeScore > g.awayScore) {
-                    home.w += 1;
-                    away.l += 1;
-                } else if (g.awayScore > g.homeScore) {
-                    away.w += 1;
-                    home.l += 1;
+        async function loadStandings() {
+            try {
+                const res = await fetch(`${API}/amm/games/standings`);
+                if (!res.ok) throw new Error('standings fail');
+                const data = await res.json();
+                standingsRows = data.rows || [];
+                standingsMeta = data;
+                renderStandings();
+            } catch (_) {
+                const wrap = document.getElementById('myteam-standings-wrap');
+                if (wrap) {
+                    wrap.innerHTML = '<div class="meta" style="color:var(--muted);font-size:0.78rem">순위 불러오는 중…</div>';
                 }
             }
-            return Object.values(map)
-                .filter(r => r.w + r.l > 0)
-                .sort((a, b) => b.w - a.w || (b.w - b.l) - (a.w - a.l) || b.rf - a.rf);
         }
 
         function renderStandings() {
-            const rows = computeStandings();
+            const rows = standingsRows;
             const wrap = document.getElementById('myteam-standings-wrap');
+            const sub = document.getElementById('standings-sub');
+            if (sub && standingsMeta?.seasonLabel) {
+                sub.textContent = `${standingsMeta.seasonLabel} · KBO 공식 기록실 · 실시간 갱신`;
+            }
             if (!wrap) return;
             if (!rows.length) {
-                wrap.innerHTML = '<div class="meta" style="color:var(--muted);font-size:0.78rem">종료 경기 데이터가 쌓이면 순위가 표시됩니다</div>';
+                wrap.innerHTML = '<div class="meta" style="color:var(--muted);font-size:0.78rem">순위 불러오는 중…</div>';
                 return;
             }
             wrap.innerHTML = `<table class="standings-table">
-                <thead><tr><th>팀</th><th>승</th><th>패</th><th>득</th><th>실</th></tr></thead>
-                <tbody>${rows.map((r, i) => {
+                <thead><tr><th>#</th><th>팀</th><th>경기</th><th>승</th><th>패</th><th>무</th><th>승률</th><th>GB</th></tr></thead>
+                <tbody>${rows.map(r => {
                     const cls = r.team === myTeam ? ' class="me"' : '';
-                    return `<tr${cls}><td>${i + 1}. ${r.team}</td><td>${r.w}</td><td>${r.l}</td><td>${r.rf}</td><td>${r.ra}</td></tr>`;
+                    const pct = Number(r.pct).toFixed(3).replace(/^0(?=\.)/, '');
+                    const gb = r.gb === 0 ? '—' : String(r.gb);
+                    return `<tr${cls}><td>${r.rank}</td><td>${r.team}</td><td>${r.games}</td><td>${r.wins}</td><td>${r.losses}</td><td>${r.draws}</td><td>${pct}</td><td>${gb}</td></tr>`;
                 }).join('')}</tbody>
             </table>`;
         }
@@ -2493,7 +2523,7 @@
                 const meta = SENTIMENT_BTNS.find(b => b.id === snap.dominant);
                 hot.textContent = `지금 팬 ${snap.dominantPct}%가 「${meta?.label || snap.dominant}」 (${snap.totalVotes}표)`;
             } else {
-                hot.textContent = '타석마다 버튼 눌러 민심 반영 ㄱㄱ';
+                hot.textContent = '타석마다 버튼을 눌러 팬 반응을 남길 수 있습니다';
             }
             document.querySelectorAll('#sentiment-btns button').forEach(btn => {
                 btn.classList.toggle('on', btn.dataset.vote === snap.myVote);
@@ -2519,7 +2549,7 @@
             sentimentSnap = data;
             renderSentiment(data);
             microTap([10, 18, 10]);
-            toast('민심 반영됨 ✨');
+            toast('투표가 반영되었습니다');
         }
 
         async function loadWpaNotes(playId) {
@@ -2549,7 +2579,7 @@
             });
             if (!res.ok) return toast('등록 실패');
             input.value = '';
-            toast('한 줄 박음');
+            toast('코멘트가 등록되었습니다');
             loadWpaNotes(pt.playId);
         }
 
@@ -2644,27 +2674,33 @@
             if (!g) return;
             watchId = id;
             phaseManual = false;
+            timelineInning = 'all';
             localStorage.setItem('watch-game', id);
-            gamePhase = defaultPhaseForGame(g);
-            renderPhaseUI();
-            goTab('home');
             renderHero(g);
             renderGamesList();
             renderLiveStrip();
             renderMyTeamHome();
-            renderTimeline();
             renderRecapSection();
             if (g.status === 'scheduled') {
+                gamePhase = 'preview';
+                renderPhaseUI();
                 document.getElementById('play-now').innerHTML =
                     `⏳ <strong>${g.awayTeam} vs ${g.homeTeam}</strong> — ${g.startTime || '개막'} 예정<br>` +
-                    `<span style="color:var(--muted);font-size:0.78rem">라이브가 시작되면 타석·득점이 여기와 「중계」 탭에 올라옵니다</span>`;
-            } else if (g.status === 'live' || g.status === 'final') {
+                    `<span style="color:var(--muted);font-size:0.78rem">개막 후 「중계」 탭에서 1~9회 문자중계가 쌓입니다</span>`;
+            } else {
+                gamePhase = defaultPhaseForGame(g);
+                renderPhaseUI();
                 await loadGameRelay(id);
                 const g2 = findGame(id);
-                if (g2) renderHero(g2);
+                if (g2) {
+                    if (!phaseManual) gamePhase = defaultPhaseForGame(g2);
+                    renderHero(g2);
+                    renderPhaseUI();
+                }
                 renderTimeline();
             }
-            toast(`${g.awayTeam} vs ${g.homeTeam} 보는 중`);
+            goTab('feed');
+            toast(`${g.awayTeam} vs ${g.homeTeam} · 중계 탭`);
             loadLiveExtras();
         }
 
@@ -2701,7 +2737,7 @@
             el.style.display = '';
             const scheduled = (snapshot?.games || []).filter(g => g.status === 'scheduled');
             if (!isGameDay) {
-                el.innerHTML = `📅 <strong>오늘은 KBO 경기 없음</strong> (월요일 휴무) · ${recap.dateLabel} 결과를 훑어보세요`;
+                el.innerHTML = `📅 <strong>오늘은 KBO 경기 없음</strong> (월요일 휴무) · ${recap.dateLabel} 결과 확인`;
             } else if (scheduled.length && !hasLiveToday()) {
                 el.innerHTML = `⏳ 오늘 ${scheduled.length}경기 예정 · 개막 전 <strong>${recap.dateLabel}</strong> 복기`;
             } else {
@@ -2734,7 +2770,7 @@
                         <span class="game-card-score">${g.awayScore}:${g.homeScore}</span>
                     </div>
                     ${w ? `<div class="recap-winner">🏆 ${w} 승</div>` : ''}
-                    ${g.id === recap.highlightId ? '<div class="recap-winner" style="color:var(--highlight)">⚡ 어제의 명경기</div>' : ''}
+                    ${g.id === recap.highlightId ? '<div class="recap-winner" style="color:var(--highlight)">하이라이트 경기</div>' : ''}
                 </button>`;
             }).join('');
         }
@@ -2824,43 +2860,24 @@
         }
 
         function applyBroadcastToPrefix(prefix, g, sit, relay) {
-            const el = (name) => document.getElementById(prefix ? `${prefix}-${name}` : name);
-            if (prefix === 'feed') {
-                const feedPanel = document.getElementById('feed-broadcast');
-                if (feedPanel) feedPanel.style.display = sit ? '' : 'none';
-            }
-            if (!sit) {
-                if (!prefix && isBroadcastGame(g) && g?.id === watchId) {
-                    const bar = document.getElementById('situation-bar');
-                    if (bar) {
-                        bar.style.display = '';
-                        bar.classList.remove('demo');
-                        const innEl = document.getElementById('bc-inning');
-                        if (innEl) innEl.textContent = g.inning || '중계 불러오는 중…';
-                    }
-                } else if (!prefix) {
-                    const bar = document.getElementById('situation-bar');
-                    if (bar) bar.style.display = 'none';
-                }
-                return;
-            }
-            const bar = prefix ? document.getElementById('feed-broadcast') : document.getElementById('situation-bar');
-            if (bar) {
-                bar.style.display = '';
-                bar.classList.toggle('demo', !!sit.demo);
-            }
+            if (!prefix) return;
+            const el = (name) => document.getElementById(`${prefix}-${name}`);
+            const feedPanel = document.getElementById('feed-broadcast');
+            if (feedPanel) feedPanel.style.display = sit ? '' : 'none';
+            if (!sit) return;
             const innEl = el('bc-inning');
             if (innEl) {
                 const archived = !!relay?.archived || g?.status === 'final';
                 innEl.textContent = g?.inning || sit.inning || (archived ? '종료' : 'LIVE');
             }
-            const metaEl = prefix ? el('bc-meta') : document.getElementById('bc-bases-label');
+            const metaEl = el('bc-meta');
             const outs = sit.outs ?? 0;
             if (metaEl) metaEl.textContent = `${basesLabelFromSit(sit)} · ${outs}사`;
 
             if (el('sit-b')) el('sit-b').textContent = sit.balls;
             if (el('sit-s')) el('sit-s').textContent = sit.strikes;
             if (el('sit-o')) el('sit-o').textContent = sit.outs;
+            if (feedPanel) feedPanel.classList.toggle('demo', !!sit.demo);
             if (el('sit-count')) {
                 el('sit-count').textContent = sit.countText || `${sit.balls}-${sit.strikes}`;
             }
@@ -2922,16 +2939,12 @@
         }
 
         function renderSituation(g) {
+            const bar = document.getElementById('situation-bar');
+            if (bar) bar.style.display = 'none';
             const sit = resolveSituation(g);
-            applyBroadcastToPrefix('', g, sit, g?.relay);
             applyBroadcastToPrefix('feed', g, sit, g?.relay);
             const duel = document.getElementById('duel-line');
-            if (duel && g?.batter && g?.pitcher) {
-                duel.style.display = '';
-                duel.innerHTML = `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`;
-            } else if (duel) {
-                duel.style.display = 'none';
-            }
+            if (duel) duel.style.display = 'none';
         }
 
         function syncGameRelay(gameId, payload) {
@@ -3072,7 +3085,7 @@
             }
             if (!g) {
                 sec.style.display = '';
-                el.innerHTML = `<div class="empty">${myTeam} 경기 없음 (오늘)</div>`;
+                el.innerHTML = `<div class="empty">${myTeam} 경기 없음 (오늘 일정)</div>`;
                 return;
             }
             sec.style.display = '';
@@ -3114,7 +3127,7 @@
             const el = document.getElementById('games-list');
             el.innerHTML = games.length
                 ? games.map(gameCardHtml).join('')
-                : '<div class="empty">해당 상태의 경기가 없어요</div>';
+                : '<div class="empty">해당 상태의 경기가 없습니다</div>';
         }
 
         function appendPlay(play) {
@@ -3127,23 +3140,68 @@
             const game = findGame(play.gameId);
             if (play.gameId === watchId) triggerDopamine(play, game);
             if (play.gameId === watchId && (play.impact === 'run' || play.impact === 'game_end')) {
-                toast(play.impact === 'run' ? '⚡ 득점!' : '🏁 경기 종료');
+                toast(play.impact === 'run' ? '득점' : '경기 종료');
             }
             if (play.gameId === watchId) loadLiveExtras();
+        }
+
+        function inningOrderKey(label) {
+            if (!label) return 999;
+            const m = String(label).match(/([▲▼])(\d+)/);
+            if (!m) return 998;
+            return parseInt(m[2], 10) * 2 + (m[1] === '▼' ? 1 : 0);
+        }
+
+        function setTimelineInning(v) {
+            timelineInning = v;
+            renderTimeline();
+        }
+
+        function renderInningFilter(sourcePlays) {
+            const el = document.getElementById('inning-filter');
+            if (!el) return;
+            const labels = [...new Set((sourcePlays || []).map(p => p.inning).filter(Boolean))]
+                .sort((a, b) => inningOrderKey(a) - inningOrderKey(b));
+            if (labels.length < 2) {
+                el.innerHTML = labels.length
+                    ? `<span class="meta">${labels.join(' · ')} 포함 · ${sourcePlays.length}건</span>`
+                    : '';
+                return;
+            }
+            const chips = ['all', ...labels].map(v => {
+                const label = v === 'all' ? '전체' : v;
+                const on = timelineInning === v ? ' on' : '';
+                return `<button type="button" class="inn-chip${on}" onclick="setTimelineInning('${v}')">${label}</button>`;
+            }).join('');
+            el.innerHTML = chips + `<span class="meta" style="margin-left:auto">${sourcePlays.length}건</span>`;
         }
 
         function renderTimeline() {
             const el = document.getElementById('play-timeline');
             const cached = relayCache[watchId]?.plays;
-            const list = cached?.length
-                ? [...cached].reverse()
+            const source = cached?.length
+                ? cached
                 : plays.filter(p => !watchId || p.gameId === watchId);
+            renderInningFilter(source);
+            let list = [...source];
+            if (timelineInning !== 'all') {
+                list = list.filter(p => p.inning === timelineInning);
+            }
+            list.reverse();
             if (!list.length) {
                 const g = findGame(watchId);
+                if (g?.status === 'scheduled') {
+                    el.innerHTML = '<div class="empty">경기 시작 전입니다<br>개막 후 1~9회 문자 중계가 표시됩니다</div>';
+                    return;
+                }
+                if (relayCache[watchId]?.error) {
+                    el.innerHTML = '<div class="empty">중계를 불러오지 못했습니다<br>잠시 후 다시 시도해 주세요</div>';
+                    return;
+                }
                 const loading = g && (g.status === 'live' || g.status === 'final');
                 el.innerHTML = loading
                     ? '<div class="empty">중계 불러오는 중…</div>'
-                    : '<div class="empty">아직 타석 소식이 없어요<br>경기가 시작되면 여기에 쌓입니다</div>';
+                    : '<div class="empty">아직 타석 기록이 없습니다<br>경기를 선택하면 중계가 표시됩니다</div>';
                 return;
             }
             el.innerHTML = list.map(p => {
@@ -3208,7 +3266,7 @@
                     box.innerHTML = `<strong>${myTeam}</strong> · ${g.awayTeam} vs ${g.homeTeam}<br>
                         ${g.inning} · <strong>${g.awayScore}:${g.homeScore}</strong> · ${statusKo(g.status)}
                         <br><button type="button" class="chat-send" style="margin-top:8px;width:100%"
-                            onclick="pickGame('${g.id}');goTab('home')">이 경기 보기</button>`;
+                            onclick="pickGame('${g.id}')">중계 보기</button>`;
                 }
             }
         }
@@ -3227,7 +3285,7 @@
             if (g) pickGame(g.id);
             renderPulseStory();
             microTap([12, 24, 12]);
-            toast(`${team} 응원 구단 💙`);
+            toast(`${team}을(를) 응원 구단으로 설정했습니다`);
         }
 
         function applySnapshot(snap, recapPayload, showRecap) {
@@ -3247,7 +3305,7 @@
                 const urlGame = new URLSearchParams(location.search).get('game');
                 if (urlGame && g.id === urlGame && shareDeepGameToast !== urlGame) {
                     shareDeepGameToast = urlGame;
-                    toast(`${g.awayTeam} vs ${g.homeTeam} — 친구 링크로 왔어요`);
+                    toast(`${g.awayTeam} vs ${g.homeTeam} — 링크로 들어왔습니다`);
                 }
             }
             else if (showRecapMode && recap?.games?.length) {
@@ -3284,6 +3342,7 @@
                 fetch(`${API}/amm/games/plays?limit=30`).catch(() => null),
                 fetch(`${API}/amm/community/feed?limit=40`).catch(() => null),
             ]);
+            void loadStandings();
             if (gamesRes?.ok) {
                 const data = await gamesRes.json();
                 isGameDay = data.isGameDay !== false;

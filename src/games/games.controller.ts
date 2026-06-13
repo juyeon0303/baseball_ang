@@ -5,6 +5,7 @@ import { GamesSyncService } from './games-sync.service';
 import { GameLiveService } from './game-live.service';
 import { GamesService } from './games.service';
 import { RelaySyncService } from './relay-sync.service';
+import { KboStandingsProvider } from './kbo-standings.provider';
 import { SentimentVoteKind } from './game-live.types';
 
 @Controller('amm/games')
@@ -15,6 +16,7 @@ export class GamesController {
     private readonly live: GameLiveService,
     private readonly recap: GamesRecapService,
     private readonly relay: RelaySyncService,
+    private readonly standings: KboStandingsProvider,
   ) {}
 
   @Get('today')
@@ -56,6 +58,18 @@ export class GamesController {
       snapshot,
       featured: this.games.getTodayFeatured(),
     };
+  }
+
+  @Get('standings')
+  async getStandings(@Query('force') force?: string) {
+    try {
+      const data = await this.standings.getStandings(
+        force === '1' || force === 'true',
+      );
+      return { success: true, ...data };
+    } catch (e) {
+      throw new BadRequestException('팀 순위를 불러올 수 없습니다.');
+    }
   }
 
   @Get(':gameId/relay')

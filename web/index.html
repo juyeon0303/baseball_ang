@@ -4,17 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="야스닥 — 종목·밈에 「된다/안 된다」 가상 P 게임. 진짜 주식 아님.">
+    <meta name="description" content="YASDAQ — KBO 선수·밈 가상 포인트 베팅 (실제 투자 아님)">
     <meta name="theme-color" content="#0f1419">
     <meta property="og:title" content="야스닥 · YASDAQ">
-    <meta property="og:description" content="너 오늘 야스닥 뭐 삼? KBO 팬 가상 P · 된다/안 된다 베팅">
+    <meta property="og:description" content="KBO 선수·밈 가상 포인트 · YES/NO 베팅">
     <meta property="og:site_name" content="YASDAQ">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://kbo-stock-mvp.onrender.com/stock/">
     <meta property="og:image" content="https://kbo-stock-mvp.onrender.com/stock/og-yasdaq.svg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="야스닥 · YASDAQ">
-    <meta name="twitter:description" content="너 오늘 야스닥 뭐 삼? KBO 팬 가상 P 게임">
+    <meta name="twitter:description" content="KBO 선수·밈 가상 포인트 · YES/NO 베팅">
     <title>야스닥 · YASDAQ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='72'>📈</text></svg>">
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
@@ -839,6 +839,11 @@
 
         .lineup-panel {
             border-color: rgba(94, 234, 212, 0.2);
+        }
+
+        #meme-panel {
+            border-color: rgba(252, 211, 77, 0.35);
+            scroll-margin-top: calc(var(--strip-h) + 12px);
         }
 
         .lineup-sub {
@@ -1719,7 +1724,7 @@
 
         <div class="demo-banner" id="demo-banner" style="display:none"></div>
         <div class="share-prompt" id="share-prompt">
-            <span id="share-prompt-text">베팅했어 — 단톡에 자랑 ㄱㄱ</span>
+            <span id="share-prompt-text">베팅이 완료되었습니다 — 공유해 보세요</span>
             <button type="button" id="share-prompt-go">공유</button>
             <button type="button" class="dismiss" id="share-prompt-x">×</button>
         </div>
@@ -1728,7 +1733,7 @@
             <aside class="col-side col-left">
                 <section class="panel auth-panel" id="account-panel">
                     <div class="label">로그인 · 가입</div>
-                    <p class="auth-guest-hint">로그인 없이도 종목·경기·시세는 볼 수 있어요. 베팅·랭킹·내 지갑만 계정이 필요합니다.</p>
+                    <p class="auth-guest-hint">로그인 없이도 종목·경기·시세는 볼 수 있습니다. 베팅·랭킹·내 지갑만 계정이 필요합니다.</p>
                     <div id="account-signed-out">
                         <div class="auth-sub">닉네임 + PIN 4자리 · 베팅·순위는 계정으로 저장돼요</div>
                         <div id="auth-login-panel">
@@ -1757,7 +1762,7 @@
                                 <input id="auth-reg-pin2" type="password" maxlength="4" inputmode="numeric" placeholder="●●●●">
                             </div>
                             <button type="button" class="auth-btn" onclick="submitAuthRegister()">가입하고 10만 P 받기</button>
-                            <button type="button" class="auth-btn secondary" onclick="showAuthLogin()">이미 계정 있어요</button>
+                            <button type="button" class="auth-btn secondary" onclick="showAuthLogin()">로그인</button>
                         </div>
                     </div>
                     <div id="account-signed-in" style="display:none">
@@ -1770,8 +1775,8 @@
                 <section class="panel wallet-panel" id="wallet-panel">
                     <div class="story-card" id="yas-story">
                         <div class="story-card-badge">MY YASDAQ</div>
-                        <div class="story-card-head" id="yas-story-head">오늘 야스닥 뭐 삼?</div>
-                        <div class="story-card-sub" id="yas-story-sub">종목 고르고 된다/안 된다 한 방</div>
+                        <div class="story-card-head" id="yas-story-head">오늘의 종목</div>
+                        <div class="story-card-sub" id="yas-story-sub">종목을 선택하고 베팅해 보세요</div>
                         <div class="share-row">
                             <button type="button" class="share-chip" onclick="shareMyYasdaq()">🔗 내 픽 공유</button>
                             <button type="button" class="share-chip" onclick="shareInviteLink()">초대 링크</button>
@@ -1818,7 +1823,7 @@
                         <div class="auth-account-tag" id="account-tag">@—</div>
                         <label for="user-id">표시 이름 (닉과 다르게 가능)</label>
                         <input class="field" id="user-id" value="" oninput="updateNickHint()" onblur="onDisplayNameBlur()" placeholder="랭킹·피드에 보이는 이름">
-                        <div class="nick-hint" id="nick-hint">로그인 없이도 둘러볼 수 있어요 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a></div>
+                        <div class="nick-hint" id="nick-hint">로그인 없이도 둘러볼 수 있습니다 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a></div>
                     </div>
                 </section>
 
@@ -1838,14 +1843,14 @@
                     </div>
                     <div class="guide-body" id="guide-body">
                         <p class="guide-lead">
-                            종목·밈 골라 <span>「된다 / 안 된다」</span> — <strong>가상 P 게임</strong>, 진짜 돈·주식 아님.
+                            종목·밈을 고른 뒤 <span>YES / NO</span>로 베팅합니다. <strong>가상 포인트</strong>이며 실제 돈·주식이 아닙니다.
                         </p>
 
                         <div class="guide-block">
                             <div class="guide-h">하는 법</div>
                             <ol class="guide-steps">
                                 <li>카드 탭 → 가운데 <strong>지금 베팅</strong></li>
-                                <li><strong>된다!</strong> = 잘 될 듯 · <strong>안 된다</strong> = 아닐 듯</li>
+                                <li><strong>YES</strong> = 그렇다 · <strong>NO</strong> = 아니다</li>
                             </ol>
                         </div>
 
@@ -1857,7 +1862,7 @@
                                 <li>표시 이름 → 입력 후 <strong>칸 밖 클릭</strong> 저장</li>
                             </ul>
                             <p class="guide-p" style="margin-top:8px">
-                                <a href="#" onclick="openAccountGuide(); return false;" style="color:var(--accent-neon)">계정 헷갈릴 때</a>
+                                <a href="#" onclick="openAccountGuide(); return false;" style="color:var(--accent-neon)">계정 안내</a>
                             </p>
                             <ul class="guide-list hidden" id="guide-account-detail" style="margin-top:8px">
                                 <li>닉+PIN으로 로그인 · PIN 분실 시 새 가입 필요</li>
@@ -1872,7 +1877,7 @@
                 <div class="trade-focus">
                     <section class="panel glass-hero" id="hero">
                         <div class="label">오늘의 픽</div>
-                        <div class="bet-cta" id="bet-cta">대한건아 <em>이정후의 OPS에 베팅하세요!</em></div>
+                        <div class="bet-cta" id="bet-cta">종목을 선택하세요</div>
                         <div class="hero-top">
                             <div>
                                 <div class="hero-name" id="hero-name">이정후</div>
@@ -1886,9 +1891,9 @@
                         </div>
                         <div class="spark" id="spark"></div>
                         <div class="crowd">
-                            <div class="label" style="margin-bottom:0">된다파 vs 안된다파</div>
+                            <div class="label" style="margin-bottom:0">YES vs NO</div>
                             <div class="crowd-bar"><div class="crowd-long" id="crowd-long" style="width:50%"></div></div>
-                            <div class="crowd-text" id="crowd-text">된다 50% · 안 된다 50%</div>
+                            <div class="crowd-text" id="crowd-text">YES 50% · NO 50%</div>
                         </div>
                     </section>
 
@@ -1902,8 +1907,8 @@
                             <button type="button" data-qty="10" onclick="setQty(10)">세게</button>
                         </div>
                         <div class="btns">
-                            <button class="btn btn-long" id="btn-yes" onclick="order('buy','long')">된다!</button>
-                            <button class="btn btn-short" id="btn-no" onclick="order('sell','short')">안 된다</button>
+                            <button class="btn btn-long" id="btn-yes" onclick="order('buy','long')">YES</button>
+                            <button class="btn btn-short" id="btn-no" onclick="order('sell','short')">NO</button>
                         </div>
                     </section>
                 </div>
@@ -1920,22 +1925,22 @@
                     <div class="meta" id="live-line">접속 —명 · 탭하면 연동 종목 보기</div>
                 </button>
 
+                <section class="panel" id="meme-panel">
+                    <div class="label">밈·화제 픽</div>
+                    <div class="meme-list" id="meme-list"></div>
+                </section>
+
                 <section class="panel lineup-panel" id="lineup-panel">
                     <div class="row-between">
                         <div>
                             <div class="label" style="margin:0">KBO 10구단 종목</div>
                             <div class="lineup-sub">팀별 대표 선수 · 눌러서 바로 베팅</div>
                         </div>
-                        <button type="button" class="link-btn" id="toggle-lineup" onclick="toggleLineup()">접기</button>
+                        <button type="button" class="link-btn" id="toggle-lineup" onclick="toggleLineup()">펼치기</button>
                     </div>
-                    <div class="lineup-body" id="lineup-body">
+                    <div class="lineup-body collapsed" id="lineup-body">
                         <div id="lineup-list"></div>
                     </div>
-                </section>
-
-                <section class="panel" id="meme-panel">
-                    <div class="label">🔥 밈·화제 픽</div>
-                    <div class="meme-list" id="meme-list"></div>
                 </section>
             </main>
 
@@ -1948,7 +1953,7 @@
                 <section class="panel" id="etf-panel">
                     <div class="label">테마 ETF (바스켓 시세)</div>
                     <div id="etf-list"></div>
-                    <p class="meta" style="margin-top:8px">숏(공매도)은 「안 된다」 베팅 · 라이벌·슬럼프 역베팅 ㄱㄱ</p>
+                    <p class="meta" style="margin-top:8px">숏(매도)은 NO 베팅입니다</p>
                 </section>
 
                 <section class="panel" id="owner-panel">
@@ -1958,7 +1963,7 @@
 
                 <section class="panel" id="activity-panel">
                     <div class="activity-block">
-                        <div class="label">이번 주 간다신</div>
+                        <div class="label">이번 주 1위</div>
                         <div class="king-line" id="crown">—</div>
                     </div>
                     <div class="activity-block">
@@ -2005,7 +2010,7 @@
         let lastRank = null;
         let hub = null;
         let hubLoaded = false;
-        let lineupOpen = true;
+        let lineupOpen = false;
         let lineupCache = [];
         let lastEquity = null;
         let liveLineMeta = { count: 0, gameStatus: 'scheduled', instrumentName: '' };
@@ -2035,7 +2040,7 @@
             const me = hub?.me;
             const rank = me?.rank ? ` · 내 순위 ${me.rank}위` : '';
             const live = hub?.liveCount ? ` · ${hub.liveCount}명 접속` : '';
-            return `⚾ YASDAQ에서 ${name} ${chg} — KBO 가상주식 같이 볼래?${rank}${live}`;
+            return `YASDAQ · ${name} ${chg}${rank}${live}`;
         }
 
         async function shareOut(text, url) {
@@ -2043,7 +2048,7 @@
             if (navigator.share) {
                 try {
                     await navigator.share({ title: 'YASDAQ', text, url });
-                    toast('공유했어요');
+                    toast('공유했습니다');
                     return;
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
@@ -2051,7 +2056,7 @@
             }
             try {
                 await navigator.clipboard.writeText(full);
-                toast('링크 복사됨 — 카톡에 붙여넣기');
+                toast('링크가 복사되었습니다');
             } catch {
                 prompt('아래 링크를 복사해서 공유하세요', full);
             }
@@ -2062,7 +2067,7 @@
         }
 
         function shareInviteLink() {
-            shareOut('⚾ YASDAQ · KBO 선수 가상주식 거래소. 무료로 시작해요!', YAS_SHARE_BASE);
+            shareOut('YASDAQ · KBO 선수 가상 포인트 거래소', YAS_SHARE_BASE);
         }
 
         function showSharePrompt(text) {
@@ -2077,11 +2082,19 @@
             document.getElementById('share-prompt')?.classList.remove('show');
         }
 
+        function normalizeMemes(list) {
+            return (list || []).map(m => ({
+                ...m,
+                id: m.id || m.instrumentId,
+                playerName: m.playerName || m.title || m.name,
+            })).filter(m => m.id);
+        }
+
         function collectInstrumentIds() {
             const ids = new Set();
             if (hub?.featuredId) ids.add(hub.featuredId);
-            (hub?.memes || []).forEach(m => ids.add(m.id));
-            (lineupCache || []).forEach(i => ids.add(i.id));
+            (hub?.memes || []).forEach(m => ids.add(m.id || m.instrumentId));
+            (lineupCache || []).forEach(i => ids.add(i.instrumentId || i.id));
             return ids;
         }
 
@@ -2090,7 +2103,7 @@
             if (!q || !collectInstrumentIds().has(q)) return;
             pendingDeepInstrument = null;
             await selectStock(q);
-            toast('친구 링크로 들어왔어요 — 같이 볼 종목');
+            toast('링크로 들어왔습니다 — 선택한 종목을 표시합니다');
         }
 
         function maybeWeeklyToast() {
@@ -2099,7 +2112,7 @@
             const seen = localStorage.getItem(WEEK_SEEN_KEY);
             if (seen === label) return;
             localStorage.setItem(WEEK_SEEN_KEY, label);
-            toast(`📅 ${label} · 이번 주 순위가 리셋됐어요`);
+            toast(`${label} · 이번 주 순위가 리셋되었습니다`);
         }
 
         function yasHaptic(pattern = [12, 24, 12]) {
@@ -2144,21 +2157,21 @@
             const sub = document.getElementById('yas-story-sub');
             if (!head || !sub) return;
             if (!me) {
-                head.textContent = '오늘 야스닥 뭐 삼?';
-                sub.textContent = '자동 가입되면 10만 P · 종목 골라 한 방';
+                head.textContent = '오늘의 종목';
+                sub.textContent = '가입 시 10만 P · 종목을 선택해 베팅';
                 return;
             }
             const pct = Number(me.weeklyReturnPct) || 0;
             const rank = me.rank != null ? `${me.rank}위` : '순위 집계 중';
             if (pct >= 5) {
-                head.textContent = `@${displayName()}님, 이번 주 ${fmtPct(pct)} 🔥`;
-                sub.textContent = `${rank} · ${inst?.playerName || '픽'} 들고 가는 중`;
+                head.textContent = `@${displayName()} · 이번 주 ${fmtPct(pct)}`;
+                sub.textContent = `${rank} · ${inst?.playerName || '종목'}`;
             } else if (pct <= -3) {
-                head.textContent = '숏 칠 타이밍일지도… 📉';
-                sub.textContent = `${fmtPct(pct)} · ${inst?.yesBet || '된다'} vs ${inst?.noBet || '안 된다'}`;
+                head.textContent = `@${displayName()} · 이번 주 ${fmtPct(pct)}`;
+                sub.textContent = `${rank} · ${inst?.yesBet || 'YES'} vs ${inst?.noBet || 'NO'}`;
             } else {
-                head.textContent = `@${displayName()} · ${fmtPct(pct)} 이번 주`;
-                sub.textContent = `${rank} · 「${inst?.playerName || '종목'}」 ${Number(inst?.price || 0).toLocaleString()}P`;
+                head.textContent = `@${displayName()} · ${fmtPct(pct)}`;
+                sub.textContent = `${rank} · ${inst?.playerName || '종목'} ${Number(inst?.price || 0).toLocaleString()}P`;
             }
         }
 
@@ -2260,7 +2273,7 @@
             renderAccountPanel();
             updateNickHint();
             renderWallet(null);
-            toast('로그아웃됨 · 종목·경기는 계속 볼 수 있어요');
+            toast('로그아웃되었습니다 · 종목·경기는 계속 볼 수 있습니다');
             refresh();
         }
 
@@ -2403,7 +2416,7 @@
                 const nick = localStorage.getItem(NICKNAME_KEY);
                 hint.innerHTML = sessionReady
                     ? `@${nick || '—'} · 10만 P · <a href="#" onclick="openAccountGuide(); return false;" style="color:#fde68a">계정</a>`
-                    : '로그인 없이도 둘러볼 수 있어요 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a>';
+                    : '로그인 없이도 둘러볼 수 있습니다 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a>';
             }
         }
 
@@ -2513,11 +2526,11 @@
                         fomoEl.style.display = 'none';
                     }
                 } else if (me.rank != null && me.rank <= 3) {
-                    fomoEl.textContent = '🏆 TOP3 — 친구 초대해서 자랑해요';
+                    fomoEl.textContent = 'TOP 3 — 순위를 공유해 보세요';
                     fomoEl.style.display = '';
                     fomoEl.onclick = shareMyYasdaq;
                 } else if (me.rank != null && me.rank <= 10) {
-                    fomoEl.textContent = `TOP10 ${me.rank}위 — 유지 중 💪`;
+                    fomoEl.textContent = `TOP10 ${me.rank}위 — 순위 유지 중`;
                     fomoEl.style.display = '';
                 } else {
                     fomoEl.textContent = '';
@@ -2579,7 +2592,7 @@
         function renderDisclosures(items) {
             const el = document.getElementById('disc-list');
             if (!items?.length) {
-                el.innerHTML = '<li class="disc-item meta">공시 대기 중 — 프리마켓·월요일에 찌라시 반영</li>';
+                el.innerHTML = '<li class="disc-item meta">공시 대기 중 — 프리마켓·월요일에 반영됩니다</li>';
                 return;
             }
             el.innerHTML = items.map(d => {
@@ -2643,7 +2656,7 @@
 
             const rows = lb?.rankings || [];
             if (!rows.length) {
-                list.innerHTML = '<li class="meta" style="padding:8px 0">아직 참가자 없음 — 첫 베팅 ㄱㄱ</li>';
+                list.innerHTML = '<li class="meta" style="padding:8px 0">아직 참가자가 없습니다</li>';
                 hint.textContent = '';
                 return;
             }
@@ -2682,9 +2695,9 @@
 
         function actionKo(a) {
             return {
-                open_long: '된다',
+                open_long: 'YES',
                 close_long: '청산',
-                open_short: '안된다',
+                open_short: 'NO',
                 close_short: '청산',
             }[a] || a;
         }
@@ -2702,32 +2715,16 @@
         }
 
         function betCta(inst) {
-            if (!inst) return '베팅할 종목을 골라 주세요';
+            if (!inst) return '베팅할 종목을 선택하세요';
             if (inst.betCta) return inst.betCta;
-            if (inst.id === 'lee-jung-hoo') {
-                return '대한건아 이정후의 OPS에 베팅하세요!';
-            }
             const metric = inst.metricLabel || 'OPS';
-            return `${inst.playerName} ${metric}, 걸어볼 거야?`;
+            return `${inst.playerName} · ${metric} 베팅`;
         }
 
         function renderBetCta(inst) {
-            const raw = betCta(inst);
-            const el = document.getElementById('bet-cta');
-            if (inst?.id === 'lee-jung-hoo') {
-                el.innerHTML = '대한건아 <em>이정후의 OPS에 베팅하세요!</em>';
-            } else if (raw.includes('베팅하세요!')) {
-                el.innerHTML = raw.replace(/(.+)(베팅하세요!)/, '$1<em>$2</em>');
-            } else {
-                const parts = raw.match(/^(.+?,)\s*(.+)$/);
-                if (parts) {
-                    el.innerHTML = `${parts[1]} <em>${parts[2]}</em>`;
-                } else {
-                    el.innerHTML = raw.replace(/(걸어볼 거야\?)/, '<em>$1</em>');
-                }
-            }
-            const yes = inst?.yesBet || inst?.longThesis || '된다!';
-            const no = inst?.noBet || inst?.shortThesis || '안 된다';
+            document.getElementById('bet-cta').textContent = betCta(inst);
+            const yes = inst?.yesBet || inst?.longThesis || 'YES';
+            const no = inst?.noBet || inst?.shortThesis || 'NO';
             document.getElementById('btn-yes').textContent = yes;
             document.getElementById('btn-no').textContent = no;
         }
@@ -2823,7 +2820,7 @@
             const lp = data.crowd.longPct;
             document.getElementById('crowd-long').style.width = lp + '%';
             document.getElementById('crowd-text').textContent =
-                `된다파 ${lp}% 🔥 · 안된다파 ${data.crowd.shortPct}% · ${data.liveCount}명 지금 걸는 중`;
+                `YES ${lp}% · NO ${data.crowd.shortPct}% · ${data.liveCount}명 참여 중`;
 
             const g = data.game;
             document.getElementById('game-line').textContent =
@@ -2848,7 +2845,7 @@
             const king = data.weekKing;
             document.getElementById('crown').innerHTML = king
                 ? `<strong>@${king.displayName || king.userId}</strong> · 이번 주 ${fmtPct(king.weeklyReturnPct)}`
-                : '아직 없음 — 1등 자리 비었음';
+                : '아직 1위가 없습니다';
 
             const feed = document.getElementById('feed');
             feed.innerHTML = data.recentTrades.length
@@ -2857,7 +2854,7 @@
                         <span>@${(t.displayName || t.userId).slice(0, 8)}</span>
                         <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.instrumentName || '픽'} · ${t.price.toLocaleString()}P</span>
                     </li>`).join('')
-                : '<li>아직 픽 없음 — 첫 번째 ㄱㄱ</li>';
+                : '<li>아직 거래 내역이 없습니다</li>';
 
             if (data.me) {
                 renderWallet(data.me);
@@ -2917,13 +2914,14 @@
 
         function renderMemes(memes) {
             const el = document.getElementById('meme-list');
-            if (!memes?.length) {
+            const rows = normalizeMemes(memes);
+            if (!rows.length) {
                 el.innerHTML = hubLoaded
                     ? '<div class="meta">밈 종목이 없습니다</div>'
                     : '<div class="meta">밈 종목 불러오는 중…</div>';
                 return;
             }
-            el.innerHTML = memes.map((m, i) => `
+            el.innerHTML = rows.map((m, i) => `
                 <div class="meme-item ${m.id === selectedId ? 'active' : ''}" role="button" tabindex="0"
                      style="--meme-accent:${m.accent || '#5eead4'}"
                      onclick="selectStock('${m.id}')"
@@ -2931,14 +2929,29 @@
                     <div class="meme-bet-cta">${m.betCta || betCta(m)}${i === 0 ? '<span class="meme-hot">HOT</span>' : ''}</div>
                     <div class="meme-narrative">${m.narrative || ''}</div>
                     <div class="meme-bet-btns">
-                        <button type="button" class="yes" onclick="event.stopPropagation();quickBet('${m.id}','buy','long')">${m.yesBet || m.longThesis || '된다'}</button>
-                        <button type="button" class="no" onclick="event.stopPropagation();quickBet('${m.id}','sell','short')">${m.noBet || m.shortThesis || '안된다'}</button>
+                        <button type="button" class="yes" onclick="event.stopPropagation();quickBet('${m.id}','buy','long')">${m.yesBet || m.longThesis || 'YES'}</button>
+                        <button type="button" class="no" onclick="event.stopPropagation();quickBet('${m.id}','sell','short')">${m.noBet || m.shortThesis || 'NO'}</button>
                     </div>
                     <div class="meme-meta">
                         <span>${m.metricLabel || '밈지수'}</span>
                         <strong>${fmtOracle(m)} · ${Number(m.price).toLocaleString()}P</strong>
                     </div>
                 </div>`).join('');
+        }
+
+        async function loadMemes() {
+            try {
+                const res = await fetch(`${API}/amm/memes`);
+                if (!res.ok) throw new Error('memes fail');
+                const data = await res.json();
+                const memes = normalizeMemes(data.items || []);
+                if (hub) hub.memes = memes;
+                renderMemes(memes);
+                return memes;
+            } catch (_) {
+                renderMemes([]);
+                return [];
+            }
         }
 
         async function loadSpark(instrumentId) {
@@ -2962,16 +2975,27 @@
             } catch (_) {}
             renderProgress(roadmap, apiOk);
 
-            const [hubRes, lineupRes, syncRes] = await Promise.all([
+            const [hubRes, lineupRes, syncRes, memeRes] = await Promise.all([
                 fetch(`${API}/amm/hub`, { headers: authHeaders(false) }).catch(() => null),
                 fetch(`${API}/amm/lineup`).catch(() => null),
                 fetch(`${API}/amm/live-stats`).catch(() => null),
+                fetch(`${API}/amm/memes`).catch(() => null),
             ]);
 
             if (lineupRes?.ok) {
                 renderLineup(await lineupRes.json());
             } else if (!lineupCache.length) {
                 await reloadLineup();
+            }
+
+            let memes = [];
+            if (memeRes?.ok) {
+                const memeData = await memeRes.json();
+                memes = normalizeMemes(memeData.items || []);
+                renderMemes(memes);
+            } else {
+                await loadMemes();
+                memes = hub?.memes || [];
             }
 
             if (!hubRes?.ok) {
@@ -2991,15 +3015,8 @@
             } else {
                 renderLineup(lineupCache);
             }
-            let memes = hubData.memes || [];
-            if (!memes.length) {
-                try {
-                    const memeRes = await fetch(`${API}/amm/memes`);
-                    if (memeRes.ok) {
-                        const memeData = await memeRes.json();
-                        memes = memeData.items || [];
-                    }
-                } catch (_) {}
+            if (hubData.memes?.length) {
+                memes = normalizeMemes(hubData.memes);
             }
             hubData.memes = memes;
             renderHub(hubData);
@@ -3026,7 +3043,7 @@
             try {
                 const res = await fetch(`${API}/amm/market/${instrumentId}`);
                 if (!res.ok) {
-                    toast('종목 정보를 불러오지 못했어요');
+                    toast('종목 정보를 불러오지 못했습니다');
                     return;
                 }
                 const inst = await res.json();
@@ -3045,7 +3062,7 @@
                 await loadSpark(instrumentId);
                 toast(betCta(inst));
             } catch (_) {
-                toast('종목 정보를 불러오지 못했어요');
+                toast('종목 정보를 불러오지 못했습니다');
             }
         }
 
@@ -3074,17 +3091,17 @@
                 });
                 let data = {};
                 try { data = await res.json(); } catch (_) {}
-                if (!res.ok) return toast(data.message || '베팅 실패 ㅠㅠ');
+                if (!res.ok) return toast(data.message || '베팅에 실패했습니다');
                 celebrateTrade(side);
                 const inst = hub?.memes?.find(x => x.id === selectedId) || hub?.instrument;
                 const label = inst?.yesBet && side === 'long' ? inst.yesBet
                     : inst?.noBet && side === 'short' ? inst.noBet
-                    : side === 'long' ? '된다' : '안된다';
-                toast(`@${displayName()} · 「${label}」 ${qty}주 박음 🔥`);
-                showSharePrompt(`「${label}」 ${qty}주 — 단톡에 자랑 ㄱㄱ`);
+                    : side === 'long' ? 'YES' : 'NO';
+                toast(`@${displayName()} · ${label} ${qty}주`);
+                showSharePrompt(`${label} ${qty}주 — 공유해 보세요`);
                 refresh();
             } catch (_) {
-                toast('베팅 실패 ㅠㅠ');
+                toast('베팅에 실패했습니다');
             } finally {
                 orderBusy = false;
                 if (btnYes) btnYes.disabled = false;
@@ -3107,7 +3124,7 @@
         function followFeaturedGame() {
             if (!hub?.featuredId) return;
             selectStock(hub.featuredId);
-            toast(hub.game?.status === 'live' ? '경기 연동 종목으로 바뀌었어요' : '오늘의 경기 종목이에요');
+            toast(hub.game?.status === 'live' ? '경기 연동 종목으로 변경되었습니다' : '오늘의 경기 종목입니다');
         }
 
         function renderPlay(play) {
@@ -3220,7 +3237,12 @@
                 document.getElementById('guide-body').classList.add('collapsed');
                 document.getElementById('guide-toggle').textContent = '펼치기';
             }
-            if (localStorage.getItem('lineup-collapsed') === '1') {
+            const lineupStored = localStorage.getItem('lineup-collapsed');
+            if (lineupStored === '0') {
+                lineupOpen = true;
+                document.getElementById('lineup-body').classList.remove('collapsed');
+                document.getElementById('toggle-lineup').textContent = '접기';
+            } else {
                 lineupOpen = false;
                 document.getElementById('lineup-body').classList.add('collapsed');
                 document.getElementById('toggle-lineup').textContent = '펼치기';
@@ -3228,7 +3250,6 @@
             updateNickHint();
         } catch (_) {}
 
-        setInterval(refresh, 30000);
         (async () => {
             await bootApp();
             await tryRestoreSession();

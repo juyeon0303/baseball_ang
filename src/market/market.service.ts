@@ -438,6 +438,36 @@ export class MarketService {
     return this.updateOracle(instrumentId, value);
   }
 
+  async updateMemeTrend(
+    instrumentId: string,
+    patch: {
+      value: number;
+      title?: string;
+      betCta?: string;
+      narrative?: string;
+      yesBet?: string;
+      noBet?: string;
+    },
+  ): Promise<InstrumentState> {
+    const inst = await Promise.resolve(this.store.getInstrument(instrumentId));
+    if (inst.kind !== 'meme') {
+      throw new BadRequestException('밈 종목만 갱신할 수 있습니다.');
+    }
+    const updates: Partial<InstrumentState> = {};
+    if (patch.title) {
+      updates.name = patch.title;
+      updates.playerName = patch.title;
+    }
+    if (patch.betCta) updates.betCta = patch.betCta;
+    if (patch.narrative) updates.narrative = patch.narrative;
+    if (patch.yesBet) updates.yesBet = patch.yesBet;
+    if (patch.noBet) updates.noBet = patch.noBet;
+    await Promise.resolve(
+      this.store.updateInstrument(instrumentId, updates),
+    );
+    return this.updateMemeOracle(instrumentId, patch.value);
+  }
+
   async updateOracle(instrumentId: string, value: number): Promise<InstrumentState> {
     const inst = await Promise.resolve(this.store.getInstrument(instrumentId));
     if (!Number.isFinite(value) || value < 0) {

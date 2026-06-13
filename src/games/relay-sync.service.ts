@@ -163,8 +163,8 @@ export class RelaySyncService {
     _dateKey: string,
     storeOnly: boolean,
   ): Promise<GameRelayBundle | null> {
-    const raw = await this.naver.fetchRelay(game.naverGameId!);
-    if (!raw || typeof raw !== 'object') return null;
+    const raw = await this.naver.fetchRelayFull(game.naverGameId!);
+    if (!raw) return null;
 
     const parsed = this.naver.parseRelayArchive(
       game.id,

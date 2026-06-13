@@ -1,6 +1,10 @@
 /** 커뮤 밈·화제 → 주식 (선수 OPS와 별도 오라클) */
 
-export type MemeOracleMode = 'control' | 'hr_pace' | 'manual';
+export type MemeOracleMode =
+  | 'control'
+  | 'hr_pace'
+  | 'manual'
+  | 'pitcher_trend';
 
 export interface MemeStockSeed {
   id: string;
@@ -35,12 +39,12 @@ export const MEME_STOCKS: MemeStockSeed[] = [
   {
     id: 'meme-ksh-control',
     title: '김서현 직구 제구',
-    betCta: '김서현 제구 ㄹㅇ 잡히냐',
-    narrative: '볼넷 먹으면 숏파 우는 중',
-    longThesis: '잡힌다',
-    shortThesis: '아직 멀다',
-    yesBet: '간다 ㅇㅇ',
-    noBet: '무리 ㅋㅋ',
+    betCta: '김서현 제구 안정?',
+    narrative: '볼넷·제구가 관건',
+    longThesis: '안정',
+    shortThesis: '아직 불안',
+    yesBet: '안정',
+    noBet: '아직 불안',
     teamName: '한화',
     teamShort: '한화',
     symbol: 'KSH',
@@ -54,12 +58,12 @@ export const MEME_STOCKS: MemeStockSeed[] = [
   {
     id: 'meme-kbh-50hr',
     title: '강백호 50홈런',
-    betCta: '강백호 50홈 ㄱㄴ?',
-    narrative: '시즌 50홈런 간다 vs 무리',
-    longThesis: '간다',
-    shortThesis: '무리다',
-    yesBet: '간다 🔥',
-    noBet: '무리야',
+    betCta: '강백호 50홈런 가능?',
+    narrative: '시즌 50홈런 달성 여부',
+    longThesis: '가능',
+    shortThesis: '어렵다',
+    yesBet: '가능',
+    noBet: '어렵다',
     teamName: '한화',
     teamShort: '한화',
     symbol: 'KBH50',
@@ -72,21 +76,22 @@ export const MEME_STOCKS: MemeStockSeed[] = [
   },
   {
     id: 'meme-ryu-quality',
-    title: '류현진 6이닝+',
-    betCta: '류현진 오늘 6이닝 넘기냐',
-    narrative: '6이닝 컷 vs 넘긴다 논쟁',
-    longThesis: '넘긴다',
-    shortThesis: '5이닝 컷',
-    yesBet: '넘긴다',
-    noBet: '5이닝 컷',
+    title: '류현진 QS·완봉',
+    betCta: '류현진 오늘 QS?',
+    narrative: '퀄리티 스타트 가능성',
+    longThesis: 'QS',
+    shortThesis: 'QS 아님',
+    yesBet: 'QS',
+    noBet: 'QS 아님',
     teamName: '한화',
     teamShort: '한화',
     symbol: 'RYU6',
     accent: '#1e3a5f',
-    metricLabel: '이닝지수',
-    oracleValue: 42,
-    oracleMode: 'manual',
-    linkedKeywords: ['류현진'],
+    metricLabel: '밈지수',
+    oracleValue: 72,
+    oracleMode: 'pitcher_trend',
+    kboPlayerId: 76715,
+    linkedKeywords: ['류현진', 'QS', '완봉'],
   },
 ];
 
