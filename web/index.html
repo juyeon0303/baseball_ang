@@ -2186,6 +2186,7 @@
         let myHoldings = [];
         let liveLineMeta = { count: 0, gameStatus: 'scheduled', instrumentName: '' };
         let orderBusy = false;
+        let chartLoadSeq = 0;
         document.getElementById('playball-link').href = PLAYBALL_URL;
         if (!IS_LOCAL_DEV) {
             const prog = document.getElementById('progress-panel');
@@ -2549,6 +2550,7 @@
         async function bootApp() {
             if (appBooted) return;
             appBooted = true;
+            void loadPriceChart(selectedId || 'lee-jung-hoo');
             refresh();
             setInterval(refresh, 30000);
         }
@@ -3188,7 +3190,6 @@
             renderYasdaqStory(data.me, inst);
             if (lineupCache.length) renderLineup(lineupCache);
             if (data.memes?.length) renderMemes(data.memes);
-            void loadPriceChart(selectedId);
         }
 
         function renderLineup(items) {
@@ -3287,13 +3288,26 @@
 
         async function loadPriceChart(instrumentId) {
             if (!instrumentId) return;
+            const seq = ++chartLoadSeq;
             setPriceChartLoading();
             try {
-                const res = await fetch(`${API}/amm/status?instrumentId=${encodeURIComponent(instrumentId)}`);
+                const res = await fetch(`${API}/amm/market/${encodeURIComponent(instrumentId)}`);
                 if (!res.ok) throw new Error('chart fail');
                 const data = await res.json();
+                if (seq !== chartLoadSeq) return;
                 renderPriceChart(data.priceHistory);
             } catch (_) {
+                if (seq !== chartLoadSeq) return;
+                try {
+                    const fallback = await fetch(
+                        `${API}/amm/status?instrumentId=${encodeURIComponent(instrumentId)}`,
+                    );
+                    if (fallback.ok && seq === chartLoadSeq) {
+                        const data = await fallback.json();
+                        renderPriceChart(data.priceHistory);
+                        return;
+                    }
+                } catch (_) {}
                 renderPriceChart([]);
             }
         }
@@ -3302,11 +3316,15 @@
             let apiOk = false;
             let roadmap = [];
             try {
-                const statusRes = await fetch(`${API}/amm/status?instrumentId=lee-jung-hoo`);
+                const bootId = selectedId || 'lee-jung-hoo';
+                const statusRes = await fetch(
+                    `${API}/amm/status?instrumentId=${encodeURIComponent(bootId)}`,
+                );
                 if (statusRes.ok) {
                     apiOk = true;
                     const statusData = await statusRes.json();
                     roadmap = statusData.roadmap || [];
+                    renderPriceChart(statusData.priceHistory);
                 }
             } catch (_) {}
             renderProgress(roadmap, apiOk);
@@ -3594,6 +3612,7 @@
         } catch (_) {}
 
         (async () => {
+            void loadPriceChart('lee-jung-hoo');
             await bootApp();
             await tryRestoreSession();
             renderAccountPanel();
