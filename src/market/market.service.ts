@@ -46,7 +46,7 @@ export class MarketService {
 
   async getMemeLineup(): Promise<InstrumentState[]> {
     if ('getMemeLineup' in this.store && typeof this.store.getMemeLineup === 'function') {
-      return Promise.resolve(this.store.getMemeLineup());
+      return this.store.getMemeLineup();
     }
     return Promise.all(
       MEME_STOCKS.map((s) => Promise.resolve(this.store.getInstrument(s.id))),

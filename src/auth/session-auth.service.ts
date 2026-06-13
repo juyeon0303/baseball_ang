@@ -4,12 +4,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'crypto';
+import { AuthAccountService } from './auth-account.service';
 
 export interface SessionRecord {
   accountId: string;
   token: string;
   deviceId: string;
   displayName: string;
+  nickname?: string;
   createdAt: string;
 }
 
@@ -20,6 +22,35 @@ export class SessionAuthService {
   private readonly byToken = new Map<string, SessionRecord>();
   private readonly byDevice = new Map<string, string>();
   private readonly byAccount = new Map<string, SessionRecord>();
+
+  constructor(private readonly accounts: AuthAccountService) {}
+
+  openSession(
+    accountId: string,
+    displayName: string,
+    nickname?: string,
+    deviceId?: string,
+  ): SessionRecord {
+    const existing = this.byAccount.get(accountId);
+    if (existing) {
+      this.byToken.delete(existing.token);
+    }
+    const token = randomBytes(TOKEN_BYTES).toString('hex');
+    const record: SessionRecord = {
+      accountId,
+      token,
+      deviceId: deviceId?.trim().slice(0, 128) || existing?.deviceId || '',
+      displayName,
+      nickname,
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
+    };
+    this.byToken.set(token, record);
+    this.byAccount.set(accountId, record);
+    if (record.deviceId) {
+      this.byDevice.set(record.deviceId, accountId);
+    }
+    return record;
+  }
 
   bootstrap(deviceId: string): SessionRecord {
     const safeDevice = deviceId.trim().slice(0, 128);
@@ -88,11 +119,15 @@ export class SessionAuthService {
       throw new BadRequestException('표시 이름을 입력해 주세요.');
     }
     record.displayName = name;
+    void this.accounts.updateDisplayName(accountId, name);
     return record;
   }
 
   getDisplayName(accountId: string): string {
-    return this.byAccount.get(accountId)?.displayName ?? accountId.slice(0, 8);
+    return (
+      this.byAccount.get(accountId)?.displayName ??
+      this.accounts.getDisplayName(accountId)
+    );
   }
 
   toPublic(record: SessionRecord) {
@@ -100,6 +135,7 @@ export class SessionAuthService {
       accountId: record.accountId,
       token: record.token,
       displayName: record.displayName,
+      nickname: record.nickname ?? record.displayName,
       createdAt: record.createdAt,
     };
   }

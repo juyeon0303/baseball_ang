@@ -13,6 +13,15 @@ export class UserEntity {
   @PrimaryColumn()
   externalId: string;
 
+  @Column({ type: 'varchar', length: 24, unique: true, nullable: true })
+  nickname: string | null;
+
+  @Column({ type: 'varchar', length: 128, nullable: true, select: false })
+  pinHash: string | null;
+
+  @Column({ type: 'varchar', length: 24, nullable: true })
+  displayName: string | null;
+
   @Column({ type: 'bigint', default: 100_000 })
   points: number;
 

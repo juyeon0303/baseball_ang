@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
 
@@ -28,6 +28,7 @@ import { KboRawGame, KboScoreProvider } from './kbo-score.provider';
 
 import { GamesService } from './games.service';
 import { GameLiveService } from './game-live.service';
+import { RelaySyncService } from './relay-sync.service';
 
 
 
@@ -79,6 +80,9 @@ export class GamesSyncService implements OnModuleInit {
 
     private readonly live: GameLiveService,
 
+    @Inject(forwardRef(() => RelaySyncService))
+    private readonly relay: RelaySyncService,
+
   ) {}
 
 
@@ -123,6 +127,21 @@ export class GamesSyncService implements OnModuleInit {
 
     return this.plays.slice(0, limit);
 
+  }
+
+  prependPlay(play: PlayFeedItem): void {
+    this.plays.unshift(play);
+    this.plays = this.plays.slice(0, 40);
+    if (this.snapshot) {
+      this.snapshot.plays = this.getRecentPlays(15);
+    }
+  }
+
+  patchSnapshotGames(games: TodayGame[]): void {
+    if (this.snapshot) {
+      this.snapshot.games = games;
+      this.snapshot.updatedAt = new Date().toISOString();
+    }
   }
 
 
@@ -243,21 +262,19 @@ export class GamesSyncService implements OnModuleInit {
 
       const featuredGameId = this.pickFeaturedGameId(games);
 
-      this.snapshot = {
-
+      const draft: ScoreboardSnapshot = {
         date,
-
         updatedAt: new Date().toISOString(),
-
         source: 'kbo_gamecenter',
-
         featuredGameId,
-
         games,
-
         plays: this.getRecentPlays(15),
-
       };
+
+      this.relay.attachNaverIds(draft, rawGames);
+      await this.relay.syncLiveRelays(draft, trigger, false);
+
+      this.snapshot = draft;
 
       this.games.setSnapshot(this.snapshot);
 

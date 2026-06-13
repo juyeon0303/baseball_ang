@@ -35,7 +35,7 @@ export function mountProductionUis(app: NestExpressApplication): {
 
   if (webDist) {
     app.useStaticAssets(webDist, {
-      prefix: '/stock/assets',
+      prefix: '/stock',
       index: false,
       redirect: false,
     });

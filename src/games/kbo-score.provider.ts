@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { todayKey } from '../stats/game-day.util';
 import { GameSituation, GameStatus, TodayGame } from './games.types';
+import { formatBasesLabel } from './games-display.util';
 
 const KBO_UA =
   'Mozilla/5.0 (compatible; BaseballStockBot/1.0; +kbo-scoreboard)';
@@ -112,6 +113,11 @@ export class KboScoreProvider {
         third: this.parseIntField(raw.B3_BAT_ORDER_NO) > 0,
       },
       countText: `${balls}-${strikes}`,
+      basesLabel: formatBasesLabel({
+        first: this.parseIntField(raw.B1_BAT_ORDER_NO) > 0,
+        second: this.parseIntField(raw.B2_BAT_ORDER_NO) > 0,
+        third: this.parseIntField(raw.B3_BAT_ORDER_NO) > 0,
+      }),
     };
   }
 

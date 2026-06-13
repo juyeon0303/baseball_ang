@@ -77,12 +77,20 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
   }
 
   async getMemeLineup(): Promise<InstrumentState[]> {
+    await this.ensureMemeInstruments();
     const ids = MEME_STOCKS.map((s) => s.id);
     const rows = await this.instrumentRepo.find({
       where: { id: In(ids) },
     });
     const byId = new Map(rows.map((r) => [r.id, toInstrumentState(r)]));
     return ids.map((id) => byId.get(id)!).filter(Boolean);
+  }
+
+  private async ensureMemeInstruments(): Promise<void> {
+    for (const meme of MEME_STOCKS) {
+      await this.upsertInstrument(this.memeToEntity(meme));
+      await this.ensurePriceSnapshot(meme.id);
+    }
   }
 
   async getLineup(): Promise<InstrumentState[]> {

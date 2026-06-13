@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AmmEngineService } from './amm/amm-engine.service';
 import { StockStreamGateway } from './amm/stock-stream.gateway';
 import { AmmController } from './amm.controller';
 import { AuthController } from './auth/auth.controller';
+import { AuthAccountService } from './auth/auth-account.service';
 import { SessionAuthService } from './auth/session-auth.service';
 import { AppController } from './app.controller';
 import { CommunityController } from './community/community.controller';
@@ -28,6 +30,8 @@ import { GamesController } from './games/games.controller';
 import { GamesSyncService } from './games/games-sync.service';
 import { GamesService } from './games/games.service';
 import { KboScoreProvider } from './games/kbo-score.provider';
+import { NaverRelayProvider } from './games/naver-relay.provider';
+import { RelaySyncService } from './games/relay-sync.service';
 import { DisclosureService } from './market/disclosure.service';
 import { OffDayDemoService } from './market/off-day-demo.service';
 import { ShareholderService } from './market/shareholder.service';
@@ -123,11 +127,19 @@ const usePostgres = process.env.STORAGE_MODE === 'postgres';
         : [MemoryCommunityStoreService, ConfigService],
     },
     SessionAuthService,
+    {
+      provide: AuthAccountService,
+      useFactory: (userRepo?: Repository<UserEntity>) =>
+        new AuthAccountService(userRepo),
+      inject: usePostgres ? [getRepositoryToken(UserEntity)] : [],
+    },
     DatabaseHealthService,
     PresenceService,
     KboScoreProvider,
+    NaverRelayProvider,
     GamesService,
     GamesSyncService,
+    RelaySyncService,
     GamesRecapService,
     GameLiveService,
     HubService,

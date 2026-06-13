@@ -7,8 +7,14 @@
     <meta name="description" content="야스닥 — 종목·밈에 「된다/안 된다」 가상 P 게임. 진짜 주식 아님.">
     <meta name="theme-color" content="#0f1419">
     <meta property="og:title" content="야스닥 · YASDAQ">
-    <meta property="og:description" content="나스닥처럼, 야구 팬이 선수·밈에 포인트로 베팅하는 가상 거래소">
+    <meta property="og:description" content="너 오늘 야스닥 뭐 삼? KBO 팬 가상 P · 된다/안 된다 베팅">
     <meta property="og:site_name" content="YASDAQ">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kbo-stock-mvp.onrender.com/stock/">
+    <meta property="og:image" content="https://kbo-stock-mvp.onrender.com/stock/og-yasdaq.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="야스닥 · YASDAQ">
+    <meta name="twitter:description" content="너 오늘 야스닥 뭐 삼? KBO 팬 가상 P 게임">
     <title>야스닥 · YASDAQ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='72'>📈</text></svg>">
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
@@ -1130,69 +1136,6 @@
 
         .boot-error.show { display: block; }
 
-        body.boot-lock { overflow: hidden; }
-
-        .boot-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            background: #0f1419;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            text-align: center;
-        }
-        .boot-screen.hide { display: none; }
-        .boot-timer {
-            margin-top: 10px;
-            font-size: 0.72rem;
-            color: var(--faint);
-            font-variant-numeric: tabular-nums;
-        }
-        .boot-art {
-            font-size: 2.5rem;
-            letter-spacing: 0.2em;
-            animation: boot-bounce 1.2s ease infinite;
-        }
-        @keyframes boot-bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-        .boot-msg {
-            margin-top: 16px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        .boot-quiz {
-            margin-top: 12px;
-            font-size: 0.78rem;
-            color: var(--muted);
-            max-width: 280px;
-            line-height: 1.5;
-        }
-        .boot-bar {
-            margin-top: 20px;
-            width: 160px;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .boot-bar span {
-            display: block;
-            height: 100%;
-            width: 40%;
-            background: var(--accent);
-            animation: boot-load 1.4s ease infinite;
-        }
-        @keyframes boot-load {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(350%); }
-        }
-
         .session-pill {
             display: inline-block;
             margin-top: 6px;
@@ -1655,23 +1598,98 @@
             font-size: 0.72rem;
             color: var(--muted);
         }
+        .share-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .share-chip {
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .share-chip:active { transform: scale(0.97); }
+        .rank-fomo {
+            margin-top: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--highlight);
+        }
+        .rank-badge { cursor: pointer; }
+        .share-prompt {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: var(--radius);
+            background: linear-gradient(90deg, rgba(94, 234, 212, 0.15), rgba(252, 211, 77, 0.1));
+            border: 1px solid rgba(94, 234, 212, 0.35);
+            font-size: 0.78rem;
+        }
+        .share-prompt.show { display: flex; }
+        .share-prompt button {
+            margin-left: auto;
+            border: none;
+            background: var(--accent-neon);
+            color: var(--text-on-accent);
+            font-weight: 800;
+            font-size: 0.72rem;
+            padding: 6px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .share-prompt .dismiss {
+            background: transparent;
+            color: var(--muted);
+            padding: 4px 8px;
+        }
+
+        .auth-panel { margin-bottom: 0; }
+        .auth-panel.compact .auth-guest-hint { display: none; }
+        .auth-guest-hint {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 12px;
+            line-height: 1.45;
+        }
+        .auth-card,
+        .auth-panel-inner {
+            width: min(380px, 100%);
+            padding: 22px 20px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, var(--glass), transparent 50%), var(--surface);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        .auth-logo { font-size: 1.35rem; font-weight: 800; margin-bottom: 4px; }
+        .auth-logo span { color: var(--accent-neon); }
+        .auth-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 16px; line-height: 1.45; }
+        .auth-field { margin-bottom: 10px; }
+        .auth-field label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+        .auth-field input {
+            width: 100%; padding: 11px 12px; border-radius: 10px;
+            border: 1px solid var(--border); background: rgba(8, 12, 20, 0.65);
+            color: var(--text); font-size: 0.95rem;
+        }
+        .auth-btn {
+            width: 100%; margin-top: 6px; padding: 12px; border: none; border-radius: 10px;
+            background: var(--accent-neon); color: #061018; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+        }
+        .auth-btn.secondary { background: transparent; color: var(--muted); font-weight: 600; font-size: 0.78rem; margin-top: 8px; }
+        .auth-err { min-height: 1.2em; font-size: 0.72rem; color: var(--danger); margin-top: 6px; }
+        .auth-account-tag { font-size: 0.72rem; color: var(--accent-neon); margin-bottom: 4px; }
 
     </style>
 </head>
 
 <body>
-    <div class="boot-screen" id="boot-screen">
-        <div class="boot-art">⚾ 🏟️ 📈</div>
-        <div class="boot-msg" id="boot-msg">야스닥 개장 준비 중...</div>
-        <div class="boot-quiz" id="boot-quiz">KBO는 월요일에 경기가 없어요 — 그날은 프리마켓·찌라시 장!</div>
-        <div class="boot-bar"><span></span></div>
-        <div class="boot-timer" id="boot-timer">서버 깨우는 중…</div>
-    </div>
-    <script>
-        if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
-            document.getElementById('boot-screen').classList.add('hide');
-        }
-    </script>
     <div class="yas-strip" id="yas-strip" onclick="scrollToTrade()" role="button" tabindex="0">
         <span class="yas-strip-dot" id="yas-strip-dot"></span>
         <div class="yas-strip-body">
@@ -1685,8 +1703,7 @@
     <div class="wrap">
         <div class="boot-error" id="boot-error">
             서버에 연결하지 못했습니다. API가 실행 중인지 확인해 주세요.
-            <br>로컬 개발: 프로젝트 루트에서 <code>npm run start:dev</code> 실행 후 다시 시도.
-            <br><button type="button" class="link-btn" style="margin-top:10px" onclick="wakeServer()">다시 연결</button>
+            <br>로컬 개발: 프로젝트 루트에서 <code>npm run start:dev</code> 실행 후 새로고침.
         </div>
 
         <header>
@@ -1701,14 +1718,64 @@
         </header>
 
         <div class="demo-banner" id="demo-banner" style="display:none"></div>
+        <div class="share-prompt" id="share-prompt">
+            <span id="share-prompt-text">베팅했어 — 단톡에 자랑 ㄱㄱ</span>
+            <button type="button" id="share-prompt-go">공유</button>
+            <button type="button" class="dismiss" id="share-prompt-x">×</button>
+        </div>
 
         <div class="page-grid">
             <aside class="col-side col-left">
+                <section class="panel auth-panel" id="account-panel">
+                    <div class="label">로그인 · 가입</div>
+                    <p class="auth-guest-hint">로그인 없이도 종목·경기·시세는 볼 수 있어요. 베팅·랭킹·내 지갑만 계정이 필요합니다.</p>
+                    <div id="account-signed-out">
+                        <div class="auth-sub">닉네임 + PIN 4자리 · 베팅·순위는 계정으로 저장돼요</div>
+                        <div id="auth-login-panel">
+                            <div class="auth-field">
+                                <label for="auth-nickname">닉네임</label>
+                                <input id="auth-nickname" maxlength="12" autocomplete="username" placeholder="2~12자">
+                            </div>
+                            <div class="auth-field">
+                                <label for="auth-pin">PIN (4자리)</label>
+                                <input id="auth-pin" type="password" maxlength="4" inputmode="numeric" autocomplete="current-password" placeholder="●●●●">
+                            </div>
+                            <button type="button" class="auth-btn" onclick="submitAuthLogin()">로그인</button>
+                            <button type="button" class="auth-btn secondary" onclick="showAuthRegister()">처음이에요 · 가입</button>
+                        </div>
+                        <div id="auth-register-panel" style="display:none">
+                            <div class="auth-field">
+                                <label for="auth-reg-nick">닉네임</label>
+                                <input id="auth-reg-nick" maxlength="12" placeholder="랭킹·피드에 보이는 이름">
+                            </div>
+                            <div class="auth-field">
+                                <label for="auth-reg-pin">PIN (4자리)</label>
+                                <input id="auth-reg-pin" type="password" maxlength="4" inputmode="numeric" placeholder="●●●●">
+                            </div>
+                            <div class="auth-field">
+                                <label for="auth-reg-pin2">PIN 확인</label>
+                                <input id="auth-reg-pin2" type="password" maxlength="4" inputmode="numeric" placeholder="●●●●">
+                            </div>
+                            <button type="button" class="auth-btn" onclick="submitAuthRegister()">가입하고 10만 P 받기</button>
+                            <button type="button" class="auth-btn secondary" onclick="showAuthLogin()">이미 계정 있어요</button>
+                        </div>
+                    </div>
+                    <div id="account-signed-in" style="display:none">
+                        <div class="auth-account-tag" id="account-tag-signed">@—</div>
+                        <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;line-height:1.45">로그인됨 · 플레이볼(:5174)과 계정은 따로입니다</p>
+                        <button type="button" class="auth-btn secondary" onclick="logoutAuth()">로그아웃</button>
+                    </div>
+                    <div class="auth-err" id="auth-err"></div>
+                </section>
                 <section class="panel wallet-panel" id="wallet-panel">
                     <div class="story-card" id="yas-story">
                         <div class="story-card-badge">MY YASDAQ</div>
                         <div class="story-card-head" id="yas-story-head">오늘 야스닥 뭐 삼?</div>
                         <div class="story-card-sub" id="yas-story-sub">종목 고르고 된다/안 된다 한 방</div>
+                        <div class="share-row">
+                            <button type="button" class="share-chip" onclick="shareMyYasdaq()">🔗 내 픽 공유</button>
+                            <button type="button" class="share-chip" onclick="shareInviteLink()">초대 링크</button>
+                        </div>
                     </div>
                     <div class="wallet-head">
                         <div>
@@ -1716,11 +1783,12 @@
                             <div class="wallet-equity" id="wallet-equity">—</div>
                             <div class="wallet-sub" id="wallet-sub">계정 연결 중…</div>
                         </div>
-                        <div class="rank-badge" id="rank-badge" style="display:none">
+                        <div class="rank-badge" id="rank-badge" style="display:none" onclick="shareMyYasdaq()" title="탭해서 공유">
                             <span class="rank-num" id="rank-num">—</span>
                             <span class="rank-of" id="rank-of">위</span>
                         </div>
                     </div>
+                    <div class="rank-fomo" id="rank-fomo"></div>
                     <div class="return-bar-wrap">
                         <div class="return-bar-head">
                             <span id="wallet-week-label">이번 주 수익률</span>
@@ -1747,9 +1815,10 @@
                     <div class="ops-crown" id="ops-crown" style="display:none">👑 OPS 왕</div>
                     <div id="team-titles"></div>
                     <div class="wallet-nick">
-                        <label for="user-id">표시 이름</label>
+                        <div class="auth-account-tag" id="account-tag">@—</div>
+                        <label for="user-id">표시 이름 (닉과 다르게 가능)</label>
                         <input class="field" id="user-id" value="" oninput="updateNickHint()" onblur="onDisplayNameBlur()" placeholder="랭킹·피드에 보이는 이름">
-                        <div class="nick-hint" id="nick-hint">10만 P 자동 · 이름은 <strong>칸 밖 클릭</strong>하면 저장 · <a href="#" onclick="openAccountGuide(); return false;" style="color:#fde68a">계정</a></div>
+                        <div class="nick-hint" id="nick-hint">로그인 없이도 둘러볼 수 있어요 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a></div>
                     </div>
                 </section>
 
@@ -1783,16 +1852,16 @@
                         <div class="guide-block" id="guide-account">
                             <div class="guide-h">처음 한 번만</div>
                             <ul class="guide-list">
-                                <li>열자마자 <strong>10만 P</strong> (가입 버튼 없음)</li>
-                                <li>표시 이름 → 입력 후 <strong>칸 밖 클릭</strong>해야 저장</li>
+                                <li>가입 시 <strong>닉네임 + PIN 4자리</strong></li>
+                                <li>로그인하면 <strong>10만 P</strong> · 다른 기기에서도 같은 계정</li>
+                                <li>표시 이름 → 입력 후 <strong>칸 밖 클릭</strong> 저장</li>
                             </ul>
                             <p class="guide-p" style="margin-top:8px">
                                 <a href="#" onclick="openAccountGuide(); return false;" style="color:var(--accent-neon)">계정 헷갈릴 때</a>
                             </p>
                             <ul class="guide-list hidden" id="guide-account-detail" style="margin-top:8px">
-                                <li>이 브라우저 = 내 지갑 (PIN 없음)</li>
-                                <li>시크릿·다른 브라우저 = 새 10만 P</li>
-                                <li>로컬만: 플레이볼(:5174)과 지갑 따로</li>
+                                <li>닉+PIN으로 로그인 · PIN 분실 시 새 가입 필요</li>
+                                <li>플레이볼(:5174)과 YASDAQ은 <strong>별도 가입</strong></li>
                             </ul>
                         </div>
                     </div>
@@ -1926,8 +1995,14 @@
         const SESSION_TOKEN_KEY = 'yamgu-session-token';
         const SESSION_ACCOUNT_KEY = 'yamgu-session-account';
         const DISPLAY_NAME_KEY = 'yamgu-display-name';
+        const NICKNAME_KEY = 'yamgu-nickname';
+        const WEEK_SEEN_KEY = 'yamgu-week-seen';
+        const YAS_SHARE_BASE = IS_LOCAL_DEV ? 'http://localhost:5173/stock/' : `${location.origin}/stock/`;
         let sessionReady = false;
+        let appBooted = false;
         let selectedId = 'lee-jung-hoo';
+        let pendingDeepInstrument = null;
+        let lastRank = null;
         let hub = null;
         let hubLoaded = false;
         let lineupOpen = true;
@@ -1946,6 +2021,85 @@
             el.textContent = msg;
             el.classList.add('show');
             setTimeout(() => el.classList.remove('show'), 2200);
+        }
+
+        function buildYasShareUrl(instrumentId) {
+            const id = instrumentId || selectedId;
+            return `${YAS_SHARE_BASE}?instrument=${encodeURIComponent(id)}`;
+        }
+
+        function yasShareText(instrumentId) {
+            const inst = hub?.instruments?.find(i => i.id === (instrumentId || selectedId));
+            const name = inst?.name || '선수';
+            const chg = inst?.changePct != null ? `${inst.changePct >= 0 ? '+' : ''}${inst.changePct.toFixed(1)}%` : '';
+            const me = hub?.me;
+            const rank = me?.rank ? ` · 내 순위 ${me.rank}위` : '';
+            const live = hub?.liveCount ? ` · ${hub.liveCount}명 접속` : '';
+            return `⚾ YASDAQ에서 ${name} ${chg} — KBO 가상주식 같이 볼래?${rank}${live}`;
+        }
+
+        async function shareOut(text, url) {
+            const full = `${text}\n${url}`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: 'YASDAQ', text, url });
+                    toast('공유했어요');
+                    return;
+                } catch (e) {
+                    if (e?.name === 'AbortError') return;
+                }
+            }
+            try {
+                await navigator.clipboard.writeText(full);
+                toast('링크 복사됨 — 카톡에 붙여넣기');
+            } catch {
+                prompt('아래 링크를 복사해서 공유하세요', full);
+            }
+        }
+
+        function shareMyYasdaq() {
+            shareOut(yasShareText(), buildYasShareUrl());
+        }
+
+        function shareInviteLink() {
+            shareOut('⚾ YASDAQ · KBO 선수 가상주식 거래소. 무료로 시작해요!', YAS_SHARE_BASE);
+        }
+
+        function showSharePrompt(text) {
+            const el = document.getElementById('share-prompt');
+            const msg = document.getElementById('share-prompt-text');
+            if (!el || !msg) return;
+            msg.textContent = text;
+            el.classList.add('show');
+        }
+
+        function dismissSharePrompt() {
+            document.getElementById('share-prompt')?.classList.remove('show');
+        }
+
+        function collectInstrumentIds() {
+            const ids = new Set();
+            if (hub?.featuredId) ids.add(hub.featuredId);
+            (hub?.memes || []).forEach(m => ids.add(m.id));
+            (lineupCache || []).forEach(i => ids.add(i.id));
+            return ids;
+        }
+
+        async function maybeApplyDeepLink() {
+            const q = pendingDeepInstrument || new URLSearchParams(location.search).get('instrument');
+            if (!q || !collectInstrumentIds().has(q)) return;
+            pendingDeepInstrument = null;
+            await selectStock(q);
+            toast('친구 링크로 들어왔어요 — 같이 볼 종목');
+        }
+
+        function maybeWeeklyToast() {
+            const label = hub?.me?.weekLabel;
+            if (!label) return;
+            const seen = localStorage.getItem(WEEK_SEEN_KEY);
+            if (seen === label) return;
+            localStorage.setItem(WEEK_SEEN_KEY, label);
+            toast(`📅 ${label} · 이번 주 순위가 리셋됐어요`);
         }
 
         function yasHaptic(pattern = [12, 24, 12]) {
@@ -2054,45 +2208,170 @@
             return data.displayName;
         }
 
-        async function ensureSession() {
-            const token = localStorage.getItem(SESSION_TOKEN_KEY);
-            if (token) {
-                try {
-                    const res = await fetch(`${API}/amm/auth/me`, {
-                        headers: authHeaders(false),
-                        signal: AbortSignal.timeout(12000),
-                    });
-                    if (res.ok) {
-                        const me = await res.json();
-                        localStorage.setItem(SESSION_ACCOUNT_KEY, me.accountId);
-                        localStorage.setItem(DISPLAY_NAME_KEY, me.displayName);
-                        applyDisplayName(me.displayName);
-                        sessionReady = true;
-                        return me;
-                    }
-                } catch (_) {}
-            }
-            const res = await fetch(`${API}/amm/auth/bootstrap`, {
-                method: 'POST',
-                headers: authHeaders(),
-                body: JSON.stringify({ deviceId: getDeviceId() }),
-                signal: AbortSignal.timeout(12000),
-            });
-            let data = {};
-            try { data = await res.json(); } catch (_) {}
-            if (!res.ok) throw new Error(data.message || '계정 생성 실패');
+        function applySession(data) {
             localStorage.setItem(SESSION_TOKEN_KEY, data.token);
             localStorage.setItem(SESSION_ACCOUNT_KEY, data.accountId);
             localStorage.setItem(DISPLAY_NAME_KEY, data.displayName);
+            if (data.nickname) localStorage.setItem(NICKNAME_KEY, data.nickname);
             applyDisplayName(data.displayName);
+            const tag = document.getElementById('account-tag');
+            if (tag) tag.textContent = '@' + (data.nickname || data.displayName);
+            const tagSigned = document.getElementById('account-tag-signed');
+            if (tagSigned) tagSigned.textContent = '@' + (data.nickname || data.displayName);
             sessionReady = true;
+            updateNickHint();
+            renderAccountPanel();
+        }
+
+        function renderAccountPanel() {
+            const signedOut = document.getElementById('account-signed-out');
+            const signedIn = document.getElementById('account-signed-in');
+            const panel = document.getElementById('account-panel');
+            if (!signedOut || !signedIn) return;
+            if (sessionReady) {
+                signedOut.style.display = 'none';
+                signedIn.style.display = '';
+                if (panel) panel.classList.add('compact');
+            } else {
+                signedOut.style.display = '';
+                signedIn.style.display = 'none';
+                if (panel) panel.classList.remove('compact');
+            }
+        }
+
+        function openAccountPanel() {
+            const saved = localStorage.getItem(NICKNAME_KEY);
+            const nick = document.getElementById('auth-nickname');
+            if (nick && saved && !nick.value) nick.value = saved;
+            document.getElementById('account-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function showAuthGate() {
+            openAccountPanel();
+        }
+
+        function hideAuthGate() {}
+
+        function logoutAuth() {
+            localStorage.removeItem(SESSION_TOKEN_KEY);
+            localStorage.removeItem(SESSION_ACCOUNT_KEY);
+            sessionReady = false;
+            lastEquity = null;
+            renderAccountPanel();
+            updateNickHint();
+            renderWallet(null);
+            toast('로그아웃됨 · 종목·경기는 계속 볼 수 있어요');
+            refresh();
+        }
+
+        function showAuthRegister() {
+            document.getElementById('auth-login-panel').style.display = 'none';
+            document.getElementById('auth-register-panel').style.display = '';
+            document.getElementById('auth-err').textContent = '';
+        }
+
+        function showAuthLogin() {
+            document.getElementById('auth-register-panel').style.display = 'none';
+            document.getElementById('auth-login-panel').style.display = '';
+            document.getElementById('auth-err').textContent = '';
+        }
+
+        function setAuthErr(msg) {
+            document.getElementById('auth-err').textContent = msg || '';
+        }
+
+        async function submitAuthLogin() {
+            const nickname = document.getElementById('auth-nickname').value.trim();
+            const pin = document.getElementById('auth-pin').value;
+            setAuthErr('');
             try {
-                const legacyNick = localStorage.getItem(NICK_KEY);
-                if (legacyNick && legacyNick !== 'guest' && /^팬/.test(data.displayName)) {
-                    await saveDisplayName(legacyNick);
-                }
-            } catch (_) {}
-            return data;
+                const res = await fetch(`${API}/amm/auth/login`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ nickname, pin, deviceId: getDeviceId() }),
+                    signal: AbortSignal.timeout(12000),
+                });
+                let data = {};
+                try { data = await res.json(); } catch (_) {}
+                if (!res.ok) throw new Error(data.message || '로그인 실패');
+                applySession(data);
+                toast(`@${data.nickname || nickname} 로그인됨`);
+                await bootApp();
+                refresh();
+            } catch (e) {
+                setAuthErr(e.message || '로그인 실패');
+            }
+        }
+
+        async function submitAuthRegister() {
+            const nickname = document.getElementById('auth-reg-nick').value.trim();
+            const pin = document.getElementById('auth-reg-pin').value;
+            const pin2 = document.getElementById('auth-reg-pin2').value;
+            setAuthErr('');
+            if (pin !== pin2) {
+                setAuthErr('PIN 확인이 일치하지 않아요');
+                return;
+            }
+            try {
+                const res = await fetch(`${API}/amm/auth/register`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ nickname, pin, deviceId: getDeviceId() }),
+                    signal: AbortSignal.timeout(12000),
+                });
+                let data = {};
+                try { data = await res.json(); } catch (_) {}
+                if (!res.ok) throw new Error(data.message || '가입 실패');
+                applySession(data);
+                toast(`@${nickname} 가입 · 10만 P`);
+                await bootApp();
+                refresh();
+            } catch (e) {
+                setAuthErr(e.message || '가입 실패');
+            }
+        }
+
+        async function tryRestoreSession() {
+            const token = localStorage.getItem(SESSION_TOKEN_KEY);
+            if (!token) return false;
+            try {
+                const res = await fetch(`${API}/amm/auth/me`, {
+                    headers: authHeaders(false),
+                    signal: AbortSignal.timeout(12000),
+                });
+                if (!res.ok) return false;
+                const me = await res.json();
+                localStorage.setItem(SESSION_ACCOUNT_KEY, me.accountId);
+                localStorage.setItem(DISPLAY_NAME_KEY, me.displayName);
+                if (me.nickname) localStorage.setItem(NICKNAME_KEY, me.nickname);
+                applyDisplayName(me.displayName);
+                const tag = document.getElementById('account-tag');
+                if (tag) tag.textContent = '@' + (me.nickname || me.displayName);
+                const tagSigned = document.getElementById('account-tag-signed');
+                if (tagSigned) tagSigned.textContent = '@' + (me.nickname || me.displayName);
+                sessionReady = true;
+                updateNickHint();
+                renderAccountPanel();
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        async function bootApp() {
+            if (appBooted) return;
+            appBooted = true;
+            refresh();
+            setInterval(refresh, 30000);
+        }
+
+        async function ensureSession() {
+            if (sessionReady) return { accountId: accountId() };
+            const ok = await tryRestoreSession();
+            if (ok) return { accountId: accountId() };
+            openAccountPanel();
+            toast('왼쪽 로그인 패널에서 가입·로그인해 주세요');
+            throw new Error('로그인이 필요합니다');
         }
 
         function accountId() {
@@ -2111,7 +2390,8 @@
 
         function ensureUserNick() {
             if (!sessionReady) {
-                toast('계정 준비 중… 잠시 후 다시 시도해 주세요');
+                toast('베팅하려면 왼쪽에서 로그인해 주세요');
+                openAccountPanel();
                 return false;
             }
             return true;
@@ -2120,9 +2400,10 @@
         function updateNickHint() {
             const hint = document.getElementById('nick-hint');
             if (hint) {
+                const nick = localStorage.getItem(NICKNAME_KEY);
                 hint.innerHTML = sessionReady
-                    ? '10만 P · 이름은 <strong>칸 밖 클릭</strong> 저장 · <a href="#" onclick="openAccountGuide(); return false;" style="color:#fde68a">계정</a>'
-                    : '계정 연결 중…';
+                    ? `@${nick || '—'} · 10만 P · <a href="#" onclick="openAccountGuide(); return false;" style="color:#fde68a">계정</a>`
+                    : '로그인 없이도 둘러볼 수 있어요 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a>';
             }
         }
 
@@ -2171,7 +2452,7 @@
             if (!me) {
                 document.getElementById('wallet-sub').textContent = sessionReady
                     ? '지갑 불러오는 중…'
-                    : '계정 연결 중…';
+                    : '로그인하면 10만 P · 베팅·랭킹';
                 document.getElementById('rank-badge').style.display = 'none';
                 document.getElementById('ops-crown').style.display = 'none';
                 document.getElementById('team-titles').innerHTML = '';
@@ -2212,6 +2493,40 @@
             } else {
                 rankBadge.style.display = 'none';
             }
+
+            const fomoEl = document.getElementById('rank-fomo');
+            if (fomoEl) {
+                fomoEl.onclick = null;
+                if (me.rank != null && me.rank > 10 && hub?.leaderboard?.rankings?.length >= 10) {
+                    const tenth = hub.leaderboard.rankings.find(r => r.rank === 10)
+                        || hub.leaderboard.rankings[9];
+                    const gap = tenth?.currentEquity != null && me.equity != null
+                        ? Math.max(0, tenth.currentEquity - me.equity)
+                        : 0;
+                    if (gap > 0) {
+                        fomoEl.innerHTML =
+                            `TOP10까지 <strong>${gap.toLocaleString()}P</strong> · 탭해서 공유하고 따라잡기`;
+                        fomoEl.style.display = '';
+                        fomoEl.onclick = shareMyYasdaq;
+                    } else {
+                        fomoEl.textContent = '';
+                        fomoEl.style.display = 'none';
+                    }
+                } else if (me.rank != null && me.rank <= 3) {
+                    fomoEl.textContent = '🏆 TOP3 — 친구 초대해서 자랑해요';
+                    fomoEl.style.display = '';
+                    fomoEl.onclick = shareMyYasdaq;
+                } else if (me.rank != null && me.rank <= 10) {
+                    fomoEl.textContent = `TOP10 ${me.rank}위 — 유지 중 💪`;
+                    fomoEl.style.display = '';
+                } else {
+                    fomoEl.textContent = '';
+                    fomoEl.style.display = 'none';
+                }
+            }
+
+            if (me.rank !== lastRank && me.rank != null) lastRank = me.rank;
+            maybeWeeklyToast();
 
             document.getElementById('ops-crown').style.display =
                 me.isOpsKing ? '' : 'none';
@@ -2318,84 +2633,6 @@
                     <span>${o ? `@${(o.displayName || o.userId).slice(0, 10)}<span class="owner-badge">구단주 ${o.stakePct}%</span>` : '탭해서 베팅 →'}</span>
                 </button>`;
             }).join('');
-        }
-
-        const BOOT_MSGS = [
-            '야스닥 개장 준비 중...',
-            '전광판 호가 세팅 중...',
-            '프리마켓 종목 상장 중...',
-            'KBO 공시 크롤러 기상 중...',
-            'Render 서버 기상 중 — 잠만 기다려!',
-        ];
-        const BOOT_QUIZZES = [
-            'YASDAQ = NASDAQ + 야구 — 「너 오늘 야스닥 뭐 삼?」',
-            'KBO는 월요일 경기 없음 → 그날은 찌라시·프리마켓 장!',
-            '「안 된다」 베팅 = 숏(공매도) — 라이벌 슬럼프에 올인 ㄱㄱ',
-            '무료 호스팅 sleep 후 첫 접속은 30초 걸릴 수 있어요 — 아래 퀴즈 읽고 기다리기 ㄱㄱ',
-        ];
-        const BOOT_MIN_MS = 2200;
-        let bootTick = 0;
-
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-        function isPageReload() {
-            return performance.getEntriesByType('navigation')[0]?.type === 'reload';
-        }
-
-        async function bootAppFast() {
-            finishBoot(false);
-            try {
-                await ensureSession();
-                await refresh();
-            } catch (_) {
-                document.getElementById('boot-error').classList.add('show');
-            }
-        }
-
-        function updateBootUi(startMs) {
-            document.getElementById('boot-msg').textContent =
-                BOOT_MSGS[bootTick % BOOT_MSGS.length];
-            document.getElementById('boot-quiz').textContent =
-                BOOT_QUIZZES[bootTick % BOOT_QUIZZES.length];
-            const sec = Math.max(1, Math.round((Date.now() - startMs) / 1000));
-            document.getElementById('boot-timer').textContent =
-                `서버 깨우는 중… ${sec}초 · Render sleep이면 최대 1분`;
-            bootTick++;
-        }
-
-        function finishBoot(showError) {
-            const screen = document.getElementById('boot-screen');
-            screen.classList.add('hide');
-            document.body.classList.remove('boot-lock');
-            document.getElementById('boot-error').classList.toggle('show', !!showError);
-        }
-
-        async function wakeServer() {
-            const screen = document.getElementById('boot-screen');
-            const started = Date.now();
-            screen.classList.remove('hide');
-            document.body.classList.add('boot-lock');
-            updateBootUi(started);
-            for (let attempt = 0; attempt < 30; attempt++) {
-                if (attempt > 0) updateBootUi(started);
-                try {
-                    await ensureSession();
-                    const res = await fetch(`${API}/amm/health`, {
-                        signal: AbortSignal.timeout(12000),
-                    });
-                    if (res.ok) {
-                        const data = await res.json().catch(() => ({}));
-                        if (data.ok === false) throw new Error('warming');
-                        const wait = BOOT_MIN_MS - (Date.now() - started);
-                        if (wait > 0) await sleep(wait);
-                        finishBoot(false);
-                        await refresh();
-                        return;
-                    }
-                } catch (_) {}
-                await sleep(2000);
-            }
-            finishBoot(true);
         }
 
         function renderLeaderboard(lb, me) {
@@ -2743,9 +2980,21 @@
             setSyncStatus(true, '연결됨');
             const hubData = await hubRes.json();
             const lineup = lineupRes?.ok ? await lineupRes.json() : lineupCache;
+            let memes = hubData.memes || [];
+            if (!memes.length) {
+                try {
+                    const memeRes = await fetch(`${API}/amm/memes`);
+                    if (memeRes.ok) {
+                        const memeData = await memeRes.json();
+                        memes = memeData.items || [];
+                    }
+                } catch (_) {}
+            }
+            hubData.memes = memes;
             renderHub(hubData);
             renderLineup(lineup);
-            renderMemes(hubData.memes || []);
+            renderMemes(memes);
+            await maybeApplyDeepLink();
             await loadSpark(selectedId);
 
             if (syncRes?.ok) {
@@ -2822,6 +3071,7 @@
                     : inst?.noBet && side === 'short' ? inst.noBet
                     : side === 'long' ? '된다' : '안된다';
                 toast(`@${displayName()} · 「${label}」 ${qty}주 박음 🔥`);
+                showSharePrompt(`「${label}」 ${qty}주 — 단톡에 자랑 ㄱㄱ`);
                 refresh();
             } catch (_) {
                 toast('베팅 실패 ㅠㅠ');
@@ -2948,7 +3198,15 @@
             }
         });
 
+        document.getElementById('share-prompt-go')?.addEventListener('click', () => {
+            dismissSharePrompt();
+            shareMyYasdaq();
+        });
+        document.getElementById('share-prompt-x')?.addEventListener('click', dismissSharePrompt);
+
         try {
+            const deepInst = new URLSearchParams(location.search).get('instrument');
+            if (deepInst) pendingDeepInstrument = deepInst;
             if (localStorage.getItem('guide-collapsed') === '1') {
                 document.getElementById('guide-body').classList.add('collapsed');
                 document.getElementById('guide-toggle').textContent = '펼치기';
@@ -2962,8 +3220,11 @@
         } catch (_) {}
 
         setInterval(refresh, 30000);
-        if (isPageReload()) bootAppFast();
-        else wakeServer();
+        (async () => {
+            await bootApp();
+            await tryRestoreSession();
+            renderAccountPanel();
+        })();
     </script>
 </body>
 

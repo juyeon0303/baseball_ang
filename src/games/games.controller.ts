@@ -4,6 +4,7 @@ import { GamesRecapService } from './games-recap.service';
 import { GamesSyncService } from './games-sync.service';
 import { GameLiveService } from './game-live.service';
 import { GamesService } from './games.service';
+import { RelaySyncService } from './relay-sync.service';
 import { SentimentVoteKind } from './game-live.types';
 
 @Controller('amm/games')
@@ -13,6 +14,7 @@ export class GamesController {
     private readonly sync: GamesSyncService,
     private readonly live: GameLiveService,
     private readonly recap: GamesRecapService,
+    private readonly relay: RelaySyncService,
   ) {}
 
   @Get('today')
@@ -54,6 +56,15 @@ export class GamesController {
       snapshot,
       featured: this.games.getTodayFeatured(),
     };
+  }
+
+  @Get(':gameId/relay')
+  async getRelay(@Param('gameId') gameId: string) {
+    const bundle = await this.relay.getGameRelay(gameId);
+    if (!bundle) {
+      throw new BadRequestException('문자중계를 불러올 수 없습니다.');
+    }
+    return bundle;
   }
 
   @Get(':gameId/wpa')
