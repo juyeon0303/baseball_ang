@@ -33,12 +33,14 @@ export class MemoryMarketStoreService implements IMarketStore {
 
   constructor(private readonly pricing: PricingService) {
     for (const seed of ALL_INSTRUMENT_SEEDS) {
-      this.instruments.set(seed.id, this.seedToInstrument(seed));
-      this.pushPriceSnapshot(seed.id);
+      const inst = this.seedToInstrument(seed);
+      this.instruments.set(seed.id, inst);
+      this.seedPriceHistory(seed.id, inst);
     }
     for (const meme of MEME_STOCKS) {
-      this.instruments.set(meme.id, this.memeToInstrument(meme));
-      this.pushPriceSnapshot(meme.id);
+      const inst = this.memeToInstrument(meme);
+      this.instruments.set(meme.id, inst);
+      this.seedPriceHistory(meme.id, inst);
     }
   }
 
@@ -128,6 +130,36 @@ export class MemoryMarketStoreService implements IMarketStore {
     const updated = this.updateInstrument(id, { fairPrice, price });
     this.pushPriceSnapshot(id);
     return updated;
+  }
+
+  private seedPriceHistory(
+    instrumentId: string,
+    inst: InstrumentState,
+  ): void {
+    const points = 30;
+    const history: PriceSnapshot[] = [];
+    const target = inst.price;
+    let p = Math.round(target * (0.96 + Math.random() * 0.04));
+    const baseTime = Date.parse(inst.updatedAt) || Date.now();
+    for (let i = points - 1; i >= 0; i--) {
+      if (i === 0) {
+        p = target;
+      } else {
+        const step = (target - p) / (i + 1);
+        p = Math.max(
+          100,
+          Math.round(p + step + (Math.random() - 0.5) * target * 0.006),
+        );
+      }
+      history.push({
+        at: new Date(baseTime - i * 20 * 60 * 1000).toISOString(),
+        price: p,
+        fairPrice: inst.fairPrice,
+        oracleValue: inst.oracleValue,
+        sentiment: inst.sentiment,
+      });
+    }
+    this.priceHistory.set(instrumentId, history);
   }
 
   private pushPriceSnapshot(instrumentId: string): void {

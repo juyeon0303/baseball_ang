@@ -1,4 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  HitterSeasonStats,
+  PitcherSeasonStats,
+} from '../games/player-stats.types';
 
 const KBO_UA =
   'Mozilla/5.0 (compatible; BaseballStockBot/1.0; +kbo-oracle-sync)';
@@ -61,16 +65,65 @@ export class KboRecordProvider {
   }
 
   async fetchPitcherEra(playerId: number): Promise<KboPlayerStatRow | null> {
+    const stats = await this.fetchPitcherSeasonStats(playerId);
+    if (stats?.era == null) return null;
+    return {
+      playerName: stats.playerName ?? '',
+      team: stats.team,
+      era: stats.era,
+      source: 'kbo_official',
+      fetchedAt: stats.fetchedAt,
+    };
+  }
+
+  async fetchHitterSeasonStats(
+    playerId: number,
+  ): Promise<(HitterSeasonStats & { playerName?: string; team?: string; fetchedAt: string }) | null> {
+    const html = await this.fetchHtml(
+      `https://www.koreabaseball.com/Record/Player/HitterDetail/Basic.aspx?playerId=${playerId}`,
+    );
+    const row = this.parseSeasonRow(html, '출루율+장타율');
+    if (!row) return null;
+    return {
+      playerName: this.parsePlayerName(html),
+      team: this.parseTeamCode(html),
+      avg: this.num(row, 'AVG', 'HRA_RT'),
+      ops: this.num(row, 'OPS'),
+      hr: this.int(row, 'HR'),
+      rbi: this.int(row, 'RBI'),
+      sb: this.int(row, 'SB'),
+      games: this.int(row, 'G', 'GAME_CN'),
+      ab: this.int(row, 'AB'),
+      hits: this.int(row, 'H'),
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+
+  async fetchPitcherSeasonStats(
+    playerId: number,
+  ): Promise<(PitcherSeasonStats & { playerName?: string; team?: string; fetchedAt: string }) | null> {
     const html = await this.fetchHtml(
       `https://www.koreabaseball.com/Record/Player/PitcherDetail/Basic.aspx?playerId=${playerId}`,
     );
-    const era = this.parseSeasonEra(html);
-    if (era == null) return null;
+    const row = this.parseSeasonRow(html, '평균자책');
+    if (!row) return null;
+    const ip = this.parseInnings(row['IP'] ?? '0');
+    const bb = this.int(row, 'BB') ?? 0;
+    const so = this.int(row, 'SO', 'KK') ?? 0;
+    const whip =
+      ip > 0 && bb >= 0
+        ? Math.round(((bb + (this.int(row, 'H') ?? 0)) / ip) * 1000) / 1000
+        : undefined;
     return {
-      playerName: this.parsePlayerName(html) ?? '',
+      playerName: this.parsePlayerName(html),
       team: this.parseTeamCode(html),
-      era,
-      source: 'kbo_official',
+      era: this.num(row, 'ERA'),
+      ip,
+      w: this.int(row, 'W'),
+      l: this.int(row, 'L'),
+      so,
+      bb,
+      whip,
       fetchedAt: new Date().toISOString(),
     };
   }
@@ -99,20 +152,8 @@ export class KboRecordProvider {
   }
 
   private parseSeasonOps(html: string): number | null {
-    for (const table of this.extractTables(html)) {
-      if (!table.includes('출루율+장타율') || table.includes('최근 10경기')) {
-        continue;
-      }
-      const ths = this.extractThLabels(table);
-      const opsIdx = ths.findIndex((h) => h === 'OPS');
-      if (opsIdx < 0) continue;
-      const cells = this.firstRowCells(table);
-      if (cells && cells.length > opsIdx) {
-        const v = parseFloat(cells[opsIdx]);
-        return Number.isFinite(v) ? v : null;
-      }
-    }
-    return null;
+    const row = this.parseSeasonRow(html, '출루율+장타율');
+    return row ? (this.num(row, 'OPS') ?? null) : null;
   }
 
   private parsePitcherSeasonLine(html: string): KboPitcherSeasonLine | null {
@@ -168,23 +209,44 @@ export class KboRecordProvider {
   }
 
   private parseSeasonEra(html: string): number | null {
+    const row = this.parseSeasonRow(html, '평균자책');
+    return row ? (this.num(row, 'ERA') ?? null) : null;
+  }
+
+  private parseSeasonRow(
+    html: string,
+    marker: string,
+  ): Record<string, string> | null {
     for (const table of this.extractTables(html)) {
-      if (
-        (!table.includes('평균자책') && !table.includes('>ERA<')) ||
-        table.includes('최근 10경기')
-      ) {
+      if (!table.includes(marker) || table.includes('최근 10경기')) {
         continue;
       }
       const ths = this.extractThLabels(table);
-      const eraIdx = ths.findIndex((h) => h === 'ERA');
-      if (eraIdx < 0) continue;
       const cells = this.firstRowCells(table);
-      if (cells && cells.length > eraIdx) {
-        const v = parseFloat(cells[eraIdx]);
-        return Number.isFinite(v) ? v : null;
-      }
+      if (!cells?.length || ths.length !== cells.length) continue;
+      const row: Record<string, string> = {};
+      ths.forEach((label, i) => {
+        row[label] = cells[i];
+      });
+      return row;
     }
     return null;
+  }
+
+  private num(row: Record<string, string>, ...keys: string[]): number | undefined {
+    for (const key of keys) {
+      const v = parseFloat(row[key] ?? '');
+      if (Number.isFinite(v)) return v;
+    }
+    return undefined;
+  }
+
+  private int(row: Record<string, string>, ...keys: string[]): number | undefined {
+    for (const key of keys) {
+      const v = parseInt(row[key] ?? '', 10);
+      if (Number.isFinite(v)) return v;
+    }
+    return undefined;
   }
 
   private extractTables(html: string): string[] {

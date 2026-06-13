@@ -324,7 +324,34 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
 
   private async ensurePriceSnapshot(instrumentId: string): Promise<void> {
     const n = await this.snapshotRepo.count({ where: { instrumentId } });
-    if (n === 0) await this.pushPriceSnapshot(instrumentId);
+    if (n === 0) await this.seedPriceHistory(instrumentId);
+  }
+
+  private async seedPriceHistory(instrumentId: string): Promise<void> {
+    const inst = await this.getInstrument(instrumentId);
+    const points = 30;
+    const target = inst.price;
+    let p = Math.round(target * (0.96 + Math.random() * 0.04));
+    const rows: PriceSnapshotEntity[] = [];
+    for (let i = points - 1; i >= 0; i--) {
+      if (i === 0) {
+        p = target;
+      } else {
+        const step = (target - p) / (i + 1);
+        p = Math.max(
+          100,
+          Math.round(p + step + (Math.random() - 0.5) * target * 0.006),
+        );
+      }
+      const row = new PriceSnapshotEntity();
+      row.instrumentId = instrumentId;
+      row.price = p;
+      row.fairPrice = inst.fairPrice;
+      row.oracleValue = inst.oracleValue;
+      row.sentiment = inst.sentiment;
+      rows.push(row);
+    }
+    await this.snapshotRepo.save(rows);
   }
 
   private memeToEntity(seed: MemeStockSeed): InstrumentEntity {

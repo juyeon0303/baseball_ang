@@ -31,6 +31,8 @@ import { GamesSyncService } from './games/games-sync.service';
 import { GamesService } from './games/games.service';
 import { KboScoreProvider } from './games/kbo-score.provider';
 import { KboStandingsProvider } from './games/kbo-standings.provider';
+import { KboPlayerLookupProvider } from './games/kbo-player-lookup.provider';
+import { PlayerStatsService } from './games/player-stats.service';
 import { NaverRelayProvider } from './games/naver-relay.provider';
 import { RelaySyncService } from './games/relay-sync.service';
 import { DisclosureService } from './market/disclosure.service';
@@ -138,6 +140,8 @@ const usePostgres = process.env.STORAGE_MODE === 'postgres';
     PresenceService,
     KboScoreProvider,
     KboStandingsProvider,
+    KboPlayerLookupProvider,
+    PlayerStatsService,
     NaverRelayProvider,
     GamesService,
     GamesSyncService,

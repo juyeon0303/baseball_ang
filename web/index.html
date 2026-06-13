@@ -354,20 +354,58 @@
             color: var(--muted);
         }
 
-        .spark {
-            height: 36px;
+        .price-chart {
             margin-top: 14px;
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
         }
 
-        .spark span {
-            flex: 1;
-            background: var(--accent-soft);
-            border-radius: 2px 2px 0 0;
-            min-height: 4px;
-            transition: height 0.3s;
+        .price-chart-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .price-chart-meta {
+            font-size: 0.66rem;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+        }
+
+        .price-chart-meta .up {
+            color: var(--accent-neon);
+            font-weight: 700;
+        }
+
+        .price-chart-meta .down {
+            color: var(--down-neon);
+            font-weight: 700;
+        }
+
+        .price-chart-meta .chart-range {
+            margin-left: 6px;
+            color: var(--faint);
+            font-weight: 400;
+        }
+
+        .price-chart-svg {
+            width: 100%;
+            height: 92px;
+            display: block;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid var(--glass-border);
+        }
+
+        .price-chart.empty .price-chart-svg {
+            opacity: 0.45;
+        }
+
+        .price-chart-loading .price-chart-svg {
+            opacity: 0.35;
         }
 
         .crowd {
@@ -1401,6 +1439,124 @@
             margin-top: 2px;
         }
 
+        .wallet-holdings-panel {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .wallet-holdings-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .wallet-holdings-head .label {
+            margin: 0;
+        }
+
+        .wallet-holdings-sum {
+            font-size: 0.62rem;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .wallet-holdings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .holding-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.22);
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .holding-row:hover {
+            border-color: rgba(94, 234, 212, 0.35);
+            background: rgba(94, 234, 212, 0.06);
+        }
+
+        .holding-row.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.2);
+        }
+
+        .holding-row.just-added {
+            animation: dealPop 0.45s ease;
+        }
+
+        .holding-main {
+            min-width: 0;
+        }
+
+        .holding-name {
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .holding-team {
+            font-size: 0.62rem;
+            color: var(--faint);
+            margin-top: 1px;
+        }
+
+        .holding-side {
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        .holding-qty {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .holding-qty.yes { color: var(--accent-neon); }
+        .holding-qty.no { color: var(--down-neon); }
+
+        .holding-value {
+            font-size: 0.6rem;
+            color: var(--faint);
+            margin-top: 2px;
+        }
+
+        .wallet-holdings-empty {
+            font-size: 0.68rem;
+            color: var(--faint);
+            line-height: 1.45;
+            padding: 6px 2px;
+        }
+
+        .lineup-owned,
+        .meme-owned {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 0.58rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: rgba(45, 212, 191, 0.16);
+            color: var(--accent-neon);
+            vertical-align: middle;
+        }
+
         .ops-crown {
             display: inline-block;
             font-size: 0.62rem;
@@ -1817,6 +1973,13 @@
                             <span class="wallet-stat-lbl">주간 시작</span>
                         </div>
                     </div>
+                    <div class="wallet-holdings-panel" id="wallet-holdings-panel" style="display:none">
+                        <div class="wallet-holdings-head">
+                            <div class="label">내 보유</div>
+                            <span class="wallet-holdings-sum" id="wallet-holdings-sum"></span>
+                        </div>
+                        <div class="wallet-holdings-list" id="wallet-holdings-list"></div>
+                    </div>
                     <div class="ops-crown" id="ops-crown" style="display:none">👑 OPS 왕</div>
                     <div id="team-titles"></div>
                     <div class="wallet-nick">
@@ -1889,7 +2052,13 @@
                             <span class="hero-stat-val" id="hero-ops">—</span>
                             <span class="hero-stat-unit" id="hero-metric">OPS</span>
                         </div>
-                        <div class="spark" id="spark"></div>
+                        <div class="price-chart" id="price-chart">
+                            <div class="price-chart-head">
+                                <span class="label" style="margin:0">시세 추이</span>
+                                <span class="price-chart-meta" id="price-chart-meta">—</span>
+                            </div>
+                            <svg class="price-chart-svg" id="price-chart-svg" viewBox="0 0 320 120" preserveAspectRatio="none" role="img" aria-label="종목 시세 꺾은선 그래프"></svg>
+                        </div>
                         <div class="crowd">
                             <div class="label" style="margin-bottom:0">YES vs NO</div>
                             <div class="crowd-bar"><div class="crowd-long" id="crowd-long" style="width:50%"></div></div>
@@ -2013,6 +2182,8 @@
         let lineupOpen = false;
         let lineupCache = [];
         let lastEquity = null;
+        let lastHoldingsKey = '';
+        let myHoldings = [];
         let liveLineMeta = { count: 0, gameStatus: 'scheduled', instrumentName: '' };
         let orderBusy = false;
         document.getElementById('playball-link').href = PLAYBALL_URL;
@@ -2131,6 +2302,10 @@
             priceEl?.classList.remove('pop');
             void priceEl?.offsetWidth;
             priceEl?.classList.add('pop');
+            const holdStat = document.getElementById('wallet-holdings')?.closest('.wallet-stat');
+            holdStat?.classList.remove('pop');
+            void holdStat?.offsetWidth;
+            holdStat?.classList.add('pop');
             yasHaptic(side === 'long' ? [10, 30, 14] : [16, 40, 16]);
         }
 
@@ -2438,6 +2613,85 @@
             return (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
         }
 
+        function holdingSideLabel(h) {
+            const parts = [];
+            if (h.longShares > 0) parts.push(`YES ${h.longShares}주`);
+            if (h.shortShares > 0) parts.push(`NO ${h.shortShares}주`);
+            return parts.join(' · ') || '—';
+        }
+
+        function holdingsFingerprint(holdings) {
+            return (holdings || [])
+                .map(h => `${h.instrumentId}:${h.longShares}:${h.shortShares}`)
+                .sort()
+                .join('|');
+        }
+
+        function holdingBadgeText(h) {
+            const total = (h.longShares || 0) + (h.shortShares || 0);
+            if (total <= 0) return '';
+            if (h.longShares > 0 && !h.shortShares) return `보유 ${h.longShares}`;
+            if (h.shortShares > 0 && !h.longShares) return `NO ${h.shortShares}`;
+            return `보유 ${total}`;
+        }
+
+        function renderWalletHoldings(me) {
+            const panel = document.getElementById('wallet-holdings-panel');
+            const listEl = document.getElementById('wallet-holdings-list');
+            const sumEl = document.getElementById('wallet-holdings-sum');
+            if (!panel || !listEl) return;
+
+            myHoldings = me?.holdings || [];
+            if (!me) {
+                panel.style.display = 'none';
+                listEl.innerHTML = '';
+                if (sumEl) sumEl.textContent = '';
+                lastHoldingsKey = '';
+                return;
+            }
+
+            const holdings = myHoldings;
+            const fp = holdingsFingerprint(holdings);
+            const grew = fp !== lastHoldingsKey && lastHoldingsKey !== '' && fp.length >= lastHoldingsKey.length;
+            lastHoldingsKey = fp;
+
+            const totalShares = holdings.reduce(
+                (n, h) => n + (h.longShares || 0) + (h.shortShares || 0), 0,
+            );
+            const totalValue = holdings.reduce((n, h) => n + (h.value || 0), 0);
+
+            if (!holdings.length) {
+                panel.style.display = '';
+                if (sumEl) sumEl.textContent = '';
+                listEl.innerHTML =
+                    '<div class="wallet-holdings-empty">아직 보유 종목이 없어요.<br>YES / NO 베팅하면 여기에 쌓입니다.</div>';
+                return;
+            }
+
+            panel.style.display = '';
+            if (sumEl) {
+                sumEl.textContent =
+                    `${holdings.length}종목 · ${totalShares}주 · ${Math.round(totalValue).toLocaleString()}P`;
+            }
+
+            listEl.innerHTML = holdings.map(h => {
+                const sideCls = h.shortShares > 0 && !h.longShares ? 'no' : 'yes';
+                const active = h.instrumentId === selectedId ? ' active' : '';
+                const pulse = grew ? ' just-added' : '';
+                const safeId = String(h.instrumentId).replace(/'/g, "\\'");
+                return `<button type="button" class="holding-row${active}${pulse}" onclick="selectStock('${safeId}')">
+                    <span class="holding-main">
+                        <span class="holding-name">${h.playerName}</span>
+                        <span class="holding-team">${h.teamShort}${h.kind === 'meme' ? ' · 밈' : ''}</span>
+                    </span>
+                    <span class="holding-side">
+                        <span class="holding-qty ${sideCls}">${holdingSideLabel(h)}</span>
+                        <span class="holding-value">${Math.round(h.value || 0).toLocaleString()}P</span>
+                    </span>
+                </button>`;
+            }).join('');
+        }
+
         function animateEquity(target) {
             const el = document.getElementById('wallet-equity');
             const start = lastEquity == null ? target : lastEquity;
@@ -2469,6 +2723,7 @@
                 document.getElementById('rank-badge').style.display = 'none';
                 document.getElementById('ops-crown').style.display = 'none';
                 document.getElementById('team-titles').innerHTML = '';
+                renderWalletHoldings(null);
                 return;
             }
             animateEquity(me.equity);
@@ -2481,9 +2736,10 @@
             document.getElementById('wallet-cash').textContent =
                 (me.points ?? 0).toLocaleString();
             document.getElementById('wallet-holdings').textContent =
-                String(me.holdingsCount ?? 0);
+                String(me.holdingsCount ?? me.holdings?.length ?? 0);
             document.getElementById('wallet-start').textContent =
                 (me.startEquity ?? 0).toLocaleString();
+            renderWalletHoldings(me);
 
             const pct = Number(me.weeklyReturnPct) || 0;
             const pctEl = document.getElementById('wallet-return-pct');
@@ -2772,20 +3028,82 @@
                 : 'API 미연결 — 루트에서 npm run start:dev 를 실행하세요';
         }
 
-        function renderSpark(history) {
-            const el = document.getElementById('spark');
-            const prices = (history || []).map(h => h.price).slice(-24);
-            if (prices.length < 2) {
-                el.innerHTML = '';
+        function renderPriceChart(history) {
+            const wrap = document.getElementById('price-chart');
+            const svg = document.getElementById('price-chart-svg');
+            const meta = document.getElementById('price-chart-meta');
+            if (!wrap || !svg) return;
+
+            wrap.classList.remove('price-chart-loading');
+            const rows = (history || []).slice(-48);
+            if (!rows.length) {
+                wrap.classList.add('empty');
+                svg.innerHTML = '';
+                if (meta) meta.textContent = '시세 기록 수집 중';
                 return;
             }
+            wrap.classList.remove('empty');
+
+            let prices = rows.map(r => Number(r.price)).filter(Number.isFinite);
+            if (prices.length === 1) prices = [prices[0], prices[0]];
+
             const min = Math.min(...prices);
             const max = Math.max(...prices);
-            const range = max - min || 1;
-            el.innerHTML = prices.map(p => {
-                const h = 8 + Math.round(((p - min) / range) * 28);
-                return `<span style="height:${h}px"></span>`;
-            }).join('');
+            const pad = (max - min) * 0.1 || max * 0.02 || 50;
+            const yMin = min - pad;
+            const yMax = max + pad;
+            const w = 320;
+            const h = 120;
+            const left = 6;
+            const right = 6;
+            const top = 10;
+            const bottom = 12;
+            const plotW = w - left - right;
+            const plotH = h - top - bottom;
+            const denom = Math.max(1, prices.length - 1);
+
+            const coords = prices.map((p, i) => ({
+                x: left + (i / denom) * plotW,
+                y: top + (1 - (p - yMin) / (yMax - yMin)) * plotH,
+                p,
+            }));
+
+            const line = coords
+                .map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`)
+                .join(' ');
+            const last = coords[coords.length - 1];
+            const firstPt = coords[0];
+            const area = `${line} L${last.x.toFixed(1)},${(top + plotH).toFixed(1)} L${firstPt.x.toFixed(1)},${(top + plotH).toFixed(1)} Z`;
+
+            const first = prices[0];
+            const lastPrice = prices[prices.length - 1];
+            const ch = first > 0 ? ((lastPrice - first) / first) * 100 : 0;
+            const up = ch >= 0;
+            const stroke = up ? '#2dd4bf' : '#f87171';
+            const dot = up ? '#5eead4' : '#fca5a5';
+
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="priceChartFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${stroke}" stop-opacity="0.32"/>
+                        <stop offset="100%" stop-color="${stroke}" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d="${area}" fill="url(#priceChartFill)"/>
+                <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+                <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="3.2" fill="${dot}" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>
+            `;
+
+            if (meta) {
+                meta.innerHTML =
+                    `<span class="${up ? 'up' : 'down'}">${ch >= 0 ? '+' : ''}${ch.toFixed(1)}%</span>` +
+                    `<span class="chart-range">${Math.round(min).toLocaleString()}–${Math.round(max).toLocaleString()}P</span>`;
+            }
+        }
+
+        function setPriceChartLoading() {
+            const wrap = document.getElementById('price-chart');
+            wrap?.classList.add('price-chart-loading');
         }
 
         function renderDemoBanner(data) {
@@ -2868,6 +3186,8 @@
             renderOwners(data.shareholders);
             updateYasStrip(inst, data.session);
             renderYasdaqStory(data.me, inst);
+            if (lineupCache.length) renderLineup(lineupCache);
+            if (data.memes?.length) renderMemes(data.memes);
         }
 
         function renderLineup(items) {
@@ -2885,13 +3205,17 @@
                 const oracle = i.metric === 'era'
                     ? Number(i.oracleValue).toFixed(2)
                     : Number(i.oracleValue).toFixed(3);
+                const owned = myHoldings.find(h => h.instrumentId === i.instrumentId);
+                const ownedBadge = owned
+                    ? `<span class="lineup-owned">${holdingBadgeText(owned)}</span>`
+                    : '';
                 return `
                 <button type="button" class="lineup-item ${i.instrumentId === selectedId ? 'active' : ''}"
                      style="border-left: 3px solid ${i.accent || 'var(--accent)'}"
                      onclick="selectStock('${i.instrumentId}')">
                     <span class="lineup-team">${i.teamShort}</span>
                     <div>
-                        <div class="lineup-name">${i.playerName}</div>
+                        <div class="lineup-name">${i.playerName}${ownedBadge}</div>
                         <div class="lineup-meta">${metric} ${oracle}</div>
                     </div>
                     <span class="lineup-stat">
@@ -2921,12 +3245,17 @@
                     : '<div class="meta">밈 종목 불러오는 중…</div>';
                 return;
             }
-            el.innerHTML = rows.map((m, i) => `
+            el.innerHTML = rows.map((m, i) => {
+                const owned = myHoldings.find(h => h.instrumentId === m.id);
+                const ownedBadge = owned
+                    ? `<span class="meme-owned">${holdingBadgeText(owned)}</span>`
+                    : '';
+                return `
                 <div class="meme-item ${m.id === selectedId ? 'active' : ''}" role="button" tabindex="0"
                      style="--meme-accent:${m.accent || '#5eead4'}"
                      onclick="selectStock('${m.id}')"
                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectStock('${m.id}');}">
-                    <div class="meme-bet-cta">${m.betCta || betCta(m)}${i === 0 ? '<span class="meme-hot">HOT</span>' : ''}</div>
+                    <div class="meme-bet-cta">${m.betCta || betCta(m)}${ownedBadge}${i === 0 ? '<span class="meme-hot">HOT</span>' : ''}</div>
                     <div class="meme-narrative">${m.narrative || ''}</div>
                     <div class="meme-bet-btns">
                         <button type="button" class="yes" onclick="event.stopPropagation();quickBet('${m.id}','buy','long')">${m.yesBet || m.longThesis || 'YES'}</button>
@@ -2936,7 +3265,8 @@
                         <span>${m.metricLabel || '밈지수'}</span>
                         <strong>${fmtOracle(m)} · ${Number(m.price).toLocaleString()}P</strong>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
 
         async function loadMemes() {
@@ -2954,12 +3284,17 @@
             }
         }
 
-        async function loadSpark(instrumentId) {
+        async function loadPriceChart(instrumentId) {
+            if (!instrumentId) return;
+            setPriceChartLoading();
             try {
-                const res = await fetch(`${API}/amm/status?instrumentId=${instrumentId}`);
+                const res = await fetch(`${API}/amm/status?instrumentId=${encodeURIComponent(instrumentId)}`);
+                if (!res.ok) throw new Error('chart fail');
                 const data = await res.json();
-                renderSpark(data.priceHistory);
-            } catch (_) {}
+                renderPriceChart(data.priceHistory);
+            } catch (_) {
+                renderPriceChart([]);
+            }
         }
 
         async function refresh() {
@@ -3022,7 +3357,7 @@
             renderHub(hubData);
             renderMemes(memes);
             await maybeApplyDeepLink();
-            await loadSpark(selectedId);
+            await loadPriceChart(selectedId);
 
             if (syncRes?.ok) {
                 const sync = await syncRes.json();
@@ -3040,10 +3375,12 @@
 
         async function selectStock(instrumentId) {
             selectedId = instrumentId;
+            setPriceChartLoading();
             try {
-                const res = await fetch(`${API}/amm/market/${instrumentId}`);
+                const res = await fetch(`${API}/amm/market/${encodeURIComponent(instrumentId)}`);
                 if (!res.ok) {
                     toast('종목 정보를 불러오지 못했습니다');
+                    renderPriceChart([]);
                     return;
                 }
                 const inst = await res.json();
@@ -3057,12 +3394,14 @@
                 document.getElementById('hero-ops').textContent = fmtOracle(inst);
                 document.getElementById('hero-metric').textContent = inst.metricLabel;
                 renderBetCta(inst);
+                renderPriceChart(inst.priceHistory);
                 renderLineup(lineupCache);
                 if (hub?.memes) renderMemes(hub.memes);
-                await loadSpark(instrumentId);
+                if (hub?.me) renderWalletHoldings(hub.me);
                 toast(betCta(inst));
             } catch (_) {
                 toast('종목 정보를 불러오지 못했습니다');
+                renderPriceChart([]);
             }
         }
 
@@ -3097,7 +3436,7 @@
                 const label = inst?.yesBet && side === 'long' ? inst.yesBet
                     : inst?.noBet && side === 'short' ? inst.noBet
                     : side === 'long' ? 'YES' : 'NO';
-                toast(`@${displayName()} · ${label} ${qty}주`);
+                toast(`@${displayName()} · ${label} ${qty}주 · 내 보유에 반영됨`);
                 showSharePrompt(`${label} ${qty}주 — 공유해 보세요`);
                 refresh();
             } catch (_) {
@@ -3215,13 +3554,14 @@
             }
         });
         socket.on('priceUpdate', item => {
-            if (item.id !== selectedId && item.id !== hub?.featuredId) return;
+            if (item.id !== selectedId) return;
             document.getElementById('hero-price').textContent =
                 item.price.toLocaleString() + ' P';
             if (item.oracleValue != null && hub?.instrument) {
                 const probe = { ...hub.instrument, id: item.id, oracleValue: item.oracleValue };
                 document.getElementById('hero-ops').textContent = fmtOracle(probe);
             }
+            loadPriceChart(selectedId);
         });
 
         document.getElementById('share-prompt-go')?.addEventListener('click', () => {

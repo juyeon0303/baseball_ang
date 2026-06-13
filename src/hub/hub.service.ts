@@ -86,6 +86,16 @@ export class HubService {
       weekLabel: string;
       totalParticipants: number;
       holdingsCount: number;
+      holdings: Array<{
+        instrumentId: string;
+        teamShort: string;
+        playerName: string;
+        kind: 'player' | 'meme';
+        price: number;
+        longShares: number;
+        shortShares: number;
+        value: number;
+      }>;
       isOpsKing: boolean;
       teamTitles: Array<{ teamShort: string; stakePct: number }>;
     } | null = null;
@@ -101,6 +111,7 @@ export class HubService {
         weekLabel: port.weekLabel,
         totalParticipants: port.totalParticipants ?? leaderboard.totalParticipants ?? 0,
         holdingsCount: port.holdings.length,
+        holdings: port.holdings,
         isOpsKing: port.isOpsKing,
         teamTitles: shareholderBoard.myTitles,
       };

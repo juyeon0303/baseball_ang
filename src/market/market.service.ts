@@ -23,6 +23,7 @@ import {
   OrderResult,
   OrderSide,
   Position,
+  PriceSnapshot,
   TradeAction,
   UserWallet,
   UserWeekStat,
@@ -53,8 +54,16 @@ export class MarketService {
     );
   }
 
-  async getMarket(instrumentId: string): Promise<InstrumentState> {
-    return Promise.resolve(this.store.getInstrument(instrumentId));
+  async getMarket(instrumentId: string): Promise<
+    InstrumentState & { priceHistory: PriceSnapshot[] }
+  > {
+    const instrument = await Promise.resolve(
+      this.store.getInstrument(instrumentId),
+    );
+    const priceHistory = await Promise.resolve(
+      this.store.getPriceHistory(instrumentId),
+    );
+    return { ...instrument, priceHistory };
   }
 
   async getStatus(selectedId = LEE_JUNG_HOO_OPS_ID) {
@@ -217,25 +226,34 @@ export class MarketService {
       instrumentId: string;
       teamShort: string;
       playerName: string;
+      kind: InstrumentState['kind'];
       price: number;
       longShares: number;
       shortShares: number;
       value: number;
     }> = [];
-    for (const seed of KBO_TEAM_STOCKS) {
-      const inst = await Promise.resolve(this.store.getInstrument(seed.id));
-      const p = wallet.positions[seed.id] ?? { longShares: 0, shortShares: 0 };
+    for (const [instrumentId, p] of Object.entries(wallet.positions)) {
       if (p.longShares === 0 && p.shortShares === 0) continue;
+      if (!(await Promise.resolve(this.store.hasInstrument(instrumentId)))) {
+        continue;
+      }
+      const inst = await Promise.resolve(
+        this.store.getInstrument(instrumentId),
+      );
       holdings.push({
-        instrumentId: seed.id,
-        teamShort: seed.teamShort,
-        playerName: seed.playerName,
+        instrumentId,
+        teamShort: inst.teamShort,
+        playerName: inst.playerName,
+        kind: inst.kind,
         price: inst.price,
         longShares: p.longShares,
         shortShares: p.shortShares,
         value: p.longShares * inst.price - p.shortShares * inst.price,
       });
     }
+    holdings.sort(
+      (a, b) => Math.abs(b.value) - Math.abs(a.value) || b.price - a.price,
+    );
 
     return {
       wallet,

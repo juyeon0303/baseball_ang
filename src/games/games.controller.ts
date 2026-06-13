@@ -6,6 +6,7 @@ import { GameLiveService } from './game-live.service';
 import { GamesService } from './games.service';
 import { RelaySyncService } from './relay-sync.service';
 import { KboStandingsProvider } from './kbo-standings.provider';
+import { PlayerStatsService } from './player-stats.service';
 import { SentimentVoteKind } from './game-live.types';
 
 @Controller('amm/games')
@@ -17,6 +18,7 @@ export class GamesController {
     private readonly recap: GamesRecapService,
     private readonly relay: RelaySyncService,
     private readonly standings: KboStandingsProvider,
+    private readonly playerStats: PlayerStatsService,
   ) {}
 
   @Get('today')
@@ -69,6 +71,15 @@ export class GamesController {
       return { success: true, ...data };
     } catch (e) {
       throw new BadRequestException('팀 순위를 불러올 수 없습니다.');
+    }
+  }
+
+  @Get(':gameId/player-stats')
+  async getPlayerStats(@Param('gameId') gameId: string) {
+    try {
+      return await this.playerStats.getGamePlayerStats(gameId);
+    } catch (e) {
+      throw new BadRequestException('선수 스탯을 불러올 수 없습니다.');
     }
   }
 

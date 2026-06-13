@@ -185,7 +185,46 @@
             color: var(--text);
         }
         .duel-line strong { color: var(--highlight); }
-        .play-now {
+        .player-stats-panel {
+            margin-top: 8px;
+            display: grid;
+            gap: 8px;
+        }
+        .player-stat-card {
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--surface-inset);
+            border: 1px solid var(--border);
+        }
+        .player-stat-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .player-stat-name { font-weight: 700; font-size: 0.84rem; }
+        .player-stat-role {
+            font-size: 0.68rem;
+            color: var(--faint);
+            text-transform: uppercase;
+        }
+        .player-stat-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+        .player-stat-grid span strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+        .player-stat-note {
+            margin-top: 6px;
+            font-size: 0.68rem;
+            color: var(--faint);
+        }
             margin-top: 10px;
             padding: 10px 12px;
             border-radius: 10px;
@@ -1459,6 +1498,7 @@
                     <span id="feed-bc-last-play">타석 소식 대기</span>
                 </div>
                 <div class="duel-line" id="feed-duel-line" style="margin-top:8px;display:none"></div>
+                <div class="player-stats-panel" id="feed-player-stats" style="display:none"></div>
             </div>
             <div class="panel" id="feed-live-stack">
                 <div class="label">승률 그래프 · 하이라이트 터치</div>
@@ -1871,7 +1911,8 @@
             '두산': '#9AAFD4', '삼성': '#5EB0FF', '롯데': '#8CB8FF', '한화': '#FF9F43', '키움': '#E85D7A',
         };
         let snapshot = null;
-        let recap = null;
+        let playerStatsCache = null;
+        let playerStatsGameId = null;
         let showRecapMode = false;
         let isGameDay = true;
         let plays = [];
@@ -2241,6 +2282,93 @@
             if (bundle.inning) g.inning = bundle.inning;
         }
 
+        function fmtStatNum(v, digits = 3) {
+            if (v == null || Number.isNaN(v)) return '—';
+            return Number(v).toFixed(digits);
+        }
+
+        function statRowHtml(row) {
+            const s = row.stats || {};
+            const chips = row.role === 'pitcher'
+                ? [
+                    `ERA <strong>${fmtStatNum(s.era)}</strong>`,
+                    `IP <strong>${s.ip != null ? s.ip : '—'}</strong>`,
+                    `WHIP <strong>${fmtStatNum(s.whip)}</strong>`,
+                    `SO <strong>${s.so ?? '—'}</strong>`,
+                    `BB <strong>${s.bb ?? '—'}</strong>`,
+                    `W-L <strong>${s.w ?? '—'}-${s.l ?? '—'}</strong>`,
+                ]
+                : [
+                    `AVG <strong>${fmtStatNum(s.avg)}</strong>`,
+                    `OPS <strong>${fmtStatNum(s.ops)}</strong>`,
+                    `HR <strong>${s.hr ?? '—'}</strong>`,
+                    `RBI <strong>${s.rbi ?? '—'}</strong>`,
+                    `H <strong>${s.hits ?? '—'}</strong>`,
+                    `G <strong>${s.games ?? '—'}</strong>`,
+                ];
+            const roleLabel = row.role === 'pitcher' ? '투수' : '타자';
+            return `<div class="player-stat-card">
+                <div class="player-stat-head">
+                    <span class="player-stat-name">${row.name}</span>
+                    <span class="player-stat-role">${roleLabel}${row.team ? ' · ' + row.team : ''}</span>
+                </div>
+                <div class="player-stat-grid">${chips.map(c => `<span>${c}</span>`).join('')}</div>
+            </div>`;
+        }
+
+        function renderPlayerStatsPanel(data, game) {
+            const el = document.getElementById('feed-player-stats');
+            if (!el) return;
+            const rows = data?.players || [];
+            if (!rows.length || !game) {
+                el.style.display = 'none';
+                el.innerHTML = '';
+                return;
+            }
+            const order = [];
+            const pick = (name, role) => rows.find(r =>
+                r.name === name || (name && r.name.includes(name)) ||
+                (role && r.role === role && !order.includes(r))
+            );
+            if (game.batter) {
+                const row = pick(game.batter, 'hitter') || rows.find(r => r.role === 'hitter');
+                if (row && !order.includes(row)) order.push(row);
+            }
+            if (game.pitcher) {
+                const row = pick(game.pitcher, 'pitcher') || rows.find(r => r.role === 'pitcher' && !order.includes(r));
+                if (row && !order.includes(row)) order.push(row);
+            }
+            for (const row of rows) {
+                if (order.length >= 4) break;
+                if (!order.includes(row)) order.push(row);
+            }
+            el.style.display = '';
+            el.innerHTML = order.map(statRowHtml).join('') +
+                '<div class="player-stat-note">2026 시즌 · KBO 공식 기록실</div>';
+        }
+
+        async function loadPlayerStats(force = false) {
+            if (!watchId) {
+                renderPlayerStatsPanel(null, null);
+                return;
+            }
+            const g = findGame(watchId);
+            if (!force && playerStatsGameId === watchId && playerStatsCache) {
+                renderPlayerStatsPanel(playerStatsCache, g);
+                return;
+            }
+            try {
+                const res = await fetch(`${API}/amm/games/${encodeURIComponent(watchId)}/player-stats`);
+                if (!res.ok) throw new Error('player-stats fail');
+                const data = await res.json();
+                playerStatsCache = data;
+                playerStatsGameId = watchId;
+                renderPlayerStatsPanel(data, g);
+            } catch (_) {
+                renderPlayerStatsPanel(null, g);
+            }
+        }
+
         async function loadLiveExtras() {
             if (!watchId) return;
             const g = findGame(watchId);
@@ -2272,6 +2400,7 @@
                 winPickSnap = await pickRes.json();
                 renderWinPick(findGame(watchId));
             }
+            void loadPlayerStats();
         }
 
         function defaultPhaseForGame(g) {
@@ -2980,6 +3109,7 @@
             if (gameId === watchId) {
                 renderHero(g);
                 renderSituation(g);
+                void loadPlayerStats(true);
             }
         }
 
