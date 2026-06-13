@@ -1285,18 +1285,6 @@
                     <button type="button" data-phase="live" class="on" onclick="setGamePhase('live')">라이브</button>
                     <button type="button" data-phase="review" onclick="setGamePhase('review')">리뷰</button>
                 </div>
-                <div class="phase-panel hidden" id="phase-preview">
-                    <div class="preview-card" id="preview-body">경기 정보 불러오는 중…</div>
-                    <div class="pick-box">
-                        <div class="label" style="margin-bottom:6px">승부 예측</div>
-                        <div class="pick-crowd" id="pick-crowd">팬 예측 집계 · 경기 전에 고르세요</div>
-                        <div class="pick-btns">
-                            <button type="button" id="pick-away" onclick="pickWinner('away')">원정 승</button>
-                            <button type="button" id="pick-home" onclick="pickWinner('home')">홈 승</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="phase-panel" id="phase-live">
                 <div class="duel-line" id="duel-line" style="display:none"></div>
                 <div class="broadcast-panel situation-bar" id="situation-bar" style="display:none">
                     <div class="bc-top">
@@ -1325,6 +1313,18 @@
                         <span id="bc-last-play">—</span>
                     </div>
                 </div>
+                <div class="phase-panel hidden" id="phase-preview">
+                    <div class="preview-card" id="preview-body">경기 정보 불러오는 중…</div>
+                    <div class="pick-box">
+                        <div class="label" style="margin-bottom:6px">승부 예측</div>
+                        <div class="pick-crowd" id="pick-crowd">팬 예측 집계 · 경기 전에 고르세요</div>
+                        <div class="pick-btns">
+                            <button type="button" id="pick-away" onclick="pickWinner('away')">원정 승</button>
+                            <button type="button" id="pick-home" onclick="pickWinner('home')">홈 승</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="phase-panel" id="phase-live">
                 <div class="play-now" id="play-now">타석 소식 대기 중</div>
                 <div class="wpa-bar" id="wpa-bar">
                     <div class="wpa-head">
@@ -1915,15 +1915,17 @@
 
         function openFromStrip() {
             microTap([10]);
-            if (gamePhase === 'review' || findGame(watchId)?.status === 'final') {
+            const g = findGame(watchId);
+            if (gamePhase === 'review' || g?.status === 'final') {
                 setGamePhase('review', true);
-                goTab('feed');
-            } else if (findGame(watchId)?.status === 'live') {
+            } else if (g?.status === 'live') {
                 setGamePhase('live', true);
-                goTab('feed');
             } else {
                 setGamePhase('preview', true);
-                goTab('home');
+            }
+            goTab('home');
+            if (g && (g.status === 'live' || g.status === 'final')) {
+                void loadGameRelay(g.id);
             }
         }
 
@@ -2173,10 +2175,12 @@
                 applyRelayBundle(g, relayCache[gameId]);
                 if (gameId === watchId) {
                     renderHero(g);
+                    renderSituation(g);
                     renderTimeline();
                 }
                 return;
             }
+            if (gameId === watchId) renderSituation(g);
             try {
                 const res = await fetch(`${API}/amm/games/${encodeURIComponent(gameId)}/relay`);
                 if (!res.ok) return;
@@ -2185,6 +2189,7 @@
                 applyRelayBundle(g, data);
                 if (gameId === watchId) {
                     renderHero(g);
+                    renderSituation(g);
                     renderTimeline();
                 }
             } catch (_) { /* ignore */ }
@@ -2236,7 +2241,28 @@
             if (!g) return 'preview';
             if (g.status === 'scheduled') return 'preview';
             if (g.status === 'live') return 'live';
+            if (relayCache[g.id]?.plays?.length || g.relay?.source === 'naver_relay') return 'live';
             return 'review';
+        }
+
+        function resolveSituation(g) {
+            if (!g) return null;
+            if (g.situation) return g.situation;
+            const cached = relayCache[g.id];
+            if (cached?.situation) {
+                if (cached.relay && !g.relay) g.relay = cached.relay;
+                if (cached.batter && !g.batter) g.batter = cached.batter;
+                if (cached.pitcher && !g.pitcher) g.pitcher = cached.pitcher;
+                return cached.situation;
+            }
+            if (!hasLiveToday() && showRecapMode && !g?.relay?.source && g.status !== 'live') {
+                return demoSituation;
+            }
+            return null;
+        }
+
+        function isBroadcastGame(g) {
+            return !!g && (g.status === 'live' || g.status === 'final');
         }
 
         function setGamePhase(phase, manual = true) {
@@ -2613,12 +2639,15 @@
             });
         }
 
-        function pickGame(id) {
+        async function pickGame(id) {
             const g = findGame(id);
             if (!g) return;
             watchId = id;
             phaseManual = false;
             localStorage.setItem('watch-game', id);
+            gamePhase = defaultPhaseForGame(g);
+            renderPhaseUI();
+            goTab('home');
             renderHero(g);
             renderGamesList();
             renderLiveStrip();
@@ -2630,9 +2659,11 @@
                     `⏳ <strong>${g.awayTeam} vs ${g.homeTeam}</strong> — ${g.startTime || '개막'} 예정<br>` +
                     `<span style="color:var(--muted);font-size:0.78rem">라이브가 시작되면 타석·득점이 여기와 「중계」 탭에 올라옵니다</span>`;
             } else if (g.status === 'live' || g.status === 'final') {
-                void loadGameRelay(id);
+                await loadGameRelay(id);
+                const g2 = findGame(id);
+                if (g2) renderHero(g2);
+                renderTimeline();
             }
-            goTab('home');
             toast(`${g.awayTeam} vs ${g.homeTeam} 보는 중`);
             loadLiveExtras();
         }
@@ -2799,7 +2830,15 @@
                 if (feedPanel) feedPanel.style.display = sit ? '' : 'none';
             }
             if (!sit) {
-                if (!prefix) {
+                if (!prefix && isBroadcastGame(g) && g?.id === watchId) {
+                    const bar = document.getElementById('situation-bar');
+                    if (bar) {
+                        bar.style.display = '';
+                        bar.classList.remove('demo');
+                        const innEl = document.getElementById('bc-inning');
+                        if (innEl) innEl.textContent = g.inning || '중계 불러오는 중…';
+                    }
+                } else if (!prefix) {
                     const bar = document.getElementById('situation-bar');
                     if (bar) bar.style.display = 'none';
                 }
@@ -2883,10 +2922,16 @@
         }
 
         function renderSituation(g) {
-            const sit = g?.situation
-                ?? ((!hasLiveToday() && showRecapMode && !g?.relay?.source) ? demoSituation : null);
+            const sit = resolveSituation(g);
             applyBroadcastToPrefix('', g, sit, g?.relay);
             applyBroadcastToPrefix('feed', g, sit, g?.relay);
+            const duel = document.getElementById('duel-line');
+            if (duel && g?.batter && g?.pitcher) {
+                duel.style.display = '';
+                duel.innerHTML = `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`;
+            } else if (duel) {
+                duel.style.display = 'none';
+            }
         }
 
         function syncGameRelay(gameId, payload) {
@@ -2897,7 +2942,10 @@
             if (payload.pitcher) g.pitcher = payload.pitcher;
             if (payload.inning) g.inning = payload.inning;
             if (payload.relay) g.relay = payload.relay;
-            if (gameId === watchId) renderHero(g);
+            if (gameId === watchId) {
+                renderHero(g);
+                renderSituation(g);
+            }
         }
 
         function renderHero(g) {
@@ -3339,6 +3387,7 @@
         socket.on('relayUpdate', payload => {
             if (!payload?.gameId) return;
             syncGameRelay(payload.gameId, payload);
+            if (payload.gameId === watchId) renderTimeline();
         });
         socket.on('demoPulse', payload => {
             if (!payload?.demoMode) return;
