@@ -3332,7 +3332,6 @@
             const g = findGame(watchId);
             if (g && prevStatus && prevStatus !== g.status) phaseManual = false;
             const last = plays.find(p => p.gameId === watchId);
-            const g = findGame(watchId);
             if (last && !relayCache[watchId]?.plays?.length && !g?.relay?.lastPlay) {
                 renderPlayBox(last);
             }
@@ -3367,10 +3366,12 @@
         document.getElementById('pref-sound').classList.toggle('on', prefs.sound);
         initSentimentBtns();
         const wpaCanvas = document.getElementById('wpa-canvas');
-        wpaCanvas.addEventListener('click', e => pickWpaFromTouch(e.clientX));
-        wpaCanvas.addEventListener('touchstart', e => {
-            if (e.touches[0]) pickWpaFromTouch(e.touches[0].clientX);
-        }, { passive: true });
+        if (wpaCanvas) {
+            wpaCanvas.addEventListener('click', e => pickWpaFromTouch(e.clientX));
+            wpaCanvas.addEventListener('touchstart', e => {
+                if (e.touches[0]) pickWpaFromTouch(e.touches[0].clientX);
+            }, { passive: true });
+        }
         window.addEventListener('resize', () => drawWpaChart());
         renderTeamGrid();
         (async () => {
