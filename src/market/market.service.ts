@@ -54,6 +54,10 @@ export class MarketService {
     );
   }
 
+  async getInstrument(instrumentId: string): Promise<InstrumentState> {
+    return Promise.resolve(this.store.getInstrument(instrumentId));
+  }
+
   async getMarket(instrumentId: string): Promise<
     InstrumentState & { priceHistory: PriceSnapshot[] }
   > {
@@ -208,12 +212,11 @@ export class MarketService {
   }
 
   async getPortfolio(userId: string, instrumentId = LEE_JUNG_HOO_OPS_ID) {
-    await this.touchWeekStat(userId);
+    const wallet = await Promise.resolve(this.store.getWallet(userId));
+    const weekStat = await this.ensureWeekStat(userId, wallet);
     const instrument = await Promise.resolve(
       this.store.getInstrument(instrumentId),
     );
-    const wallet = await Promise.resolve(this.store.getWallet(userId));
-    const weekStat = (await Promise.resolve(this.store.getWeekStat(userId)))!;
     const pos = wallet.positions[instrumentId] ?? {
       longShares: 0,
       shortShares: 0,
@@ -235,16 +238,16 @@ export class MarketService {
       shortShares: number;
       value: number;
     }> = [];
-    for (const [instrumentId, p] of Object.entries(wallet.positions)) {
+    for (const [posInstrumentId, p] of Object.entries(wallet.positions)) {
       if (p.longShares === 0 && p.shortShares === 0) continue;
-      if (!(await Promise.resolve(this.store.hasInstrument(instrumentId)))) {
+      if (!(await Promise.resolve(this.store.hasInstrument(posInstrumentId)))) {
         continue;
       }
       const inst = await Promise.resolve(
-        this.store.getInstrument(instrumentId),
+        this.store.getInstrument(posInstrumentId),
       );
       holdings.push({
-        instrumentId,
+        instrumentId: posInstrumentId,
         teamShort: inst.teamShort,
         playerName: inst.playerName,
         kind: inst.kind,

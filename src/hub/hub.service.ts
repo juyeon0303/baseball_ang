@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { StockStreamGateway } from '../amm/stock-stream.gateway';
 import { GamesService } from '../games/games.service';
 import { isKboGameDay } from '../stats/game-day.util';
@@ -8,9 +8,14 @@ import { getMarketSession } from '../market/market-session.util';
 import { MarketService } from '../market/market.service';
 import { ShareholderService } from '../market/shareholder.service';
 import { OffDayDemoService } from '../market/off-day-demo.service';
+import { InstrumentState } from '../market/market.types';
+import { LeaderboardResult } from '../market/market.types';
+import { getWeekKey, getWeekLabel } from '../market/week.util';
 
 @Injectable()
 export class HubService {
+  private readonly logger = new Logger(HubService.name);
+
   constructor(
     private readonly market: MarketService,
     private readonly games: GamesService,
@@ -40,16 +45,14 @@ export class HubService {
       isGameDay: gameDay,
     });
 
-    const [instrument, leaderboard, trades, crowd, memeLineup, etfs, shareholderBoard] =
-      await Promise.all([
-        this.market.getMarket(featuredId),
-        this.market.getLeaderboard(15),
-        this.market.getRecentTrades(8),
-        this.market.getCrowdRatio(featuredId),
-        this.market.getMemeLineup(),
-        this.market.getEtfBaskets(),
-        this.shareholders.getBoard(userId),
-      ]);
+    const instrument = await this.safeInstrument(featuredId);
+    const leaderboard = await this.safeLeaderboard();
+    const trades = await this.safeTrades();
+    const crowd = await this.safeCrowd(featuredId);
+    const memeLineup = await this.safeMemeLineup();
+    const etfs = await this.safeEtfs();
+    const shareholderBoard = await this.safeShareholderBoard(userId);
+
     const memes = [...memeLineup].sort(
       (a, b) => b.oracleValue - a.oracleValue || b.price - a.price,
     );
@@ -101,20 +104,25 @@ export class HubService {
     } | null = null;
 
     if (userId) {
-      const port = await this.market.getPortfolio(userId, featuredId);
-      me = {
-        rank: port.myRank,
-        weeklyReturnPct: port.weeklyReturnPct,
-        points: port.wallet.points,
-        equity: port.equity,
-        startEquity: port.startEquity,
-        weekLabel: port.weekLabel,
-        totalParticipants: port.totalParticipants ?? leaderboard.totalParticipants ?? 0,
-        holdingsCount: port.holdings.length,
-        holdings: port.holdings,
-        isOpsKing: port.isOpsKing,
-        teamTitles: shareholderBoard.myTitles,
-      };
+      try {
+        const port = await this.market.getPortfolio(userId, featuredId);
+        me = {
+          rank: port.myRank,
+          weeklyReturnPct: port.weeklyReturnPct,
+          points: port.wallet.points,
+          equity: port.equity,
+          startEquity: port.startEquity,
+          weekLabel: port.weekLabel,
+          totalParticipants:
+            port.totalParticipants ?? leaderboard.totalParticipants ?? 0,
+          holdingsCount: port.holdings.length,
+          holdings: port.holdings,
+          isOpsKing: port.isOpsKing,
+          teamTitles: shareholderBoard.myTitles,
+        };
+      } catch (e) {
+        this.logger.warn(`hub me skipped for ${userId}: ${e}`);
+      }
     }
 
     return {
@@ -134,12 +142,94 @@ export class HubService {
       shareholders,
       leaderboard: {
         weekLabel: leaderboard.weekLabel,
-        totalParticipants: leaderboard.totalParticipants ?? leaderboard.rankings.length,
+        totalParticipants:
+          leaderboard.totalParticipants ?? leaderboard.rankings.length,
         rankings,
       },
       me,
       demoMode: this.offDayDemo.isActive(),
       demoMessage: this.offDayDemo.getLastMessage(),
     };
+  }
+
+  private async safeInstrument(featuredId: string): Promise<InstrumentState> {
+    try {
+      return await this.market.getInstrument(featuredId);
+    } catch (e) {
+      this.logger.warn(`hub instrument fallback (${featuredId}): ${e}`);
+      return this.market.getInstrument(LEE_JUNG_HOO_OPS_ID);
+    }
+  }
+
+  private emptyLeaderboard(): LeaderboardResult {
+    const weekKey = getWeekKey();
+    return {
+      weekKey,
+      weekLabel: getWeekLabel(weekKey),
+      updatedAt: new Date().toISOString(),
+      totalParticipants: 0,
+      opsKing: null,
+      rankings: [],
+    };
+  }
+
+  private async safeLeaderboard(): Promise<LeaderboardResult> {
+    try {
+      return await this.market.getLeaderboard(15);
+    } catch (e) {
+      this.logger.warn(`hub leaderboard fallback: ${e}`);
+      return this.emptyLeaderboard();
+    }
+  }
+
+  private async safeTrades() {
+    try {
+      return await this.market.getRecentTrades(8);
+    } catch (e) {
+      this.logger.warn(`hub trades fallback: ${e}`);
+      return [];
+    }
+  }
+
+  private async safeCrowd(instrumentId: string) {
+    try {
+      return await this.market.getCrowdRatio(instrumentId);
+    } catch (e) {
+      this.logger.warn(`hub crowd fallback: ${e}`);
+      return {
+        longShares: 0,
+        shortShares: 0,
+        longPct: 50,
+        shortPct: 50,
+        participants: 0,
+      };
+    }
+  }
+
+  private async safeMemeLineup(): Promise<InstrumentState[]> {
+    try {
+      return await this.market.getMemeLineup();
+    } catch (e) {
+      this.logger.warn(`hub meme lineup fallback: ${e}`);
+      return [];
+    }
+  }
+
+  private async safeEtfs() {
+    try {
+      return await this.market.getEtfBaskets();
+    } catch (e) {
+      this.logger.warn(`hub etfs fallback: ${e}`);
+      return [];
+    }
+  }
+
+  private async safeShareholderBoard(userId?: string) {
+    try {
+      return await this.shareholders.getBoard(userId);
+    } catch (e) {
+      this.logger.warn(`hub shareholders fallback: ${e}`);
+      return { teams: [], myTitles: [] };
+    }
   }
 }
