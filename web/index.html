@@ -1734,7 +1734,7 @@
                         <div id="auth-login-panel">
                             <div class="auth-field">
                                 <label for="auth-nickname">닉네임</label>
-                                <input id="auth-nickname" maxlength="12" autocomplete="username" placeholder="2~12자">
+                                <input id="auth-nickname" maxlength="12" autocomplete="username" placeholder="2~12자 · 한글·자모 OK">
                             </div>
                             <div class="auth-field">
                                 <label for="auth-pin">PIN (4자리)</label>
@@ -2967,6 +2967,13 @@
                 fetch(`${API}/amm/lineup`).catch(() => null),
                 fetch(`${API}/amm/live-stats`).catch(() => null),
             ]);
+
+            if (lineupRes?.ok) {
+                renderLineup(await lineupRes.json());
+            } else if (!lineupCache.length) {
+                await reloadLineup();
+            }
+
             if (!hubRes?.ok) {
                 hubLoaded = false;
                 setSyncStatus(false);
@@ -2979,7 +2986,11 @@
             hubLoaded = true;
             setSyncStatus(true, '연결됨');
             const hubData = await hubRes.json();
-            const lineup = lineupRes?.ok ? await lineupRes.json() : lineupCache;
+            if (!lineupCache.length) {
+                await reloadLineup();
+            } else {
+                renderLineup(lineupCache);
+            }
             let memes = hubData.memes || [];
             if (!memes.length) {
                 try {
@@ -2992,7 +3003,6 @@
             }
             hubData.memes = memes;
             renderHub(hubData);
-            renderLineup(lineup);
             renderMemes(memes);
             await maybeApplyDeepLink();
             await loadSpark(selectedId);
@@ -3127,9 +3137,8 @@
             document.getElementById('toggle-lineup').textContent =
                 lineupOpen ? '접기' : '펼치기';
             try { localStorage.setItem('lineup-collapsed', lineupOpen ? '0' : '1'); } catch (_) {}
-            if (lineupOpen) {
-                if (!lineupCache.length) reloadLineup();
-                document.getElementById('lineup-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (lineupOpen && !lineupCache.length) {
+                void reloadLineup();
             }
         }
 

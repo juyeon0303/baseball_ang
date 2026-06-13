@@ -24,8 +24,9 @@ export function normalizeNickname(raw: string): string {
 export function validateNickname(nickname: string): string | null {
   if (!nickname) return '닉네임을 입력해 주세요.';
   if (nickname.length < 2) return '닉네임은 2자 이상이어야 해요.';
-  if (!/^[\uAC00-\uD7A3a-zA-Z0-9_]+$/.test(nickname)) {
-    return '닉네임은 한글·영문·숫자·_(언더바)만 가능해요.';
+  // 완성형 한글 + 자모(ㄱㅏ) + 영문·숫자·_
+  if (!/^[\uAC00-\uD7A3\u1100-\u11FF\u3131-\u318Ea-zA-Z0-9_]+$/.test(nickname)) {
+    return '닉네임은 한글·자모·영문·숫자·_(언더바)만 가능해요.';
   }
   return null;
 }
