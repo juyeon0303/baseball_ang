@@ -37,11 +37,15 @@ export class ShareholderService {
     for (const uid of userIds) {
       const wallet = await Promise.resolve(this.store.getWallet(uid));
       for (const seed of KBO_TEAM_STOCKS) {
-        const inst = await Promise.resolve(this.store.getInstrument(seed.id));
-        const pos = wallet.positions[seed.id] ?? { longShares: 0, shortShares: 0 };
-        const eq = pos.longShares * inst.price - pos.shortShares * inst.price;
-        if (eq <= 0) continue;
-        equityByUserInstrument.set(`${uid}:${seed.id}`, eq);
+        try {
+          const inst = await Promise.resolve(this.store.getInstrument(seed.id));
+          const pos = wallet.positions[seed.id] ?? { longShares: 0, shortShares: 0 };
+          const eq = pos.longShares * inst.price - pos.shortShares * inst.price;
+          if (eq <= 0) continue;
+          equityByUserInstrument.set(`${uid}:${seed.id}`, eq);
+        } catch {
+          continue;
+        }
       }
     }
 

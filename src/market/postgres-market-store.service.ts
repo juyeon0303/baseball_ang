@@ -94,10 +94,11 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
   }
 
   async getLineup(): Promise<InstrumentState[]> {
+    const hero = await this.getInstrument(LEE_JUNG_HOO_OPS_ID);
     const ids = KBO_TEAM_STOCKS.map((s) => s.id);
     const rows = await this.instrumentRepo.find({ where: { id: In(ids) } });
     const byId = new Map(rows.map((r) => [r.id, toInstrumentState(r)]));
-    return ids.map((id) => byId.get(id)!).filter(Boolean);
+    return [hero, ...ids.map((id) => byId.get(id)).filter(Boolean) as InstrumentState[]];
   }
 
   async getInstrument(id: string): Promise<InstrumentState> {
@@ -161,8 +162,8 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
     await this.weekStatRepo.save({
       userId,
       weekKey: stat.weekKey,
-      startEquity: stat.startEquity,
-      opsTradeCount: stat.opsTradeCount,
+      startEquity: Math.round(Number(stat.startEquity) || 0),
+      opsTradeCount: stat.opsTradeCount ?? 0,
     });
   }
 

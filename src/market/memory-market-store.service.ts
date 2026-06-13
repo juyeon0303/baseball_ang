@@ -45,7 +45,10 @@ export class MemoryMarketStoreService implements IMarketStore {
   }
 
   getLineup(): InstrumentState[] {
-    return KBO_TEAM_STOCKS.map((s) => this.getInstrument(s.id));
+    return [
+      this.getInstrument(LEE_JUNG_HOO_OPS_ID),
+      ...KBO_TEAM_STOCKS.map((s) => this.getInstrument(s.id)),
+    ];
   }
 
   getMemeLineup(): InstrumentState[] {

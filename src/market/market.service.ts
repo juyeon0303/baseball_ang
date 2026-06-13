@@ -143,22 +143,25 @@ export class MarketService {
     const userIds = await Promise.resolve(this.store.getAllUserIds());
 
     for (const userId of userIds) {
-      const wallet = await Promise.resolve(this.store.getWallet(userId));
-      await this.ensureWeekStat(userId, wallet);
-      const stat = (await Promise.resolve(this.store.getWeekStat(userId)))!;
-      const currentEquity = await this.calcEquity(wallet);
-      const weeklyReturnPct = this.calcReturnPct(
-        stat.startEquity,
-        currentEquity,
-      );
-      entries.push({
-        rank: 0,
-        userId,
-        startEquity: stat.startEquity,
-        currentEquity,
-        weeklyReturnPct,
-        opsTradeCount: stat.opsTradeCount,
-      });
+      try {
+        const wallet = await Promise.resolve(this.store.getWallet(userId));
+        const stat = await this.ensureWeekStat(userId, wallet);
+        const currentEquity = await this.calcEquity(wallet);
+        const weeklyReturnPct = this.calcReturnPct(
+          stat.startEquity,
+          currentEquity,
+        );
+        entries.push({
+          rank: 0,
+          userId,
+          startEquity: stat.startEquity,
+          currentEquity,
+          weeklyReturnPct,
+          opsTradeCount: stat.opsTradeCount,
+        });
+      } catch {
+        continue;
+      }
     }
 
     entries.sort((a, b) => b.weeklyReturnPct - a.weeklyReturnPct);
@@ -184,7 +187,7 @@ export class MarketService {
       weekKey,
       weekLabel: getWeekLabel(weekKey),
       updatedAt: new Date().toISOString(),
-      totalParticipants: ranked.length,
+      totalParticipants: entries.length,
       opsKing,
       rankings,
     };

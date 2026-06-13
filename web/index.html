@@ -3188,6 +3188,7 @@
             renderYasdaqStory(data.me, inst);
             if (lineupCache.length) renderLineup(lineupCache);
             if (data.memes?.length) renderMemes(data.memes);
+            void loadPriceChart(selectedId);
         }
 
         function renderLineup(items) {
@@ -3335,9 +3336,11 @@
 
             if (!hubRes?.ok) {
                 hubLoaded = false;
-                setSyncStatus(false);
-                document.getElementById('boot-error').classList.add('show');
-                renderProgress(roadmap, false);
+                setSyncStatus(false, '허브 일부 오류 · 종목·차트는 계속 불러옵니다');
+                document.getElementById('boot-error').classList.remove('show');
+                if (lineupCache.length) renderLineup(lineupCache);
+                renderMemes(memes);
+                await loadPriceChart(selectedId || 'lee-jung-hoo');
                 return;
             }
             document.getElementById('boot-error').classList.remove('show');
