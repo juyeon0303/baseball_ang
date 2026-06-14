@@ -1476,6 +1476,20 @@
             line-height: 1.4;
         }
         .bc-live-duel strong { color: var(--text); }
+        .bc-live-pitcher {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 8px;
+            line-height: 1.35;
+        }
+        .bc-live-pitcher:empty { display: none; }
+        .bc-live-pitcher .role {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--faint);
+            margin-left: 2px;
+        }
         .bc-live-main {
             display: flex;
             align-items: flex-start;
@@ -1489,6 +1503,11 @@
             color: var(--text);
         }
         .bc-live-text .team { color: var(--highlight); font-weight: 700; }
+        .bc-live-text .batter {
+            color: var(--text);
+            font-weight: 800;
+        }
+        .bc-live-text .action { color: var(--text); }
         .bc-live-pitches {
             display: flex;
             flex-wrap: wrap;
@@ -2285,7 +2304,7 @@
                         <div class="bc-count-big" id="feed-sit-count">0-0</div>
                     </div>
                     <div class="bc-live-caption" id="feed-bc-live-caption">
-                        <div class="duel-line bc-live-duel" id="feed-duel-line" style="display:none"></div>
+                        <div class="bc-live-pitcher" id="feed-bc-pitcher-line"></div>
                         <div class="bc-live-main">
                             <span class="bc-play-badge def" id="feed-bc-play-badge">⚾</span>
                             <span class="bc-live-text" id="feed-bc-live-text">타석 소식 대기 중</span>
@@ -2856,12 +2875,14 @@
                 snippet.innerHTML = w
                     ? `🏁 <strong>${w}</strong> 승 · ${winnerLabel(g)}`
                     : `🏁 ${winnerLabel(g)}`;
-            } else if (relay?.lastPlay) {
-                snippet.textContent = relay.lastPlay;
+            } else if (relay?.lastPitch && g.batter) {
+                snippet.textContent = `${g.batter} · ${relay.lastPitch}`;
             } else if (relay?.lastPitch) {
                 snippet.textContent = relay.lastPitch;
-            } else if (g.batter && g.pitcher) {
-                snippet.innerHTML = `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`;
+            } else if (relay?.lastPlay) {
+                snippet.textContent = g.batter ? `${g.batter} · ${relay.lastPlay}` : relay.lastPlay;
+            } else if (g.batter) {
+                snippet.textContent = g.pitcher ? `${g.pitcher}(P) · ${g.batter} 타석` : `${g.batter} 타석`;
             } else if (g.status === 'live') {
                 snippet.textContent = '실시간 문자 중계 · 중계 탭에서 확인';
             } else {
@@ -3365,7 +3386,10 @@
         function applyRelayBundle(g, bundle) {
             if (!g || !bundle) return;
             if (bundle.situation) g.situation = bundle.situation;
-            if (bundle.relay) g.relay = bundle.relay;
+            if (bundle.relay) {
+                g.relay = bundle.relay;
+                if (g.relay.lastPlay && g.batter) g.relay.lastPlayAtBatter = g.batter;
+            }
             if (bundle.batter) g.batter = bundle.batter;
             if (bundle.pitcher) g.pitcher = bundle.pitcher;
             if (bundle.inning) g.inning = bundle.inning;
@@ -4523,6 +4547,23 @@
             return `${parts.join('·')}루`;
         }
 
+        function relayResultIsActive(relay, batter) {
+            if (!relay?.lastPlay || !relay?.lastPlayKind) return false;
+            if (relay.lastPlayKind === 'pitch' || relay.lastPlayKind === 'info') return false;
+            if (relay.lastPlayAtBatter && batter && relay.lastPlayAtBatter !== batter) return false;
+            return true;
+        }
+
+        function formatLiveCaptionHtml(batter, actionText, team) {
+            const body = (actionText || '타석').trim();
+            if (batter) {
+                const teamPrefix = team ? `<span class="team">${team}</span> · ` : '';
+                return `<span class="batter">${batter}</span> · ${teamPrefix}<span class="action">${body}</span>`;
+            }
+            if (team) return `<span class="team">${team}</span> ${body}`;
+            return body;
+        }
+
         function applyBroadcastToPrefix(prefix, g, sit, relay) {
             if (!prefix) return;
             const el = (name) => document.getElementById(`${prefix}-${name}`);
@@ -4557,39 +4598,41 @@
             }
 
             const playText = relay?.lastPlay;
+            const playKind = relay?.lastPlayKind;
+            const batter = (g?.batter || relay?.batter || '').trim();
+            const pitcher = (g?.pitcher || relay?.pitcher || '').trim();
             const captionEl = document.getElementById('feed-bc-live-caption');
             const liveTextEl = el('bc-live-text');
             const badgeEl = el('bc-play-badge');
-            const duelEl = document.getElementById('feed-duel-line');
-            if (duelEl) duelEl.style.display = 'none';
+            const pitcherLineEl = document.getElementById('feed-bc-pitcher-line');
             const impact = relay?.lastPlayImpact;
+            if (pitcherLineEl && prefix === 'feed') {
+                pitcherLineEl.textContent = pitcher ? `${pitcher}(P)` : '';
+            }
             if (captionEl) {
                 captionEl.className = 'bc-live-caption' +
                     (impact === 'run' ? ' impact-run' : impact === 'game_end' ? ' impact-score' : '');
             }
             if (liveTextEl && badgeEl) {
-                if (playText) {
+                const team = relay?.lastPlayTeam;
+                const showResult = relayResultIsActive(relay, batter);
+                if (showResult) {
                     const badge = playBadgeMeta({
                         playType: relay?.lastPlayType,
-                        relayKind: relay?.lastPlayKind,
+                        relayKind: playKind,
                         text: playText,
                     });
                     badgeEl.textContent = badge.label;
                     badgeEl.className = 'bc-play-badge ' + badge.cls;
-                    const team = relay?.lastPlayTeam;
-                    liveTextEl.innerHTML = team
-                        ? `<span class="team">${team}</span> ${playText}`
-                        : playText;
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, playText, team);
                 } else if (pitch) {
                     badgeEl.textContent = '球';
                     badgeEl.className = 'bc-play-badge def';
-                    liveTextEl.textContent = pitch;
-                } else if (g?.batter) {
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, pitch, null);
+                } else if (batter) {
                     badgeEl.textContent = '⚾';
                     badgeEl.className = 'bc-play-badge def';
-                    liveTextEl.innerHTML = g.pitcher
-                        ? `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`
-                        : `${g.batter} 타석`;
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, '타석', null);
                 } else {
                     badgeEl.textContent = '⚾';
                     badgeEl.className = 'bc-play-badge def';
@@ -4648,6 +4691,7 @@
             if (payload.awayScore != null) g.awayScore = payload.awayScore;
             if (payload.homeScore != null) g.homeScore = payload.homeScore;
             if (payload.relay) g.relay = payload.relay;
+            if (g.relay?.lastPlay && g.batter) g.relay.lastPlayAtBatter = g.batter;
             const cached = relayCache[gameId] || {};
             relayCache[gameId] = {
                 ...cached,
@@ -4735,6 +4779,9 @@
                 g.relay.lastPlayKind = play.relayKind;
                 g.relay.lastPlayTeam = play.team;
                 g.relay.lastPlayImpact = play.impact;
+                if (play.relayKind !== 'pitch' && play.relayKind !== 'info') {
+                    g.relay.lastPlayAtBatter = g.batter;
+                }
             }
             renderSituation(g);
             if (g) updateHeroSnippet(g);
