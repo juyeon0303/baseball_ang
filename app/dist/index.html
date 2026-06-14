@@ -684,6 +684,7 @@
             max-height: calc(100dvh - var(--strip-h) - var(--nav-h) - 118px);
             min-height: 320px;
         }
+        #tab-feed.feed-live-mode .feed-toolbar { display: none; }
         #tab-feed.feed-live-mode .feed-relay-stack { gap: 6px; }
         #tab-feed.feed-live-mode .feed-stack-label { display: none; }
         #tab-feed.feed-live-mode .broadcast-panel.compact-live {
@@ -692,11 +693,21 @@
         }
         #tab-feed.feed-live-mode .broadcast-panel.compact-live > .label { display: none; }
         #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-top { margin-bottom: 4px; }
-        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-pitch-log {
-            max-height: 28px;
-            overflow: hidden;
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-live-caption {
+            margin-top: 6px;
+            padding: 10px 12px;
         }
-        #tab-feed.feed-live-mode .feed-play-strip { display: none; }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-live-duel {
+            font-size: 0.78rem;
+            margin-bottom: 6px;
+        }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-live-main {
+            font-size: 0.9rem;
+        }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-live-pitches {
+            margin-top: 6px;
+            padding-top: 6px;
+        }
         #tab-feed.feed-live-mode .timeline-panel-compact {
             flex: 1;
             min-height: 0;
@@ -1440,6 +1451,52 @@
             font-size: 0.88rem;
             line-height: 1.55;
         }
+        .bc-live-caption {
+            margin-top: 10px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(8, 12, 20, 0.6);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+        }
+        .bc-live-caption.impact-run {
+            border-left-color: var(--danger);
+            background: rgba(251, 113, 133, 0.1);
+        }
+        .bc-live-caption.impact-score { animation: pulse-once 0.6s ease; }
+        .bc-live-duel {
+            margin: 0 0 8px;
+            padding: 0;
+            background: none;
+            border: none;
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .bc-live-duel strong { color: var(--text); }
+        .bc-live-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: var(--fs-body);
+            line-height: 1.55;
+        }
+        .bc-live-text {
+            flex: 1;
+            min-width: 0;
+            color: var(--text);
+        }
+        .bc-live-text .team { color: var(--highlight); font-weight: 700; }
+        .bc-live-pitches {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(51, 65, 85, 0.45);
+        }
+        .bc-live-pitches:empty { display: none; }
         .bc-label {
             display: inline-block;
             font-size: 0.58rem;
@@ -1904,6 +1961,72 @@
             padding: 6px 4px;
         }
 
+        .head-meta .pref-row { display: none; }
+        .hero-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .hero-cta {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 10px;
+            font: inherit;
+            font-size: var(--fs-body);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .hero-cta.primary {
+            background: linear-gradient(135deg, var(--accent-neon), #2563eb);
+            color: var(--text-on-accent);
+            box-shadow: var(--glow-accent);
+        }
+        .hero-cta.secondary {
+            background: var(--surface-inset);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .hero-snippet {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--surface-inset);
+            border-left: 3px solid var(--accent);
+            min-height: 2.8em;
+        }
+        .hero-snippet:empty { display: none; }
+        #tab-home .phase-seg,
+        #tab-home .phase-panel,
+        #tab-home #duel-line,
+        #tab-home #situation-bar,
+        #tab-home #play-now { display: none !important; }
+        .feed-extras-toggle {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin: 8px 0 0;
+            padding: 10px 12px;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            background: var(--surface-inset);
+            color: var(--muted);
+            font: inherit;
+            font-size: var(--fs-small);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #tab-feed.feed-live-mode .feed-extras-toggle { display: flex; }
+        #tab-feed.feed-live-mode.feed-extras-open .feed-play-stack { display: flex !important; }
+        #tab-feed.feed-live-mode:not(.feed-extras-open) .feed-play-stack { display: none !important; }
+        .account-prefs .pref-row { margin-top: 0; }
+        nav.bottom-nav button[data-tab="feed"] .ico { font-size: 1.35rem; }
+        nav.bottom-nav button[data-tab="feed"].on {
+            color: var(--live-neon);
+            text-shadow: 0 0 12px rgba(74, 222, 128, 0.45);
+        }
+
         /* App-wide readability — all tabs */
         .date-line { font-size: var(--fs-caption); }
         .live-pill { font-size: 0.72rem; padding: 4px 10px; }
@@ -1993,10 +2116,6 @@
                 <div class="date-line" id="date-line">—</div>
                 <span class="live-pill" id="presence">—명 접속</span>
                 <div class="sync-pill live" id="sync-status">실시간 연결</div>
-                <div class="pref-row">
-                    <button type="button" class="pref-chip on" id="pref-haptic" onclick="togglePref('haptic')">📳 진동</button>
-                    <button type="button" class="pref-chip on" id="pref-sound" onclick="togglePref('sound')">🔊 효과음</button>
-                </div>
             </div>
         </header>
         <div class="flash-overlay" id="flash-overlay"></div>
@@ -2005,7 +2124,7 @@
         <div class="tab-panel active" id="tab-home">
             <div class="offday-banner" id="offday-banner" style="display:none"></div>
             <div class="label" id="hero-label">지금 보는 경기</div>
-            <div class="hero-card watching" id="hero-card" onclick="goTab('games')" title="탭해서 다른 경기 선택">
+            <div class="hero-card watching" id="hero-card" onclick="openHeroCard()" title="탭해서 중계 보기">
                 <div class="hero-top">
                     <span class="hero-inning" id="hero-inning">—</span>
                     <span class="status-badge" id="hero-badge">—</span>
@@ -2022,7 +2141,12 @@
                     </div>
                 </div>
                 <div class="match-meta" id="hero-meta">—</div>
-                <div class="phase-seg" id="phase-seg">
+                <div class="hero-snippet subtext" id="hero-snippet"></div>
+                <div class="hero-actions">
+                    <button type="button" class="hero-cta primary" id="hero-cta-main" onclick="event.stopPropagation(); openHeroPrimary()">중계 보기</button>
+                    <button type="button" class="hero-cta secondary" onclick="event.stopPropagation(); goTab('games')">경기 변경</button>
+                </div>
+                <div class="phase-seg" id="phase-seg" style="display:none">
                     <button type="button" data-phase="preview" onclick="setGamePhase('preview')">프리뷰</button>
                     <button type="button" data-phase="live" class="on" onclick="setGamePhase('live')">라이브</button>
                     <button type="button" data-phase="review" onclick="setGamePhase('review')">리뷰</button>
@@ -2110,7 +2234,7 @@
 
         <!-- 중계 -->
         <div class="tab-panel" id="tab-feed">
-            <div class="panel">
+            <div class="panel feed-toolbar" id="feed-toolbar">
                 <div class="feed-game-bar">
                     <span id="feed-game-title">경기를 선택하세요</span>
                     <button type="button" class="link-btn" onclick="goTab('games')">경기 변경</button>
@@ -2158,20 +2282,25 @@
                         </div>
                         <div class="bc-count-big" id="feed-sit-count">0-0</div>
                     </div>
-                    <div class="bc-pitch-row" id="feed-bc-pitch-row" style="display:none">
-                        <span class="bc-label">투구</span><span id="feed-bc-last-pitch">—</span>
+                    <div class="bc-live-caption" id="feed-bc-live-caption">
+                        <div class="duel-line bc-live-duel" id="feed-duel-line" style="display:none"></div>
+                        <div class="bc-live-main">
+                            <span class="bc-play-badge def" id="feed-bc-play-badge">⚾</span>
+                            <span class="bc-live-text" id="feed-bc-live-text">타석 소식 대기 중</span>
+                        </div>
+                        <div class="bc-live-pitches" id="feed-bc-pitch-log"></div>
                     </div>
-                    <div class="bc-pitch-log" id="feed-bc-pitch-log"></div>
-                    <div class="bc-play-row" id="feed-bc-play-row">
-                        <span class="bc-play-badge def" id="feed-bc-play-badge">⚾</span>
-                        <span id="feed-bc-last-play">타석 소식 대기</span>
-                    </div>
-                    <div class="duel-line" id="feed-duel-line" style="margin-top:8px;display:none"></div>
                 </div>
-                <div class="panel feed-play-strip" id="feed-play-strip">
-                    <div class="label">지금 이 타석</div>
-                    <div class="play-now" id="feed-play-now">타석 소식 대기 중</div>
+                <div class="panel timeline-panel-compact" id="timeline-panel">
+                    <div class="label">문자 중계 · 회별 보기</div>
+                    <p class="timeline-hint">회 번호를 눌러 해당 이닝만 볼 수 있어요. <strong>핵심만</strong>이면 투구·잡음은 숨깁니다.</p>
+                    <div class="inning-filter" id="inning-filter"></div>
+                    <div class="timeline" id="play-timeline"></div>
                 </div>
+                <button type="button" class="feed-extras-toggle" id="feed-extras-toggle" onclick="toggleFeedExtras()">
+                    <span>분석 · WPA · 팬 반응</span>
+                    <span id="feed-extras-chev">펼치기 ▸</span>
+                </button>
                 <div class="panel chat-panel-compact collapsed" id="chat-panel">
                     <button type="button" class="feed-chat-toggle label" onclick="toggleFeedChat()">
                         <span>이 경기 중계창 · 응원 채팅</span>
@@ -2199,15 +2328,9 @@
                         <button type="button" class="chat-send" onclick="sendChat()">전송</button>
                     </div>
                 </div>
-                <div class="panel timeline-panel-compact" id="timeline-panel">
-                    <div class="label">문자 중계 · 회별 보기</div>
-                    <p class="timeline-hint">회 번호를 눌러 해당 이닝만 볼 수 있어요. <strong>핵심만</strong>이면 투구·잡음은 숨깁니다.</p>
-                    <div class="inning-filter" id="inning-filter"></div>
-                    <div class="timeline" id="play-timeline"></div>
-                </div>
                 </div>
             </div>
-            <div id="feed-play-stack" class="feed-play-stack hidden">
+            <div id="feed-play-stack" class="feed-play-stack hidden feed-play-stack-extra">
                 <div class="feed-stack-label">분석 · 반응</div>
                 <div class="panel" id="feed-player-stats-panel">
                     <div class="label">타석·투수 시즌 스탯</div>
@@ -2336,6 +2459,13 @@
                     <button type="button" class="auth-btn secondary" onclick="logoutAuth()">로그아웃</button>
                 </div>
                 <div class="auth-err" id="auth-err"></div>
+            </div>
+            <div class="panel account-prefs">
+                <div class="label">알림 · 효과</div>
+                <div class="pref-row">
+                    <button type="button" class="pref-chip on" id="pref-haptic" onclick="togglePref('haptic')">📳 진동</button>
+                    <button type="button" class="pref-chip on" id="pref-sound" onclick="togglePref('sound')">🔊 효과음</button>
+                </div>
             </div>
         </div>
 
@@ -2683,6 +2813,64 @@
         let timelineInningNavInitFor = null;
         let inningNavUserScroll = false;
         let feedChatOpen = localStorage.getItem('pb-feed-chat') === '1';
+        let feedExtrasOpen = localStorage.getItem('pb-feed-extras') === '1';
+
+        function openHeroCard() {
+            openHeroPrimary();
+        }
+
+        function openHeroPrimary() {
+            const g = findGame(watchId);
+            if (!g) {
+                goTab('games');
+                return;
+            }
+            if (g.status === 'final') setGamePhase('review', true);
+            else if (g.status === 'live') setGamePhase('live', true);
+            else setGamePhase('preview', true);
+            goTab('feed');
+            if (g.status === 'live' || g.status === 'final') void loadGameRelay(g.id);
+        }
+
+        function toggleFeedExtras() {
+            feedExtrasOpen = !feedExtrasOpen;
+            try { localStorage.setItem('pb-feed-extras', feedExtrasOpen ? '1' : '0'); } catch (_) {}
+            syncFeedExtrasUI();
+        }
+
+        function syncFeedExtrasUI() {
+            document.getElementById('tab-feed')?.classList.toggle('feed-extras-open', feedExtrasOpen);
+            const chev = document.getElementById('feed-extras-chev');
+            if (chev) chev.textContent = feedExtrasOpen ? '접기 ▾' : '펼치기 ▸';
+        }
+
+        function updateHeroSnippet(g) {
+            const snippet = document.getElementById('hero-snippet');
+            const cta = document.getElementById('hero-cta-main');
+            if (!g || !snippet) return;
+            const relay = g.relay;
+            if (g.status === 'final') {
+                const w = winnerTeam(g);
+                snippet.innerHTML = w
+                    ? `🏁 <strong>${w}</strong> 승 · ${winnerLabel(g)}`
+                    : `🏁 ${winnerLabel(g)}`;
+            } else if (relay?.lastPlay) {
+                snippet.textContent = relay.lastPlay;
+            } else if (relay?.lastPitch) {
+                snippet.textContent = relay.lastPitch;
+            } else if (g.batter && g.pitcher) {
+                snippet.innerHTML = `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`;
+            } else if (g.status === 'live') {
+                snippet.textContent = '실시간 문자 중계 · 중계 탭에서 확인';
+            } else {
+                snippet.textContent = '';
+            }
+            if (cta) {
+                if (g.status === 'live') cta.textContent = '라이브 중계';
+                else if (g.status === 'final') cta.textContent = '경기 리뷰';
+                else cta.textContent = '프리뷰 · 예측';
+            }
+        }
         let standingsRows = [];
         let standingsMeta = null;
         const relayCache = {};
@@ -3760,6 +3948,7 @@
             const g = findGame(watchId);
             const feedLiveMode = isLive && g?.status === 'live';
             document.getElementById('tab-feed')?.classList.toggle('feed-live-mode', feedLiveMode);
+            syncFeedExtrasUI();
             if (feedLiveMode) {
                 const chat = document.getElementById('chat-panel');
                 chat?.classList.toggle('collapsed', !feedChatOpen);
@@ -4358,6 +4547,56 @@
             if (el('base-3')) el('base-3').classList.toggle('on', !!bases.third);
 
             const pitch = relay?.lastPitch;
+            const pitchLogEl = el('bc-pitch-log');
+            const chips = (relay?.recentPitches || []).slice(-8);
+            if (pitchLogEl) {
+                pitchLogEl.innerHTML = chips.length
+                    ? chips.map(t => `<span class="bc-pitch-chip">${t}</span>`).join('')
+                    : '';
+            }
+
+            const playText = relay?.lastPlay;
+            const captionEl = document.getElementById('feed-bc-live-caption');
+            const liveTextEl = el('bc-live-text');
+            const badgeEl = el('bc-play-badge');
+            const duelEl = document.getElementById('feed-duel-line');
+            if (duelEl) duelEl.style.display = 'none';
+            const impact = relay?.lastPlayImpact;
+            if (captionEl) {
+                captionEl.className = 'bc-live-caption' +
+                    (impact === 'run' ? ' impact-run' : impact === 'game_end' ? ' impact-score' : '');
+            }
+            if (liveTextEl && badgeEl) {
+                if (playText) {
+                    const badge = playBadgeMeta({
+                        playType: relay?.lastPlayType,
+                        relayKind: relay?.lastPlayKind,
+                        text: playText,
+                    });
+                    badgeEl.textContent = badge.label;
+                    badgeEl.className = 'bc-play-badge ' + badge.cls;
+                    const team = relay?.lastPlayTeam;
+                    liveTextEl.innerHTML = team
+                        ? `<span class="team">${team}</span> ${playText}`
+                        : playText;
+                } else if (pitch) {
+                    badgeEl.textContent = '球';
+                    badgeEl.className = 'bc-play-badge def';
+                    liveTextEl.textContent = pitch;
+                } else if (g?.batter) {
+                    badgeEl.textContent = '⚾';
+                    badgeEl.className = 'bc-play-badge def';
+                    liveTextEl.innerHTML = g.pitcher
+                        ? `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`
+                        : `${g.batter} 타석`;
+                } else {
+                    badgeEl.textContent = '⚾';
+                    badgeEl.className = 'bc-play-badge def';
+                    liveTextEl.textContent = '타석 소식 대기 중';
+                }
+            }
+
+            // Legacy hero situation bar (hidden) — keep pitch/play rows in sync if present
             const pitchRow = el('bc-pitch-row');
             const pitchEl = el('bc-last-pitch');
             if (pitchRow && pitchEl) {
@@ -4368,19 +4607,10 @@
                     pitchRow.style.display = 'none';
                 }
             }
-            const pitchLogEl = el('bc-pitch-log');
-            if (pitchLogEl) {
-                const chips = (relay?.recentPitches || []).slice(-6);
-                pitchLogEl.innerHTML = chips.length
-                    ? chips.map(t => `<span class="bc-pitch-chip">${t}</span>`).join('')
-                    : '';
-            }
-
-            const playText = relay?.lastPlay;
             const playRow = el('bc-play-row');
             const playEl = el('bc-last-play');
-            const badgeEl = el('bc-play-badge');
-            if (playRow && playEl && badgeEl) {
+            const heroBadgeEl = document.getElementById('bc-play-badge');
+            if (playRow && playEl && heroBadgeEl && prefix !== 'feed') {
                 if (playText) {
                     playRow.style.display = '';
                     playEl.textContent = playText;
@@ -4389,23 +4619,13 @@
                         relayKind: relay?.lastPlayKind,
                         text: playText,
                     });
-                    badgeEl.textContent = badge.label;
-                    badgeEl.className = 'bc-play-badge ' + badge.cls;
-                } else if (prefix) {
-                    playEl.textContent = '타석 소식 대기';
-                    badgeEl.textContent = '⚾';
-                    badgeEl.className = 'bc-play-badge def';
+                    heroBadgeEl.textContent = badge.label;
+                    heroBadgeEl.className = 'bc-play-badge ' + badge.cls;
                 } else {
-                    playRow.style.display = 'none';
+                    playEl.textContent = '타석 소식 대기';
+                    heroBadgeEl.textContent = '⚾';
+                    heroBadgeEl.className = 'bc-play-badge def';
                 }
-            }
-
-            const duelEl = prefix ? document.getElementById('feed-duel-line') : null;
-            if (duelEl && g?.batter && g?.pitcher) {
-                duelEl.style.display = '';
-                duelEl.innerHTML = `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`;
-            } else if (duelEl) {
-                duelEl.style.display = 'none';
             }
         }
 
@@ -4414,6 +4634,7 @@
             if (bar) bar.style.display = 'none';
             const sit = resolveSituation(g);
             applyBroadcastToPrefix('feed', g, sit, g?.relay);
+            if (g) updateHeroSnippet(g);
         }
 
         function syncGameRelay(gameId, payload) {
@@ -4473,33 +4694,13 @@
                 meta.push(`선발 ${g.awayPitcher || '?'} vs ${g.homePitcher || '?'}`);
             }
             document.getElementById('hero-meta').textContent = meta.join(' · ') || '경기 정보';
-            const duel = document.getElementById('duel-line');
-            if (g.batter && g.pitcher) {
-                duel.style.display = '';
-                duel.innerHTML = `<strong>${g.batter}</strong> vs <strong>${g.pitcher}</strong>`;
-            } else {
-                duel.style.display = 'none';
-            }
+            updateHeroSnippet(g);
             const wpaBar = document.getElementById('wpa-bar');
             const heroLabel = document.getElementById('hero-label');
             if (g.status === 'final') {
                 const hasArchive = !!g.relay?.archived || g.relay?.source === 'naver_relay';
                 wpaBar.style.display = hasArchive ? '' : (shouldUseRecapPrimary() ? 'none' : '');
                 heroLabel.textContent = hasArchive ? '종료 경기 중계' : (hasFinalToday() ? '오늘 경기 결과' : '지난 경기 다시보기');
-                if (g.relay?.lastPlay) {
-                    renderPlayBox({
-                        text: g.relay.lastPlay,
-                        playType: g.relay.lastPlayType,
-                        relayKind: g.relay.lastPlayKind,
-                        impact: g.relay.lastPlayKind === 'game_end' ? 'game_end' : null,
-                        team: winnerTeam(g) || g.homeTeam,
-                    });
-                } else {
-                    const w = winnerTeam(g);
-                    document.getElementById('play-now').innerHTML = w
-                        ? `🏁 <span class="team">${w}</span> 승 · ${winnerLabel(g)}`
-                        : `🏁 ${winnerLabel(g)}`;
-                }
             } else {
                 wpaBar.style.display = '';
                 heroLabel.textContent = '지금 보는 경기';
@@ -4526,24 +4727,16 @@
 
         function renderPlayBox(play) {
             if (!play?.text) return;
-            const badge = playBadgeMeta(play);
-            const cls = 'play-now' + (play.impact === 'run' ? ' impact-run impact-score' : play.impact === 'game_end' ? ' impact-score' : '');
-            const html =
-                `<span class="bc-play-badge ${badge.cls}">${badge.label}</span>` +
-                `<span class="team">${play.team || 'KBO'}</span> ${play.text}`;
-            for (const id of ['play-now', 'feed-play-now']) {
-                const el = document.getElementById(id);
-                if (!el) continue;
-                el.className = cls;
-                el.innerHTML = html;
-            }
             const g = findGame(watchId);
             if (g?.relay) {
                 g.relay.lastPlay = play.text;
                 g.relay.lastPlayType = play.playType;
                 g.relay.lastPlayKind = play.relayKind;
+                g.relay.lastPlayTeam = play.team;
+                g.relay.lastPlayImpact = play.impact;
             }
             renderSituation(g);
+            if (g) updateHeroSnippet(g);
         }
 
         function isMyTeamGame(g) {
@@ -5176,6 +5369,7 @@
         document.getElementById('pref-haptic').classList.toggle('on', prefs.haptic);
         document.getElementById('pref-sound').classList.toggle('on', prefs.sound);
         initSentimentBtns();
+        syncFeedExtrasUI();
         const wpaCanvas = document.getElementById('wpa-canvas');
         if (wpaCanvas) {
             wpaCanvas.addEventListener('click', e => pickWpaFromTouch(e.clientX));
