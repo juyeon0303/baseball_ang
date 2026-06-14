@@ -737,12 +737,19 @@
         .king-line {
             font-size: 0.88rem;
             color: var(--text);
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(252, 211, 77, 0.12), rgba(94, 184, 255, 0.08));
+            border: 1px solid rgba(252, 211, 77, 0.3);
+            line-height: 1.5;
         }
 
         .king-line strong {
             color: var(--highlight);
             font-weight: 600;
         }
+
+        .king-line .up { color: var(--accent); font-weight: 800; }
 
         .feed-list {
             list-style: none;
@@ -1336,7 +1343,43 @@
         }
         .demo-banner strong { color: var(--accent); }
 
-        .disc-list { list-style: none; max-height: 240px; overflow-y: auto; padding-right: 4px; }
+        .disc-list { list-style: none; max-height: 280px; min-height: 120px; overflow-y: auto; padding-right: 4px; }
+        .side-rail-panel {
+            min-height: 0;
+        }
+        .side-rail-panel .label {
+            margin-bottom: 6px;
+        }
+        #disc-panel .disc-sub {
+            margin-bottom: 8px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: rgba(94, 184, 255, 0.08);
+            border: 1px solid rgba(94, 184, 255, 0.2);
+        }
+        #etf-list {
+            min-height: 100px;
+        }
+        #owner-list {
+            min-height: 120px;
+        }
+        .owner-row.placeholder {
+            opacity: 0.85;
+            cursor: default;
+        }
+        .activity-panel {
+            border-color: rgba(252, 211, 77, 0.25);
+        }
+        #feed {
+            min-height: 100px;
+        }
+        .etf-skeleton,
+        .disc-skeleton {
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border);
+            color: var(--faint);
+            font-size: 0.78rem;
+        }
         .disc-item {
             padding: 9px 0;
             border-bottom: 1px dashed var(--border);
@@ -2525,24 +2568,25 @@
             </main>
 
             <aside class="col-side col-right">
-                <section class="panel" id="disc-panel">
+                <section class="panel side-rail-panel" id="disc-panel">
                     <div class="label">실시간 공시창 · 프리마켓</div>
                     <div class="disc-sub" id="disc-session-sub">장 상태 확인 중…</div>
                     <ul class="disc-list" id="disc-list"></ul>
                 </section>
 
-                <section class="panel" id="etf-panel">
+                <section class="panel side-rail-panel" id="etf-panel">
                     <div class="label">테마 ETF (바스켓 시세)</div>
                     <div id="etf-list"></div>
                     <p class="meta" style="margin-top:8px">숏(매도)은 NO 베팅입니다</p>
                 </section>
 
-                <section class="panel" id="owner-panel">
+                <section class="panel side-rail-panel" id="owner-panel">
                     <div class="label">구단주 · 대주주</div>
+                    <p class="meta" style="margin:-2px 0 8px;line-height:1.45">YES 베팅 비중 5%+ 구단주 · 1%+ 대주주</p>
                     <div id="owner-list"></div>
                 </section>
 
-                <section class="panel" id="activity-panel">
+                <section class="panel side-rail-panel activity-panel" id="activity-panel">
                     <div class="activity-block">
                         <div class="label">이번 주 1위</div>
                         <div class="king-line" id="crown">—</div>
@@ -3360,7 +3404,7 @@
                 sub.textContent = `${session.label} · ${session.detail || ''}`;
             }
             if (!items?.length) {
-                el.innerHTML = '<li class="disc-item meta">공시 불러오는 중…</li>';
+                el.innerHTML = '<li class="disc-item meta disc-skeleton">공시 불러오는 중…</li>';
                 return;
             }
             el.innerHTML = items.map(d => {
@@ -3380,8 +3424,8 @@
             const el = document.getElementById('etf-list');
             if (!etfs?.length) {
                 el.innerHTML = hubLoaded
-                    ? '<div class="meta">등록된 ETF가 없습니다</div>'
-                    : '<div class="meta">ETF 불러오는 중…</div>';
+                    ? '<div class="meta etf-skeleton">ETF 데이터 없음 · 새로고침 후 다시 시도</div>'
+                    : '<div class="meta etf-skeleton">ETF 불러오는 중…</div>';
                 return;
             }
             el.innerHTML = etfs.map(e => {
@@ -3900,7 +3944,7 @@
                 ? king.isPulse
                     ? `<strong>${king.displayName}</strong> · 오늘 장 <span class="up">${fmtPct(king.weeklyReturnPct)}</span>`
                     : `<strong>@${king.displayName || king.userId}</strong> · 이번 주 ${fmtPct(king.weeklyReturnPct)}`
-                : '첫 YES 베팅을 남기면 순위에 올라요';
+                : '<span class="meta">첫 YES 베팅을 남기면 순위에 올라요</span>';
 
             const feed = document.getElementById('feed');
             feed.innerHTML = data.recentTrades.length

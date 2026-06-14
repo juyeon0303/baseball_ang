@@ -582,6 +582,40 @@
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
         }
+        .feed-relay-stack,
+        .feed-play-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .feed-relay-stack.hidden,
+        .feed-play-stack.hidden { display: none; }
+        .feed-stack-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--live);
+            margin: 4px 2px 0;
+        }
+        .feed-play-stack .feed-stack-label { color: var(--accent); margin-top: 12px; }
+        .feed-relay-stack .panel,
+        .feed-play-stack .panel { margin-bottom: 0; }
+        .feed-relay-stack .broadcast-panel { border-color: rgba(94, 184, 255, 0.35); }
+        .timeline-panel-compact .timeline { max-height: 260px; }
+        .feed-play-strip { padding-top: 10px; }
+        .feed-play-strip .play-now {
+            margin: 6px 0 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
+        .feed-play-stack .player-stats-panel { margin-top: 4px; }
+        .feed-wpa-bar { margin-bottom: 10px; }
+        .chat-panel-compact .gaga-feed { max-height: 160px; }
         .inning-filter { margin-bottom: 10px; }
         .inning-nav-scroll {
             display: flex;
@@ -1819,19 +1853,6 @@
                 </div>
                 <div class="phase-panel" id="phase-live">
                 <div class="play-now" id="play-now">타석 소식 대기 중</div>
-                <div class="wpa-bar" id="wpa-bar">
-                    <div class="wpa-head">
-                        <span>실시간 승률 (WPA)</span>
-                        <span>
-                            <span class="wpa-pct away" id="wpa-away-pct">50%</span>
-                            ·
-                            <span class="wpa-pct home" id="wpa-home-pct">50%</span>
-                        </span>
-                    </div>
-                    <div class="wpa-track">
-                        <div class="wpa-home" id="wpa-home-bar" style="width:50%"></div>
-                    </div>
-                </div>
                 </div>
                 <div class="phase-panel hidden" id="phase-review">
                     <div class="review-box" id="review-body">경기 종료 후 결과가 여기에 표시됩니다</div>
@@ -1902,90 +1923,117 @@
                     </div>
                 </div>
             </div>
-            <div class="panel broadcast-panel" id="feed-broadcast" style="display:none">
-                <div class="label">실시간 중계 · 카운트 · 주자</div>
-                <div class="bc-top">
-                    <span class="bc-inning" id="feed-bc-inning">—</span>
-                    <span class="bc-meta" id="feed-bc-meta">—</span>
-                </div>
-                <div class="bc-grid">
-                    <div class="bc-count-col">
-                        <div class="bc-pill"><span>B</span><strong id="feed-sit-b">0</strong></div>
-                        <div class="bc-pill"><span>S</span><strong id="feed-sit-s">0</strong></div>
-                        <div class="bc-pill"><span>O</span><strong id="feed-sit-o">0</strong></div>
+            <div id="feed-relay-stack" class="feed-relay-stack hidden">
+                <div class="feed-stack-label">LIVE · 중계</div>
+                <div class="panel broadcast-panel" id="feed-broadcast" style="display:none">
+                    <div class="label">실시간 중계 · 카운트 · 주자</div>
+                    <div class="bc-top">
+                        <span class="bc-inning" id="feed-bc-inning">—</span>
+                        <span class="bc-meta" id="feed-bc-meta">—</span>
                     </div>
-                    <div class="diamond">
-                        <span class="base third" id="feed-base-3"></span>
-                        <span class="base second" id="feed-base-2"></span>
-                        <span class="base first" id="feed-base-1"></span>
+                    <div class="bc-grid">
+                        <div class="bc-count-col">
+                            <div class="bc-pill"><span>B</span><strong id="feed-sit-b">0</strong></div>
+                            <div class="bc-pill"><span>S</span><strong id="feed-sit-s">0</strong></div>
+                            <div class="bc-pill"><span>O</span><strong id="feed-sit-o">0</strong></div>
+                        </div>
+                        <div class="diamond">
+                            <span class="base third" id="feed-base-3"></span>
+                            <span class="base second" id="feed-base-2"></span>
+                            <span class="base first" id="feed-base-1"></span>
+                        </div>
+                        <div class="bc-count-big" id="feed-sit-count">0-0</div>
                     </div>
-                    <div class="bc-count-big" id="feed-sit-count">0-0</div>
+                    <div class="bc-pitch-row" id="feed-bc-pitch-row" style="display:none">
+                        <span class="bc-label">투구</span><span id="feed-bc-last-pitch">—</span>
+                    </div>
+                    <div class="bc-pitch-log" id="feed-bc-pitch-log"></div>
+                    <div class="bc-play-row" id="feed-bc-play-row">
+                        <span class="bc-play-badge def" id="feed-bc-play-badge">⚾</span>
+                        <span id="feed-bc-last-play">타석 소식 대기</span>
+                    </div>
+                    <div class="duel-line" id="feed-duel-line" style="margin-top:8px;display:none"></div>
                 </div>
-                <div class="bc-pitch-row" id="feed-bc-pitch-row" style="display:none">
-                    <span class="bc-label">투구</span><span id="feed-bc-last-pitch">—</span>
+                <div class="panel feed-play-strip" id="feed-play-strip">
+                    <div class="label">지금 이 타석</div>
+                    <div class="play-now" id="feed-play-now">타석 소식 대기 중</div>
                 </div>
-                <div class="bc-pitch-log" id="feed-bc-pitch-log"></div>
-                <div class="bc-play-row" id="feed-bc-play-row">
-                    <span class="bc-play-badge def" id="feed-bc-play-badge">⚾</span>
-                    <span id="feed-bc-last-play">타석 소식 대기</span>
+                <div class="panel chat-panel-compact" id="chat-panel">
+                    <div class="label">이 경기 중계창</div>
+                    <div class="auth-account-tag" id="account-tag">@—</div>
+                    <input class="nick-input" id="nick" value="" placeholder="표시 이름 (채팅·랭킹용)" style="margin-bottom:4px;width:100%" onblur="onDisplayNameBlur()">
+                    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
+                        로그인 없이도 중계는 볼 수 있습니다 · 채팅·예측은 <button type="button" class="link-btn" style="padding:0;font-size:inherit" onclick="goTab('account')">계정 탭</button>에서 로그인
+                    </p>
+                    <div class="gaga-feed" id="gaga-feed"></div>
+                    <div class="emoji-bar">
+                        <button type="button" class="emoji-btn" onclick="sendReaction('🔥')">🔥</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('⚾')">⚾</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('😭')">😭</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('👍')">👍</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('💀')">💀</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('😂')">😂</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('🙏')">🙏</button>
+                        <button type="button" class="emoji-btn" onclick="sendReaction('👏')">👏</button>
+                    </div>
+                    <div class="input-row">
+                        <input class="chat-input" id="chat-input" maxlength="120" placeholder="한 줄 응원"
+                            onkeydown="if(event.key==='Enter')sendChat()">
+                        <button type="button" class="chat-send" onclick="sendChat()">전송</button>
+                    </div>
                 </div>
-                <div class="duel-line" id="feed-duel-line" style="margin-top:8px;display:none"></div>
-                <div class="player-stats-panel" id="feed-player-stats" style="display:none"></div>
+                <div class="panel timeline-panel-compact" id="timeline-panel">
+                    <div class="label">문자 중계 · 회별 보기</div>
+                    <p class="timeline-hint">회 번호를 눌러 해당 이닝만 볼 수 있어요. <strong>핵심만</strong>이면 투구·잡음은 숨깁니다.</p>
+                    <div class="inning-filter" id="inning-filter"></div>
+                    <div class="timeline" id="play-timeline"></div>
+                </div>
             </div>
-            <div class="panel" id="feed-live-stack">
-                <div class="label">승률 그래프 · 하이라이트 터치</div>
-                <div class="wpa-chart"><canvas id="wpa-canvas"></canvas></div>
-                <div class="wpa-tip" id="wpa-tip">그래프를 터치하면 해당 순간의 중계와 코멘트를 볼 수 있습니다</div>
-                <div class="wpa-recap-hint" id="wpa-recap-hint" style="display:none"></div>
-                <div class="input-row wpa-note-input">
-                    <input class="chat-input" id="wpa-note-input" maxlength="80" placeholder="이 순간 코멘트 (80자)"
-                        onkeydown="if(event.key==='Enter')postWpaNote()">
-                    <button type="button" class="chat-send" onclick="postWpaNote()">등록</button>
+            <div id="feed-play-stack" class="feed-play-stack hidden">
+                <div class="feed-stack-label">분석 · 반응</div>
+                <div class="panel" id="feed-player-stats-panel">
+                    <div class="label">타석·투수 시즌 스탯</div>
+                    <div class="player-stats-panel" id="feed-player-stats" style="display:none"></div>
+                    <div class="meta" id="feed-player-stats-empty">라이브 경기 중 타자·투수 카드가 표시됩니다</div>
                 </div>
-            </div>
-            <div class="panel" id="sentiment-panel">
-                <div class="label">팬 반응 투표</div>
-                <div class="sentiment-hot" id="sentiment-hot">타석마다 버튼을 눌러 반응을 남길 수 있습니다</div>
-                <div class="sentiment-gauge" id="sentiment-gauge"></div>
-                <div class="sentiment-btns" id="sentiment-btns"></div>
-            </div>
-            <div class="panel" id="rating-panel" style="display:none">
-                <div class="label">팬 평점 · 경기 종료 후</div>
-                <div id="rating-list"></div>
+                <div class="panel" id="feed-live-stack">
+                    <div class="label">승률 그래프 · 하이라이트 터치</div>
+                    <div class="wpa-bar feed-wpa-bar" id="wpa-bar">
+                        <div class="wpa-head">
+                            <span>실시간 승률 (WPA)</span>
+                            <span>
+                                <span class="wpa-pct away" id="wpa-away-pct">50%</span>
+                                ·
+                                <span class="wpa-pct home" id="wpa-home-pct">50%</span>
+                            </span>
+                        </div>
+                        <div class="wpa-track">
+                            <div class="wpa-home" id="wpa-home-bar" style="width:50%"></div>
+                        </div>
+                    </div>
+                    <div class="wpa-chart"><canvas id="wpa-canvas"></canvas></div>
+                    <div class="wpa-tip" id="wpa-tip">그래프를 터치하면 해당 순간의 중계와 코멘트를 볼 수 있습니다</div>
+                    <div class="wpa-recap-hint" id="wpa-recap-hint" style="display:none"></div>
+                    <div class="input-row wpa-note-input">
+                        <input class="chat-input" id="wpa-note-input" maxlength="80" placeholder="이 순간 코멘트 (80자)"
+                            onkeydown="if(event.key==='Enter')postWpaNote()">
+                        <button type="button" class="chat-send" onclick="postWpaNote()">등록</button>
+                    </div>
+                </div>
+                <div class="panel" id="sentiment-panel">
+                    <div class="label">팬 반응 투표</div>
+                    <div class="sentiment-hot" id="sentiment-hot">타석마다 버튼을 눌러 반응을 남길 수 있습니다</div>
+                    <div class="sentiment-gauge" id="sentiment-gauge"></div>
+                    <div class="sentiment-btns" id="sentiment-btns"></div>
+                </div>
+                <div class="panel" id="rating-panel" style="display:none">
+                    <div class="label">팬 평점 · 경기 종료 후</div>
+                    <div id="rating-list"></div>
+                </div>
             </div>
             <div class="panel hidden" id="feed-review-panel">
                 <div class="label">경기 리뷰</div>
                 <div class="review-box" id="feed-review-body">—</div>
-            </div>
-            <div class="panel" id="timeline-panel">
-                <div class="label">문자 중계 · 회별 보기</div>
-                <p class="timeline-hint">회 번호를 눌러 해당 이닝만 볼 수 있어요. <strong>핵심만</strong>이면 투구·잡음은 숨깁니다.</p>
-                <div class="inning-filter" id="inning-filter"></div>
-                <div class="timeline" id="play-timeline"></div>
-            </div>
-            <div class="panel" id="chat-panel">
-                <div class="label">이 경기 중계창</div>
-                <div class="auth-account-tag" id="account-tag">@—</div>
-                <input class="nick-input" id="nick" value="" placeholder="표시 이름 (채팅·랭킹용)" style="margin-bottom:4px;width:100%" onblur="onDisplayNameBlur()">
-                <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
-                    로그인 없이도 중계는 볼 수 있습니다 · 채팅·예측은 <button type="button" class="link-btn" style="padding:0;font-size:inherit" onclick="goTab('account')">계정 탭</button>에서 로그인
-                </p>
-                <div class="gaga-feed" id="gaga-feed"></div>
-                <div class="emoji-bar">
-                    <button type="button" class="emoji-btn" onclick="sendReaction('🔥')">🔥</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('⚾')">⚾</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('😭')">😭</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('👍')">👍</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('💀')">💀</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('😂')">😂</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('🙏')">🙏</button>
-                    <button type="button" class="emoji-btn" onclick="sendReaction('👏')">👏</button>
-                </div>
-                <div class="input-row">
-                    <input class="chat-input" id="chat-input" maxlength="120" placeholder="한 줄 응원"
-                        onkeydown="if(event.key==='Enter')sendChat()">
-                    <button type="button" class="chat-send" onclick="sendChat()">전송</button>
-                </div>
             </div>
         </div>
 
@@ -3347,11 +3395,13 @@
 
         function renderPlayerStatsPanel(data, game) {
             const el = document.getElementById('feed-player-stats');
+            const emptyEl = document.getElementById('feed-player-stats-empty');
             if (!el) return;
             const rows = data?.players || [];
             if (!rows.length || !game) {
                 el.style.display = 'none';
                 el.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = '';
                 return;
             }
             const order = [];
@@ -3372,6 +3422,7 @@
                 if (!order.includes(row)) order.push(row);
             }
             el.style.display = '';
+            if (emptyEl) emptyEl.style.display = 'none';
             el.innerHTML = order.map(r => statRowHtml(r, { clickable: true })).join('') +
                 '<button type="button" class="link-btn stats-full-link" onclick="goPlayerStats()">선수 스탯 전체 보기 →</button>' +
                 '<div class="player-stat-note">2026 시즌 · KBO 공식 기록실 · 카드 탭하면 상세</div>';
@@ -3480,10 +3531,11 @@
             const isPreview = gamePhase === 'preview';
             const isLive = gamePhase === 'live';
             const isReview = gamePhase === 'review';
+            const showRelay = isLive || isReview;
             document.getElementById('feed-preview-panel')?.classList.toggle('hidden', !isPreview);
-            document.getElementById('feed-live-stack')?.classList.toggle('hidden', !isLive);
+            document.getElementById('feed-relay-stack')?.classList.toggle('hidden', !showRelay);
+            document.getElementById('feed-play-stack')?.classList.toggle('hidden', !isLive);
             document.getElementById('feed-review-panel')?.classList.toggle('hidden', !isReview);
-            document.getElementById('sentiment-panel')?.classList.toggle('hidden', !isLive);
             document.getElementById('timeline-panel')?.classList.toggle('hidden', isPreview);
             document.getElementById('chat-panel')?.classList.toggle('hidden', isPreview);
         }
@@ -4237,12 +4289,17 @@
 
         function renderPlayBox(play) {
             if (!play?.text) return;
-            const el = document.getElementById('play-now');
             const badge = playBadgeMeta(play);
-            el.className = 'play-now' + (play.impact === 'run' ? ' impact-run impact-score' : play.impact === 'game_end' ? ' impact-score' : '');
-            el.innerHTML =
+            const cls = 'play-now' + (play.impact === 'run' ? ' impact-run impact-score' : play.impact === 'game_end' ? ' impact-score' : '');
+            const html =
                 `<span class="bc-play-badge ${badge.cls}">${badge.label}</span>` +
                 `<span class="team">${play.team || 'KBO'}</span> ${play.text}`;
+            for (const id of ['play-now', 'feed-play-now']) {
+                const el = document.getElementById(id);
+                if (!el) continue;
+                el.className = cls;
+                el.innerHTML = html;
+            }
             const g = findGame(watchId);
             if (g?.relay) {
                 g.relay.lastPlay = play.text;
