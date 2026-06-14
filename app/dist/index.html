@@ -37,9 +37,15 @@
             --final: #cbd5e1;
             --highlight: #fcd34d;
             --danger: #fb7185;
-            --nav-h: 58px;
-            --strip-h: 46px;
+            --nav-h: 60px;
+            --strip-h: 48px;
             --radius: 16px;
+            --fs-caption: 0.74rem;
+            --fs-small: 0.82rem;
+            --fs-body: 0.92rem;
+            --fs-lead: 1rem;
+            --line-body: 1.55;
+            --line-tight: 1.45;
             --text-on-accent: #061018;
             --glow-accent: 0 0 24px rgba(94, 184, 255, 0.35);
             --glow-live: 0 0 20px rgba(74, 222, 128, 0.35);
@@ -105,11 +111,16 @@
         }
         .panel:active { transform: scale(0.995); }
         .label {
-            font-size: 0.72rem;
+            font-size: 0.78rem;
             font-weight: 700;
             color: var(--muted);
             letter-spacing: 0.04em;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .subtext, .meta {
+            font-size: var(--fs-small);
+            color: var(--muted);
+            line-height: var(--line-tight);
         }
         .hero-card {
             background:
@@ -651,17 +662,17 @@
             margin-right: 2px;
         }
         .game-card.compact .game-card-head {
-            font-size: 0.65rem;
-            margin-bottom: 4px;
+            font-size: 0.76rem;
+            margin-bottom: 5px;
         }
         .game-card.compact .game-card-body {
-            font-size: 0.78rem;
+            font-size: 0.9rem;
             flex-direction: column;
             align-items: flex-start;
-            gap: 4px;
+            gap: 5px;
         }
         .game-card.compact .game-card-score {
-            font-size: 0.95rem;
+            font-size: 1.12rem;
             align-self: flex-end;
             width: 100%;
             text-align: right;
@@ -1892,6 +1903,77 @@
             margin: -6px -4px 12px;
             padding: 6px 4px;
         }
+
+        /* App-wide readability — all tabs */
+        .date-line { font-size: var(--fs-caption); }
+        .live-pill { font-size: 0.72rem; padding: 4px 10px; }
+        .sync-pill { font-size: 0.72rem; padding: 3px 9px; }
+        .pref-chip { font-size: 0.72rem; padding: 5px 10px; }
+        nav.bottom-nav button { font-size: var(--fs-small); }
+        nav.bottom-nav button .ico { font-size: 1.25rem; margin-bottom: 3px; }
+        .zero-strip-body { font-size: var(--fs-small); }
+        .zero-strip-body strong { font-size: 1.08rem; }
+        .zero-strip-cta { font-size: 0.72rem; }
+        .panel { padding: 16px; }
+        .hero-inning { font-size: var(--fs-small); }
+        .status-badge { font-size: 0.72rem; padding: 4px 10px; }
+        .phase-seg button { font-size: var(--fs-small); padding: 9px 6px; }
+        .story-card-badge { font-size: 0.68rem; }
+        .story-card-sub { font-size: var(--fs-small); }
+        .recap-card-head { font-size: 0.78rem; }
+        .recap-card-body { font-size: var(--fs-body); }
+        .recap-stats { font-size: 0.76rem; }
+        .recap-winner { font-size: var(--fs-small); }
+        .offday-banner { font-size: var(--fs-body); }
+        .seg button { font-size: var(--fs-body); padding: 9px 6px; }
+        .game-card-head { font-size: 0.78rem; }
+        .game-card-body { font-size: var(--fs-body); }
+        .preview-card { font-size: var(--fs-body); }
+        .preview-card .preview-lbl { font-size: var(--fs-small); }
+        .pick-crowd { font-size: var(--fs-small); }
+        .pick-btns button { font-size: var(--fs-body); padding: 13px 10px; }
+        .review-box { font-size: var(--fs-body); }
+        .link-btn { font-size: 0.78rem; }
+        .feed-game-bar { font-size: var(--fs-body); }
+        .stats-search { font-size: var(--fs-body); padding: 11px 14px; }
+        .stats-role-filter button { font-size: var(--fs-small); padding: 8px 10px; }
+        .stats-team-filter button { font-size: 0.76rem; padding: 6px 12px; }
+        .stats-cat-tabs button { font-size: 0.74rem; padding: 7px 12px; }
+        .stats-roster-meta { font-size: var(--fs-small); }
+        .stats-source-badges span { font-size: 0.72rem; }
+        .stats-table-wrap table { font-size: 0.78rem; }
+        .stats-table-wrap th, .stats-table-wrap td { padding: 8px 10px; }
+        .stats-metric-grid .stat-box .lbl { font-size: 0.68rem; }
+        .stats-detail-grid .stat-box .lbl { font-size: 0.68rem; }
+        .stats-player-pick .sp-name { font-size: var(--fs-body); }
+        .stats-player-pick .sp-team { font-size: var(--fs-small); }
+        .stats-player-pick .sp-ops { font-size: var(--fs-small); }
+        .player-stat-name { font-size: var(--fs-body); }
+        .player-stat-role { font-size: var(--fs-small); }
+        .player-stat-grid { font-size: var(--fs-small); }
+        .player-stat-note { font-size: var(--fs-small); }
+        .standings-table { font-size: var(--fs-body); }
+        .standings-table th, .standings-table td { padding: 8px 6px; }
+        .team-pick { font-size: var(--fs-body); padding: 16px 12px; }
+        .my-game-box { font-size: var(--fs-body); line-height: var(--line-body); }
+        .mini-row { font-size: var(--fs-body); padding: 10px 12px; }
+        .auth-guest-hint, .auth-sub { font-size: var(--fs-body); }
+        .auth-field label { font-size: 0.76rem; }
+        .auth-btn.secondary { font-size: var(--fs-body); }
+        .auth-account-tag { font-size: var(--fs-small); }
+        .auth-err { font-size: var(--fs-small); }
+        .wpa-head { font-size: var(--fs-small); }
+        .wpa-tip { font-size: var(--fs-body); }
+        .wpa-recap-hint { font-size: var(--fs-small); }
+        .sentiment-hot { font-size: var(--fs-body); }
+        .sentiment-btns button { font-size: var(--fs-small); padding: 8px 12px; }
+        .rating-row { font-size: var(--fs-body); }
+        .rating-meta { font-size: var(--fs-small); }
+        .chat-input, .nick-input { font-size: var(--fs-body); padding: 10px 12px; }
+        .chat-send { font-size: var(--fs-small); padding: 0 16px; }
+        .empty { font-size: var(--fs-body); }
+        .stock-link { font-size: var(--fs-small); }
+        .toast { font-size: var(--fs-body); }
     </style>
 </head>
 <body>
@@ -2097,7 +2179,7 @@
                     </button>
                     <div class="auth-account-tag" id="account-tag">@—</div>
                     <input class="nick-input" id="nick" value="" placeholder="표시 이름 (채팅·랭킹용)" style="margin-bottom:4px;width:100%" onblur="onDisplayNameBlur()">
-                    <p class="chat-hint" style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
+                    <p class="chat-hint subtext" style="margin-bottom:8px">
                         로그인 없이도 중계는 볼 수 있습니다 · 채팅·예측은 <button type="button" class="link-btn" style="padding:0;font-size:inherit" onclick="goTab('account')">계정 탭</button>에서 로그인
                     </p>
                     <div class="gaga-feed" id="gaga-feed"></div>
@@ -2177,7 +2259,7 @@
         <div class="tab-panel" id="tab-stats">
             <div class="panel">
                 <div class="label">선수 스탯 · 2026 시즌</div>
-                <p style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;line-height:1.45">
+                <p class="subtext" style="margin-bottom:4px">
                     KBO 등록 선수 전원 · 공식 기록실 기본·일자·상황·통산 + 고급 추정 지표. 이름 검색·팀·타/투 필터 지원.
                 </p>
                 <div class="stats-toolbar">
@@ -2188,7 +2270,7 @@
                         <button type="button" onclick="setStatsRoleFilter('pitcher')">투수</button>
                     </div>
                 </div>
-                <button type="button" class="link-btn" style="font-size:0.72rem;margin-bottom:2px" onclick="loadPlayerStatsTab(true)">새로고침</button>
+                <button type="button" class="link-btn" style="margin-bottom:2px" onclick="loadPlayerStatsTab(true)">새로고침</button>
                 <div class="stats-roster-meta" id="stats-roster-meta"></div>
                 <div class="stats-team-filter" id="stats-team-filter"></div>
                 <div class="stats-detail" id="stats-detail">
@@ -2201,7 +2283,7 @@
             </div>
             <div class="panel" id="stats-live-panel" style="display:none">
                 <div class="label">지금 보는 경기 선수</div>
-                <p style="font-size:0.74rem;color:var(--muted);margin-bottom:8px">중계 탭과 연동 · 타석·마운드 선수</p>
+                <p class="subtext" style="margin-bottom:8px">중계 탭과 연동 · 타석·마운드 선수</p>
                 <div class="player-stats-panel" id="stats-live-players"></div>
             </div>
         </div>
@@ -2244,7 +2326,7 @@
                 </div>
                 <div id="account-signed-in" style="display:none">
                     <div class="auth-account-tag" id="account-tag-main">@—</div>
-                    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;line-height:1.45">
+                    <p class="subtext" style="margin-bottom:10px">
                         로그인됨 · YASDAQ(:5173)과 계정은 <strong style="color:var(--faint)">따로</strong>입니다
                     </p>
                     <div class="auth-field">
@@ -2261,7 +2343,7 @@
         <div class="tab-panel" id="tab-myteam">
             <div class="panel">
                 <div class="label">응원 구단 선택</div>
-                <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+                <p class="subtext" style="margin-bottom:10px">
                     내 구단은 ★로 표시되고 맨 앞에 정렬됩니다 · 다른 경기도 홈에서 모두 볼 수 있어요.
                 </p>
                 <div class="team-grid" id="team-grid"></div>
@@ -2273,7 +2355,7 @@
             </div>
             <div class="panel" id="myteam-standings-panel">
                 <div class="label">KBO 팀 순위</div>
-                <p id="standings-sub" style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">2026 정규시즌 · KBO 공식 기록실 연동</p>
+                <p id="standings-sub" class="subtext" style="margin-bottom:8px">2026 정규시즌 · KBO 공식 기록실 연동</p>
                 <div id="myteam-standings-wrap"></div>
             </div>
         </div>
@@ -3750,7 +3832,7 @@
                 <div>🏁 경기 종료</div>
                 <div class="review-score">${g.awayScore} : ${g.homeScore}</div>
                 <div>${w ? `<strong>${w}</strong> 승 · ${winnerLabel(g)}` : winnerLabel(g)}</div>
-                <div style="margin-top:8px;font-size:0.78rem;color:var(--muted)">리뷰 탭 · 팬 평점 · 타임라인에서 복기하세요</div>`;
+                <div class="subtext" style="margin-top:8px">리뷰 탭 · 팬 평점 · 타임라인에서 복기하세요</div>`;
             if (reviewBody) reviewBody.innerHTML = html;
             if (feedReview) feedReview.innerHTML = html;
         }
@@ -3816,7 +3898,7 @@
             } catch (_) {
                 const wrap = document.getElementById('myteam-standings-wrap');
                 if (wrap) {
-                    wrap.innerHTML = '<div class="meta" style="color:var(--muted);font-size:0.78rem">순위 불러오는 중…</div>';
+                    wrap.innerHTML = '<div class="meta">순위 불러오는 중…</div>';
                 }
             }
         }
@@ -3830,7 +3912,7 @@
             }
             if (!wrap) return;
             if (!rows.length) {
-                wrap.innerHTML = '<div class="meta" style="color:var(--muted);font-size:0.78rem">순위 불러오는 중…</div>';
+                wrap.innerHTML = '<div class="meta">순위 불러오는 중…</div>';
                 return;
             }
             wrap.innerHTML = `<table class="standings-table">
@@ -3860,7 +3942,7 @@
                 });
             if (!mine.length) {
                 panel.style.display = '';
-                list.innerHTML = '<div class="meta" style="color:var(--muted);font-size:0.78rem">최근·오늘 일정에 내 구단 경기가 없습니다</div>';
+                list.innerHTML = '<div class="meta">최근·오늘 일정에 내 구단 경기가 없습니다</div>';
                 return;
             }
             panel.style.display = '';
@@ -4062,7 +4144,7 @@
                 renderPhaseUI();
                 document.getElementById('play-now').innerHTML =
                     `⏳ <strong>${g.awayTeam} vs ${g.homeTeam}</strong> — ${g.startTime || '개막'} 예정<br>` +
-                    `<span style="color:var(--muted);font-size:0.78rem">개막 후 「중계」 탭에서 1~9회 문자중계가 쌓입니다</span>`;
+                    `<span class="subtext">개막 후 「중계」 탭에서 1~9회 문자중계가 쌓입니다</span>`;
             } else {
                 gamePhase = defaultPhaseForGame(g);
                 renderPhaseUI();
