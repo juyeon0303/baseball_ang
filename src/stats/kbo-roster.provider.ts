@@ -99,22 +99,43 @@ export class KboRosterProvider implements OnModuleInit {
     this.byName.set(normalizeName(entry.name), entry);
   }
 
-  async ensureRoster(force = false): Promise<void> {
+  /** wait=true → refresh API 등에서 동기화 완료까지 대기 */
+  async ensureRoster(force = false, wait = false): Promise<void> {
     const cached = this.store.load();
     const maxAgeMs = 24 * 60 * 60 * 1000;
-    if (
-      !force &&
+    const cacheFresh =
       cached?.players?.length &&
-      Date.now() - Date.parse(cached.updatedAt) < maxAgeMs
-    ) {
-      if (this.byId.size === 0) this.applyFile(cached);
+      Date.now() - Date.parse(cached.updatedAt) < maxAgeMs;
+
+    if (cached?.players?.length && this.byId.size === 0) {
+      this.applyFile(cached);
+    }
+
+    if (!force && cacheFresh) {
       return;
     }
-    if (this.syncPromise) return this.syncPromise;
-    this.syncPromise = this.syncRoster().finally(() => {
+
+    if (!force && this.byId.size > 0) {
+      if (!cacheFresh) void this.startBackgroundSync();
+      return;
+    }
+
+    if (this.syncPromise) {
+      if (wait || force) return this.syncPromise;
+      return;
+    }
+
+    this.syncPromise = this.syncRoster(force).finally(() => {
       this.syncPromise = null;
     });
-    return this.syncPromise;
+    if (wait || force) return this.syncPromise;
+  }
+
+  private startBackgroundSync(): void {
+    if (this.syncPromise) return;
+    void this.ensureRoster(false, true).catch((e) =>
+      this.logger.warn(`KBO 로스터 백그라운드 동기화 실패: ${e}`),
+    );
   }
 
   async lookupRemote(name: string): Promise<KboRosterEntry | null> {
@@ -138,8 +159,10 @@ export class KboRosterProvider implements OnModuleInit {
     this.rosterUpdatedAt = file.updatedAt;
   }
 
-  private async syncRoster(): Promise<void> {
-    this.logger.log(`KBO 로스터 동기화 시작 (${this.season})`);
+  private async syncRoster(full = false): Promise<void> {
+    this.logger.log(
+      `KBO 로스터 동기화 시작 (${this.season}${full ? ', full' : ', fast'})`,
+    );
     const merged = new Map<number, KboRosterEntry>();
 
     const add = (entry: KboRosterEntry) => merged.set(entry.kboPlayerId, entry);
@@ -159,9 +182,14 @@ export class KboRosterProvider implements OnModuleInit {
 
     for (const surname of SURNAME_SEEDS) {
       for (const row of await this.searchRemote(surname)) add(row);
-      for (let code = 0xac00; code <= 0xd7a3; code += 28) {
-        const q = surname + String.fromCharCode(code);
-        for (const row of await this.searchRemote(q)) add(row);
+    }
+
+    if (full || process.env.KBO_ROSTER_FULL_SYNC === 'true') {
+      for (const surname of SURNAME_SEEDS) {
+        for (let code = 0xac00; code <= 0xd7a3; code += 28) {
+          const q = surname + String.fromCharCode(code);
+          for (const row of await this.searchRemote(q)) add(row);
+        }
       }
     }
 

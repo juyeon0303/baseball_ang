@@ -6,7 +6,7 @@ import { DisclosureService } from '../market/disclosure.service';
 import { LEE_JUNG_HOO_OPS_ID } from '../market/market-lineup';
 import { getMarketSession } from '../market/market-session.util';
 import { MarketService } from '../market/market.service';
-import { ShareholderService } from '../market/shareholder.service';
+import { ShareholderService, buildSkeletonShareholderTeams } from '../market/shareholder.service';
 import { OffDayDemoService } from '../market/off-day-demo.service';
 import { InstrumentState, LeaderboardResult, TradeRecord } from '../market/market.types';
 import { getWeekKey, getWeekLabel } from '../market/week.util';
@@ -253,7 +253,7 @@ export class HubService {
       return await this.shareholders.getBoard(userId);
     } catch (e) {
       this.logger.warn(`hub shareholders fallback: ${e}`);
-      return { teams: [], myTitles: [] };
+      return { teams: buildSkeletonShareholderTeams(), myTitles: [] };
     }
   }
 }

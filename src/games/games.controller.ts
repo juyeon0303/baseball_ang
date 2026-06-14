@@ -75,12 +75,8 @@ export class GamesController {
   }
 
   @Get('players/catalog')
-  async getPlayerCatalog() {
-    try {
-      await this.playerStats.getRoster({ limit: 1 });
-    } catch {
-      /* roster sync optional */
-    }
+  getPlayerCatalog() {
+    void this.playerStats.getRoster({ limit: 1 }).catch(() => undefined);
     return {
       updatedAt: new Date().toISOString(),
       players: this.playerStats.getPlayerCatalog(),

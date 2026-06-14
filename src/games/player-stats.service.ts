@@ -67,15 +67,38 @@ export class PlayerStatsService {
   }
 
   async getRoster(query: PlayerRosterQuery = {}): Promise<PlayerRosterBoard> {
-    await this.roster.ensureRoster(false);
+    void this.roster.ensureRoster(false).catch((e) =>
+      this.logger.warn(`로스터 백그라운드 동기화: ${e}`),
+    );
     const team = query.team?.trim();
     const role = query.role ?? 'all';
     const limit = query.limit ?? 120;
-    const rows = this.roster.search(query.q ?? '', { team, role, limit });
+    let rows = this.roster.search(query.q ?? '', { team, role, limit });
+    if (!rows.length) {
+      const catalog = this.getPlayerCatalog();
+      const q = (query.q ?? '').trim();
+      rows = catalog
+        .filter((p) => {
+          if (team && team !== 'all' && p.teamShort !== team) return false;
+          if (role !== 'all' && p.roleHint !== role) return false;
+          if (q && !p.name.includes(q)) return false;
+          return true;
+        })
+        .slice(0, limit)
+        .map((p) => ({
+          kboPlayerId: p.kboPlayerId ?? 0,
+          name: p.name,
+          team: p.teamShort,
+          role: (p.roleHint ?? 'hitter') as 'hitter' | 'pitcher',
+          position: p.position,
+          backNo: p.backNo,
+        }));
+    }
+    const total = this.roster.getAll().length || this.getPlayerCatalog().length;
     return {
       updatedAt: this.roster.getRosterUpdatedAt() || new Date().toISOString(),
       season: this.season,
-      total: this.roster.getAll().length,
+      total,
       players: rows.map((r) => this.toCatalogEntry(r)),
     };
   }
@@ -94,7 +117,7 @@ export class PlayerStatsService {
   }
 
   async refreshRoster(force = true): Promise<PlayerRosterBoard> {
-    await this.roster.ensureRoster(force);
+    await this.roster.ensureRoster(force, true);
     return this.getRoster({ limit: 200 });
   }
 
@@ -174,7 +197,7 @@ export class PlayerStatsService {
   }
 
   async getSeasonStatsBoard(): Promise<PlayerSeasonStatsBoard> {
-    await this.roster.ensureRoster(false);
+    void this.roster.ensureRoster(false).catch(() => undefined);
     const catalog = this.getPlayerCatalog().slice(0, 80);
     const players: PlayerStatRow[] = [];
     for (const entry of catalog) {
@@ -266,7 +289,7 @@ export class PlayerStatsService {
     backNo?: string;
   } | null> {
     if (opts.playerId) {
-      await this.roster.ensureRoster(false);
+      void this.roster.ensureRoster(false).catch(() => undefined);
       const hit = this.roster.findById(opts.playerId);
       if (hit) {
         return {
@@ -286,7 +309,7 @@ export class PlayerStatsService {
     }
     const name = opts.name?.trim();
     if (!name) return null;
-    await this.roster.ensureRoster(false);
+    void this.roster.ensureRoster(false).catch(() => undefined);
     const local = this.roster.findByName(name);
     if (local) {
       return {

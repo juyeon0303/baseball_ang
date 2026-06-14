@@ -142,7 +142,9 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
 
   async getAllUserIds(): Promise<string[]> {
     const users = await this.userRepo.find({ select: { externalId: true } });
-    return users.map((u) => u.externalId);
+    return users
+      .map((u) => u.externalId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
   }
 
   async getWeekStat(userId: string): Promise<UserWeekStat | undefined> {

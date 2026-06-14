@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KBO_TEAM_STOCKS } from './market-lineup';
 import { MARKET_STORE } from './market-store.interface';
 import type { IMarketStore } from './market-store.interface';
@@ -25,8 +25,23 @@ export interface TeamShareholderBoard {
 const OWNER_MIN_PCT = 5;
 const MAJOR_MIN_PCT = 1;
 
+export function buildSkeletonShareholderTeams(): TeamShareholderBoard[] {
+  return KBO_TEAM_STOCKS.map((seed) => ({
+    teamShort: seed.teamShort,
+    teamName: seed.teamName,
+    instrumentId: seed.id,
+    playerName: seed.playerName,
+    totalStake: 0,
+    holderCount: 0,
+    owner: null,
+    topHolders: [],
+  }));
+}
+
 @Injectable()
 export class ShareholderService {
+  private readonly logger = new Logger(ShareholderService.name);
+
   constructor(
     @Inject(MARKET_STORE) private readonly store: IMarketStore,
   ) {}
@@ -35,30 +50,69 @@ export class ShareholderService {
     teams: TeamShareholderBoard[];
     myTitles: Array<{ teamShort: string; stakePct: number; role: 'owner' | 'major' }>;
   }> {
-    const userIds = await Promise.resolve(this.store.getAllUserIds());
-    const longStakeByUserInstrument = new Map<string, { equity: number; shares: number }>();
+    try {
+      return await this.buildBoard(userId);
+    } catch (e) {
+      this.logger.warn(`구단주 보드 실패 — 스켈레톤 반환: ${e}`);
+      return { teams: buildSkeletonShareholderTeams(), myTitles: [] };
+    }
+  }
+
+  private async buildBoard(userId?: string): Promise<{
+    teams: TeamShareholderBoard[];
+    myTitles: Array<{ teamShort: string; stakePct: number; role: 'owner' | 'major' }>;
+  }> {
+    const rawIds = await Promise.resolve(this.store.getAllUserIds());
+    const userIds = rawIds.filter(
+      (id): id is string => typeof id === 'string' && id.length > 0,
+    );
+
+    const priceByInstrument = new Map<string, number>();
+    for (const seed of KBO_TEAM_STOCKS) {
+      try {
+        const inst = await Promise.resolve(this.store.getInstrument(seed.id));
+        priceByInstrument.set(seed.id, inst.price);
+      } catch {
+        priceByInstrument.set(seed.id, 0);
+      }
+    }
+
+    const longStakeByUserInstrument = new Map<
+      string,
+      { equity: number; shares: number }
+    >();
 
     for (const uid of userIds) {
-      const wallet = await Promise.resolve(this.store.getWallet(uid));
+      let wallet;
+      try {
+        wallet = await Promise.resolve(this.store.getWallet(uid));
+      } catch (e) {
+        this.logger.debug(`지갑 스킵 ${uid}: ${e}`);
+        continue;
+      }
       for (const seed of KBO_TEAM_STOCKS) {
-        try {
-          const inst = await Promise.resolve(this.store.getInstrument(seed.id));
-          const pos = wallet.positions[seed.id] ?? { longShares: 0, shortShares: 0 };
-          if (pos.longShares <= 0) continue;
-          const equity = pos.longShares * inst.price;
-          if (equity <= 0) continue;
-          longStakeByUserInstrument.set(`${uid}:${seed.id}`, {
-            equity,
-            shares: pos.longShares,
-          });
-        } catch {
-          continue;
-        }
+        const price = priceByInstrument.get(seed.id) ?? 0;
+        if (price <= 0) continue;
+        const pos = wallet.positions[seed.id] ?? {
+          longShares: 0,
+          shortShares: 0,
+        };
+        if (pos.longShares <= 0) continue;
+        const equity = pos.longShares * price;
+        if (equity <= 0) continue;
+        longStakeByUserInstrument.set(`${uid}:${seed.id}`, {
+          equity,
+          shares: pos.longShares,
+        });
       }
     }
 
     const teams: TeamShareholderBoard[] = [];
-    const myTitles: Array<{ teamShort: string; stakePct: number; role: 'owner' | 'major' }> = [];
+    const myTitles: Array<{
+      teamShort: string;
+      stakePct: number;
+      role: 'owner' | 'major';
+    }> = [];
 
     for (const seed of KBO_TEAM_STOCKS) {
       const holders: TeamHolderRow[] = [];
@@ -84,16 +138,27 @@ export class ShareholderService {
       }
       holders.forEach((h, idx) => {
         if (idx === 0 && h.stakePct >= OWNER_MIN_PCT) h.role = 'owner';
-        else if (idx > 0 && idx < 3 && h.stakePct >= MAJOR_MIN_PCT) h.role = 'major';
+        else if (idx > 0 && idx < 3 && h.stakePct >= MAJOR_MIN_PCT) {
+          h.role = 'major';
+        }
       });
 
-      const owner = holders.find((h) => h.role === 'owner') ?? holders[0] ?? null;
+      const owner =
+        holders.find((h) => h.role === 'owner') ?? holders[0] ?? null;
       if (userId) {
         const mine = holders.find((h) => h.userId === userId);
         if (mine?.role === 'owner') {
-          myTitles.push({ teamShort: seed.teamShort, stakePct: mine.stakePct, role: 'owner' });
+          myTitles.push({
+            teamShort: seed.teamShort,
+            stakePct: mine.stakePct,
+            role: 'owner',
+          });
         } else if (mine?.role === 'major') {
-          myTitles.push({ teamShort: seed.teamShort, stakePct: mine.stakePct, role: 'major' });
+          myTitles.push({
+            teamShort: seed.teamShort,
+            stakePct: mine.stakePct,
+            role: 'major',
+          });
         }
       }
 
