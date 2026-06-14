@@ -1539,7 +1539,7 @@
             background: rgba(148, 163, 184, 0.12);
             color: var(--faint);
         }
-        .bc-pitch-chip:first-child {
+        .bc-pitch-chip:last-child {
             background: rgba(94, 184, 255, 0.18);
             color: var(--accent);
             font-weight: 700;
@@ -2876,7 +2876,8 @@
                     ? `🏁 <strong>${w}</strong> 승 · ${winnerLabel(g)}`
                     : `🏁 ${winnerLabel(g)}`;
             } else if (relay?.lastPitch && g.batter) {
-                snippet.textContent = `${g.batter} · ${relay.lastPitch}`;
+                const stack = formatPitchStack(relay);
+                snippet.textContent = stack ? `${g.batter} · ${stack}` : `${g.batter} · ${relay.lastPitch}`;
             } else if (relay?.lastPitch) {
                 snippet.textContent = relay.lastPitch;
             } else if (relay?.lastPlay) {
@@ -3349,10 +3350,11 @@
             drawWpaChart();
         }
 
-        async function loadGameRelay(gameId) {
+        async function loadGameRelay(gameId, opts = {}) {
+            const force = opts.force === true;
             const g = findGame(gameId);
             if (!g || g.status === 'scheduled') return;
-            if (relayCache[gameId]?.plays?.length) {
+            if (!force && relayCache[gameId]?.full) {
                 applyRelayBundle(g, relayCache[gameId]);
                 if (gameId === watchId) {
                     renderHero(g);
@@ -3365,34 +3367,103 @@
             try {
                 const res = await fetch(`${API}/amm/games/${encodeURIComponent(gameId)}/relay`);
                 if (!res.ok) {
-                    relayCache[gameId] = { plays: [], error: true };
+                    if (!relayCache[gameId]?.plays?.length) {
+                        relayCache[gameId] = { plays: [], error: true };
+                    }
                     if (gameId === watchId) renderTimeline();
                     return;
                 }
                 const data = await res.json();
-                relayCache[gameId] = data;
-                applyRelayBundle(g, data);
+                const partial = relayCache[gameId]?.plays || [];
+                const mergedPlays = mergeRelayPlayLists(data.plays, partial);
+                relayCache[gameId] = {
+                    ...data,
+                    plays: mergedPlays,
+                    full: true,
+                };
+                applyRelayBundle(g, relayCache[gameId]);
                 if (gameId === watchId) {
                     renderHero(g);
                     renderSituation(g);
                     renderTimeline();
                 }
             } catch (_) {
-                relayCache[gameId] = { plays: [], error: true };
+                if (!relayCache[gameId]?.plays?.length) {
+                    relayCache[gameId] = { plays: [], error: true };
+                }
                 if (gameId === watchId) renderTimeline();
             }
+        }
+
+        function mergeRelayPlayLists(primary, extra) {
+            const map = new Map();
+            for (const p of primary || []) map.set(p.id, p);
+            for (const p of extra || []) map.set(p.id, p);
+            return [...map.values()].sort((a, b) => playSortKey(a) - playSortKey(b));
+        }
+
+        function mergeRelayPitchStack(relay, batter, incoming) {
+            if (!relay) return;
+            const name = (batter || '').trim();
+            if (name && relay.pitchBatter && relay.pitchBatter !== name) {
+                relay.recentPitches = [];
+            }
+            if (name) relay.pitchBatter = name;
+            const list = relay.recentPitches || (relay.recentPitches = []);
+            const items = Array.isArray(incoming)
+                ? incoming
+                : incoming
+                    ? [incoming]
+                    : [];
+            for (const raw of items) {
+                const text = (raw || '').trim();
+                if (!text) continue;
+                if (list[list.length - 1] !== text) list.push(text);
+            }
+            while (list.length > 12) list.shift();
+        }
+
+        function seedAtBatPitchesFromPlays(plays, g, relay) {
+            if (!relay || !plays?.length) return;
+            const inning = g?.inning;
+            const chronological = sortPlaysChronologically(
+                plays.filter(p => !inning || p.inning === inning),
+            );
+            let lastNonPitchIdx = -1;
+            for (let i = chronological.length - 1; i >= 0; i--) {
+                if (chronological[i].relayKind !== 'pitch') {
+                    lastNonPitchIdx = i;
+                    break;
+                }
+            }
+            const atBatPitches = chronological
+                .slice(lastNonPitchIdx + 1)
+                .filter(p => p.relayKind === 'pitch')
+                .map(p => p.text)
+                .filter(Boolean);
+            relay.recentPitches = atBatPitches.slice(-12);
+            if (g?.batter) relay.pitchBatter = g.batter;
+        }
+
+        function formatPitchStack(relay) {
+            const stacked = relay?.recentPitches || [];
+            if (stacked.length) return stacked.join(' · ');
+            return relay?.lastPitch || '';
         }
 
         function applyRelayBundle(g, bundle) {
             if (!g || !bundle) return;
             if (bundle.situation) g.situation = bundle.situation;
             if (bundle.relay) {
-                g.relay = bundle.relay;
+                g.relay = { ...(g.relay || {}), ...bundle.relay };
                 if (g.relay.lastPlay && g.batter) g.relay.lastPlayAtBatter = g.batter;
             }
             if (bundle.batter) g.batter = bundle.batter;
             if (bundle.pitcher) g.pitcher = bundle.pitcher;
             if (bundle.inning) g.inning = bundle.inning;
+            if (bundle.plays?.length) {
+                seedAtBatPitchesFromPlays(bundle.plays, g, g.relay || (g.relay = {}));
+            }
         }
 
         function mergeSnapshotGames(prevGames, nextGames) {
@@ -3420,12 +3491,16 @@
             let bundle = relayCache[play.gameId];
             if (!bundle) {
                 relayCache[play.gameId] = { plays: [play] };
+                void loadGameRelay(play.gameId);
                 return;
             }
             if (!bundle.plays) bundle.plays = [];
             if (bundle.plays.some((p) => p.id === play.id)) return;
             bundle.plays.push(play);
             bundle.plays.sort((a, b) => playSortKey(a) - playSortKey(b));
+            if (!relayCache[play.gameId]?.full) {
+                void loadGameRelay(play.gameId);
+            }
         }
 
         function applySituationFromPlay(g, play) {
@@ -4589,8 +4664,9 @@
             if (el('base-3')) el('base-3').classList.toggle('on', !!bases.third);
 
             const pitch = relay?.lastPitch;
+            const pitchStack = formatPitchStack(relay);
             const pitchLogEl = el('bc-pitch-log');
-            const chips = (relay?.recentPitches || []).slice(-8).reverse();
+            const chips = (relay?.recentPitches || []).slice(-8);
             if (pitchLogEl) {
                 pitchLogEl.innerHTML = chips.length
                     ? chips.map(t => `<span class="bc-pitch-chip">${t}</span>`).join('')
@@ -4625,10 +4701,10 @@
                     badgeEl.textContent = badge.label;
                     badgeEl.className = 'bc-play-badge ' + badge.cls;
                     liveTextEl.innerHTML = formatLiveCaptionHtml(batter, playText, team);
-                } else if (pitch) {
+                } else if (pitchStack) {
                     badgeEl.textContent = '球';
                     badgeEl.className = 'bc-play-badge def';
-                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, pitch, null);
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, pitchStack, null);
                 } else if (batter) {
                     badgeEl.textContent = '⚾';
                     badgeEl.className = 'bc-play-badge def';
@@ -4690,15 +4766,28 @@
             if (payload.inning) g.inning = payload.inning;
             if (payload.awayScore != null) g.awayScore = payload.awayScore;
             if (payload.homeScore != null) g.homeScore = payload.homeScore;
-            if (payload.relay) g.relay = payload.relay;
+            if (payload.relay) {
+                g.relay = { ...(g.relay || {}), ...payload.relay };
+                mergeRelayPitchStack(
+                    g.relay,
+                    payload.batter || g.batter,
+                    payload.relay.recentPitches?.length
+                        ? payload.relay.recentPitches
+                        : payload.relay.lastPitch,
+                );
+            }
+            if (g.relay?.lastPlay && g.batter) g.relay.lastPlayAtBatter = g.batter;
             const cached = relayCache[gameId] || {};
             relayCache[gameId] = {
                 ...cached,
                 situation: payload.situation ?? cached.situation,
                 batter: payload.batter ?? cached.batter,
                 pitcher: payload.pitcher ?? cached.pitcher,
-                relay: payload.relay ?? cached.relay,
+                relay: g.relay ?? cached.relay,
             };
+            if (!relayCache[gameId].full) {
+                void loadGameRelay(gameId);
+            }
             if (gameId === watchId) {
                 renderHero(g);
                 renderSituation(g);
@@ -4778,6 +4867,9 @@
                 g.relay.lastPlayKind = play.relayKind;
                 g.relay.lastPlayTeam = play.team;
                 g.relay.lastPlayImpact = play.impact;
+                if (play.relayKind !== 'pitch' && play.relayKind !== 'info') {
+                    g.relay.lastPlayAtBatter = g.batter;
+                }
             }
             renderSituation(g);
             if (g) updateHeroSnippet(g);

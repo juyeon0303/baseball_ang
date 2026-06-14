@@ -267,13 +267,32 @@ export class RelaySyncService {
     parsed.situation.inning = parsed.inningLabel ?? game.inning;
     game.situation = parsed.situation;
 
+    const prevRelay = game.relay;
+    let mergedPitches: string[];
+    if (
+      parsed.batter &&
+      prevRelay?.pitchBatter &&
+      parsed.batter !== prevRelay.pitchBatter
+    ) {
+      mergedPitches = [...parsed.recentPitches];
+    } else {
+      mergedPitches = [...(prevRelay?.recentPitches ?? [])];
+      for (const p of parsed.recentPitches) {
+        if (mergedPitches[mergedPitches.length - 1] !== p) {
+          mergedPitches.push(p);
+        }
+      }
+    }
+    while (mergedPitches.length > 12) mergedPitches.shift();
+
     game.relay = {
       naverGameId: game.naverGameId,
       lastPitch: parsed.lastPitch,
-      recentPitches: parsed.recentPitches,
+      recentPitches: mergedPitches,
       lastPlay: parsed.lastPlay,
       lastPlayKind: parsed.lastPlayKind,
       lastPlayType: parsed.lastPlayType,
+      pitchBatter: parsed.batter,
       updatedAt: new Date().toISOString(),
       source: 'naver_relay',
     };

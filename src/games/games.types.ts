@@ -17,6 +17,7 @@ export interface GameRelayState {
   naverGameId?: string;
   lastPitch?: string;
   recentPitches?: string[];
+  pitchBatter?: string;
   lastPlay?: string;
   lastPlayKind?: PlayRelayKind;
   lastPlayType?: string;
