@@ -24,7 +24,7 @@ import {
 
 } from './games.types';
 
-import { KboRawGame, KboScoreProvider } from './kbo-score.provider';
+import { KboRawGame, KboScoreProvider, resolveKboGameStatus } from './kbo-score.provider';
 
 import { GamesService } from './games.service';
 import { GameLiveService } from './game-live.service';
@@ -645,17 +645,8 @@ export class GamesSyncService implements OnModuleInit {
 
 
   private rawStatus(raw: KboRawGame): TodayGame['status'] {
-    if (raw.GAME_RESULT_CK === 1 || raw.GAME_STATE_SC === '3') return 'final';
-    if (raw.GAME_STATE_SC === '1' && raw.SCORE_CK === '0') return 'scheduled';
-    if (
-      raw.GAME_INN_NO != null ||
-      (raw.T_P_NM && raw.T_P_NM.trim()) ||
-      raw.GAME_STATE_SC === '2' ||
-      raw.SCORE_CK === '1'
-    ) {
-      return 'live';
-    }
-    return 'scheduled';
+    const tz = this.config.get('GAMES_TZ') ?? 'Asia/Seoul';
+    return resolveKboGameStatus(raw, new Date(), tz);
   }
 
   private isGameHour(timeZone: string): boolean {

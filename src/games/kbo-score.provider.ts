@@ -6,6 +6,66 @@ import { formatBasesLabel } from './games-display.util';
 const KBO_UA =
   'Mozilla/5.0 (compatible; BaseballStockBot/1.0; +kbo-scoreboard)';
 
+/** 개막 몇 분 전까지는 KBO 선발 라인업 선반영을 live로 보지 않음 */
+export const KBO_LIVE_START_LEAD_MINUTES = 5;
+
+export function parseKboStartTimeMs(
+  gDt: string | undefined,
+  gTm: string | undefined,
+  timeZone = 'Asia/Seoul',
+): number | null {
+  const tm = gTm?.trim();
+  if (!tm) return null;
+  const parts = tm.match(/^(\d{1,2}):(\d{2})$/);
+  if (!parts) return null;
+  const hour = parseInt(parts[1], 10);
+  const minute = parseInt(parts[2], 10);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+
+  let dateKey = gDt?.trim();
+  if (dateKey?.length === 8) {
+    dateKey = `${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-${dateKey.slice(6, 8)}`;
+  }
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    dateKey = todayKey(timeZone);
+  }
+
+  const iso = `${dateKey}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+09:00`;
+  const ms = Date.parse(iso);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+export function isBeforeKboLiveWindow(
+  raw: KboRawGame,
+  now = new Date(),
+  timeZone = 'Asia/Seoul',
+  leadMinutes = KBO_LIVE_START_LEAD_MINUTES,
+): boolean {
+  const startMs = parseKboStartTimeMs(raw.G_DT, raw.G_TM, timeZone);
+  if (startMs == null) return false;
+  return now.getTime() < startMs - leadMinutes * 60_000;
+}
+
+export function resolveKboGameStatus(
+  raw: KboRawGame,
+  now = new Date(),
+  timeZone = 'Asia/Seoul',
+): GameStatus {
+  if (raw.GAME_RESULT_CK === 1 || raw.GAME_STATE_SC === '3') {
+    return 'final';
+  }
+  if (raw.GAME_STATE_SC === '1') {
+    return 'scheduled';
+  }
+  if (raw.GAME_STATE_SC === '2') {
+    if (isBeforeKboLiveWindow(raw, now, timeZone)) {
+      return 'scheduled';
+    }
+    return 'live';
+  }
+  return 'scheduled';
+}
+
 /** KBO GameCenter 팀 약어 → 앱 팀명 */
 const TEAM_CODE_TO_NAME: Record<string, string> = {
   WO: '키움',
@@ -128,23 +188,7 @@ export class KboScoreProvider {
   }
 
   private resolveStatus(raw: KboRawGame): GameStatus {
-    if (raw.GAME_RESULT_CK === 1 || raw.GAME_STATE_SC === '3') {
-      return 'final';
-    }
-    if (raw.GAME_STATE_SC === '1' && raw.SCORE_CK === '0') {
-      return 'scheduled';
-    }
-    const hasLiveField =
-      raw.GAME_INN_NO != null ||
-      (raw.T_P_NM && raw.T_P_NM.trim()) ||
-      raw.GAME_STATE_SC === '2';
-    if (hasLiveField && raw.GAME_RESULT_CK === 0) {
-      return 'live';
-    }
-    if (raw.SCORE_CK === '1' && raw.GAME_RESULT_CK === 0) {
-      return 'live';
-    }
-    return 'scheduled';
+    return resolveKboGameStatus(raw);
   }
 
   private formatInning(raw: KboRawGame, status: GameStatus): string {

@@ -768,30 +768,32 @@
             text-align: left;
         }
         .feed-chat-toggle .chev { color: var(--muted); font-size: 0.7rem; }
-        .inning-filter { margin-bottom: 10px; }
-        .inning-nav-scroll {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding: 2px 2px 6px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-        .inning-nav-scroll::-webkit-scrollbar { display: none; }
-        .inn-tab {
+        .inning-filter {
+            margin-bottom: 10px;
             flex-shrink: 0;
-            min-width: 44px;
+            min-width: 0;
+        }
+        .inning-nav-scroll {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 6px;
+            padding: 2px 0 6px;
+        }
+        .inn-tab {
+            min-width: 0;
+            width: 100%;
             border: 1px solid var(--border);
             background: var(--surface2);
             color: var(--muted);
             font: inherit;
             font-size: 0.82rem;
             font-weight: 700;
-            padding: 9px 13px;
+            padding: 8px 4px;
             border-radius: 10px;
             cursor: pointer;
+            text-align: center;
         }
-        .inn-tab.all { min-width: 52px; }
+        .inn-tab.all { grid-column: span 1; }
         .inn-tab.live-dot::after {
             content: '';
             display: inline-block;
@@ -2299,7 +2301,7 @@
                 </div>
                 <button type="button" class="feed-extras-toggle" id="feed-extras-toggle" onclick="toggleFeedExtras()">
                     <span>분석 · WPA · 팬 반응</span>
-                    <span id="feed-extras-chev">펼치기 ▸</span>
+                    <span id="feed-extras-chev">접기 ▾</span>
                 </button>
                 <div class="panel chat-panel-compact collapsed" id="chat-panel">
                     <button type="button" class="feed-chat-toggle label" onclick="toggleFeedChat()">
@@ -2813,7 +2815,7 @@
         let timelineInningNavInitFor = null;
         let inningNavUserScroll = false;
         let feedChatOpen = localStorage.getItem('pb-feed-chat') === '1';
-        let feedExtrasOpen = localStorage.getItem('pb-feed-extras') === '1';
+        let feedExtrasOpen = localStorage.getItem('pb-feed-extras') !== '0';
 
         function openHeroCard() {
             openHeroPrimary();
@@ -3435,9 +3437,8 @@
         }
 
         function scrollInningTabInNav(tabEl) {
-            const nav = tabEl?.closest('.inning-nav-scroll');
-            if (!nav || !tabEl) return;
-            nav.scrollLeft = tabEl.offsetLeft - (nav.clientWidth - tabEl.offsetWidth) / 2;
+            if (!tabEl) return;
+            tabEl.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
         }
 
         function fmtStatNum(v, digits = 3) {
