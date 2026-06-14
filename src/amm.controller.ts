@@ -19,6 +19,7 @@ import { HubService } from './hub/hub.service';
 import { LiveStatsSyncService } from './stats/live-stats-sync.service';
 import { MemeSyncService } from './stats/meme-sync.service';
 import { DatabaseHealthService } from './database/database-health.service';
+import { getEffectiveStorageMode, isPostgresConfigured } from './persist/storage-mode';
 import { DisclosureService } from './market/disclosure.service';
 import { OffDayDemoService } from './market/off-day-demo.service';
 import { ShareholderService } from './market/shareholder.service';
@@ -50,20 +51,28 @@ export class AmmController {
   @Get('health')
   async getHealth() {
     const storageMode = process.env.STORAGE_MODE ?? 'memory';
+    const effectiveStorage = getEffectiveStorageMode();
+    const postgresConfigured = isPostgresConfigured();
     const db =
-      storageMode === 'postgres'
+      postgresConfigured
         ? await this.dbHealth.ping().then(() => this.dbHealth.getStatus())
         : { enabled: false, connected: false, error: null };
     const stats =
-      storageMode === 'postgres' && db.connected
+      postgresConfigured && db.connected
         ? await this.market.getStoreStats()
         : null;
     return {
-      ok: storageMode !== 'postgres' || db.connected,
+      ok: effectiveStorage === 'postgres' ? db.connected : true,
       storageMode,
+      effectiveStorage,
+      persistent: effectiveStorage === 'postgres' && db.connected,
       database: db,
       stats,
       serverTime: new Date().toISOString(),
+      hint:
+        effectiveStorage !== 'postgres' || !db.connected
+          ? '서버 재시작 시 계정·지갑이 초기화될 수 있습니다. Render에 DATABASE_URL(Supabase)을 설정하세요.'
+          : null,
     };
   }
 
@@ -152,7 +161,10 @@ export class AmmController {
   @Get('disclosures')
   getDisclosures(@Query('limit') limit?: string) {
     const n = Math.min(30, Math.max(1, parseInt(limit ?? '12', 10) || 12));
-    return { disclosures: this.disclosure.getFeed(n) };
+    return {
+      disclosures: this.disclosure.getFeed(n),
+      session: this.disclosure.getSessionContext(),
+    };
   }
 
   @Post('disclosures/pulse')
@@ -188,6 +200,18 @@ export class AmmController {
     return this.market.getStatus(id);
   }
 
+  @Get('market-board')
+  async getMarketBoard() {
+    return this.market.getMarketBoard();
+  }
+
+  @Get('trades/me')
+  async getMyTrades(@Headers('authorization') authorization?: string) {
+    const session = this.auth.requireBearer(authorization);
+    const trades = await this.market.getUserTrades(session.accountId, 40);
+    return { trades };
+  }
+
   @Get('trades')
   async getTrades(@Query('instrumentId') instrumentId?: string) {
     return { trades: await this.market.getRecentTrades(30, instrumentId) };
@@ -202,24 +226,31 @@ export class AmmController {
   @Get('lineup')
   async getLineup() {
     const instruments = await this.ammEngine.getLineup();
-    return instruments.map((item, index) => ({
-      id: index + 1,
-      instrumentId: item.id,
-      name: item.name,
-      playerName: item.playerName,
-      teamName: item.teamName,
-      teamShort: item.teamShort,
-      symbol: item.symbol,
-      metric: item.metric,
-      metricLabel: item.metricLabel,
-      type: `${item.metricLabel} / KBO`,
-      price: item.price,
-      fairPrice: item.fairPrice,
-      oracleValue: item.oracleValue,
-      oracleOps: item.oracleValue,
-      sentiment: item.sentiment,
-      accent: item.accent,
-    }));
+    const rows = await Promise.all(
+      instruments.map(async (item, index) => {
+        const enriched = await this.market.enrichInstrument(item);
+        return {
+          id: index + 1,
+          instrumentId: item.id,
+          name: enriched.name,
+          playerName: enriched.playerName,
+          teamName: enriched.teamName,
+          teamShort: enriched.teamShort,
+          symbol: enriched.symbol,
+          metric: enriched.metric,
+          metricLabel: enriched.metricLabel,
+          type: `${enriched.metricLabel} / KBO`,
+          price: enriched.price,
+          fairPrice: enriched.fairPrice,
+          oracleValue: enriched.oracleValue,
+          oracleOps: enriched.oracleValue,
+          sentiment: enriched.sentiment,
+          accent: enriched.accent,
+          changePct: enriched.changePct ?? 0,
+        };
+      }),
+    );
+    return rows;
   }
 
   @Get('market/:instrumentId')

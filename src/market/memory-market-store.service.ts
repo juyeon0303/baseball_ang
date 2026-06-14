@@ -1,5 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { createDebouncedFlush } from '../persist/debounced-flush';
+import { LocalJsonStore } from '../persist/local-json-store';
+import { getEffectiveStorageMode } from '../persist/storage-mode';
 import {
   InstrumentState,
   Position,
@@ -23,13 +26,27 @@ export { LEE_JUNG_HOO_OPS_ID };
 
 const STARTING_POINTS = 100_000;
 
+interface MemoryMarketFile {
+  version: 1;
+  wallets: Record<string, UserWallet>;
+  trades: TradeRecord[];
+  weekStats: Record<string, UserWeekStat>;
+}
+
 @Injectable()
-export class MemoryMarketStoreService implements IMarketStore {
+export class MemoryMarketStoreService implements IMarketStore, OnModuleInit {
+  private readonly logger = new Logger(MemoryMarketStoreService.name);
   private instruments = new Map<string, InstrumentState>();
   private priceHistory = new Map<string, PriceSnapshot[]>();
   private wallets = new Map<string, UserWallet>();
   private weekStats = new Map<string, UserWeekStat>();
   private trades: TradeRecord[] = [];
+  private readonly marketStore = new LocalJsonStore<MemoryMarketFile>(
+    'market-memory.json',
+  );
+  private readonly scheduleFilePersist = createDebouncedFlush(() =>
+    this.flushToFile(),
+  );
 
   constructor(private readonly pricing: PricingService) {
     for (const seed of ALL_INSTRUMENT_SEEDS) {
@@ -42,6 +59,48 @@ export class MemoryMarketStoreService implements IMarketStore {
       this.instruments.set(meme.id, inst);
       this.seedPriceHistory(meme.id, inst);
     }
+  }
+
+  onModuleInit(): void {
+    const data = this.marketStore.load();
+    if (!data) return;
+    for (const [userId, wallet] of Object.entries(data.wallets ?? {})) {
+      this.wallets.set(userId, {
+        userId,
+        points: wallet.points,
+        positions: { ...wallet.positions },
+      });
+    }
+    this.trades = Array.isArray(data.trades) ? [...data.trades] : [];
+    for (const [userId, stat] of Object.entries(data.weekStats ?? {})) {
+      this.weekStats.set(userId, { ...stat });
+    }
+    if (this.wallets.size || this.trades.length) {
+      this.logger.log(
+        `지갑 ${this.wallets.size} · 체결 ${this.trades.length}건 파일에서 복원 (${getEffectiveStorageMode()})`,
+      );
+    }
+  }
+
+  private flushToFile(): void {
+    const wallets: Record<string, UserWallet> = {};
+    for (const [userId, wallet] of this.wallets.entries()) {
+      wallets[userId] = {
+        userId,
+        points: wallet.points,
+        positions: { ...wallet.positions },
+      };
+    }
+    const weekStats: Record<string, UserWeekStat> = {};
+    for (const [userId, stat] of this.weekStats.entries()) {
+      weekStats[userId] = { ...stat };
+    }
+    this.marketStore.save({
+      version: 1,
+      wallets,
+      trades: this.trades,
+      weekStats,
+    });
   }
 
   getLineup(): InstrumentState[] {
@@ -76,6 +135,7 @@ export class MemoryMarketStoreService implements IMarketStore {
         positions: {},
       };
       this.wallets.set(userId, wallet);
+      this.scheduleFilePersist();
     }
     return {
       userId: wallet.userId,
@@ -99,6 +159,7 @@ export class MemoryMarketStoreService implements IMarketStore {
 
   setWeekStat(userId: string, stat: UserWeekStat): void {
     this.weekStats.set(userId, { ...stat });
+    this.scheduleFilePersist();
   }
 
   saveWallet(wallet: UserWallet): void {
@@ -107,6 +168,7 @@ export class MemoryMarketStoreService implements IMarketStore {
       points: wallet.points,
       positions: { ...wallet.positions },
     });
+    this.scheduleFilePersist();
   }
 
   updateInstrument(
@@ -209,6 +271,7 @@ export class MemoryMarketStoreService implements IMarketStore {
       this.trades.length = 300;
     }
     this.recordOpsTrade(partial.userId, partial.instrumentId);
+    this.scheduleFilePersist();
     return trade;
   }
 
@@ -217,6 +280,10 @@ export class MemoryMarketStoreService implements IMarketStore {
       ? this.trades.filter((t) => t.instrumentId === instrumentId)
       : this.trades;
     return list.slice(0, limit);
+  }
+
+  getUserTrades(userId: string, limit = 30): TradeRecord[] {
+    return this.trades.filter((t) => t.userId === userId).slice(0, limit);
   }
 
   private recordOpsTrade(userId: string, instrumentId: string): void {

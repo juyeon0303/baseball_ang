@@ -823,6 +823,129 @@
             margin-top: 4px;
         }
 
+        .trade-mode {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 10px;
+            padding: 4px;
+            background: var(--surface-inset);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .trade-mode button {
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .trade-mode button.on {
+            background: var(--surface2);
+            color: var(--accent-neon);
+            box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.2);
+        }
+        .trade-position-hint {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+            line-height: 1.45;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: var(--surface-inset);
+            border: 1px dashed var(--border);
+        }
+        .order-preview {
+            font-size: 0.72rem;
+            color: var(--faint);
+            margin-bottom: 8px;
+            min-height: 1.2em;
+        }
+        .market-board-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .board-col-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .board-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 7px 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            text-align: left;
+            font: inherit;
+        }
+        .board-row .br-name { font-size: 0.76rem; font-weight: 700; }
+        .board-row .br-pct { font-size: 0.72rem; font-weight: 800; }
+        .board-row .br-pct.up { color: var(--accent-neon); }
+        .board-row .br-pct.down { color: var(--down-neon); }
+        .stock-search {
+            width: 100%;
+            margin: 8px 0 10px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            padding: 9px 11px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            outline: none;
+        }
+        .stock-search:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+        .watchlist-panel .watch-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .watch-star {
+            border: none;
+            background: transparent;
+            color: var(--faint);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 2px 4px;
+        }
+        .watch-star.on { color: var(--highlight); }
+        .my-trades-list {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .my-trade-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 0.74rem;
+        }
+        .my-trade-row:last-child { border-bottom: none; }
+        .holding-pnl {
+            display: block;
+            font-size: 0.68rem;
+            margin-top: 2px;
+        }
+        .holding-pnl.up { color: var(--accent-neon); }
+        .holding-pnl.down { color: var(--down-neon); }
+
         .btn {
             border: none;
             padding: 13px;
@@ -1221,6 +1344,21 @@
             line-height: 1.5;
             color: var(--text);
         }
+        .disc-item.clickable {
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: transparent;
+            font: inherit;
+        }
+        .disc-item.clickable:hover { opacity: 0.9; }
+        .disc-sub {
+            font-size: 0.65rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
         .disc-item:last-child { border-bottom: none; }
         .disc-delta.up { color: var(--accent); font-weight: 700; }
         .disc-delta.down { color: var(--down); font-weight: 700; }
@@ -1245,6 +1383,29 @@
         .owner-row:hover { opacity: 0.92; }
         .owner-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         .owner-badge { font-size: 0.58rem; color: var(--highlight); margin-left: 4px; }
+        .owner-badge.major { color: var(--accent); }
+        .owner-majors {
+            display: block;
+            font-size: 0.62rem;
+            color: var(--faint);
+            margin-top: 2px;
+        }
+        .etf-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .etf-chip {
+            font-size: 0.58rem;
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: var(--surface-inset);
+        }
+        .etf-chip.up { color: var(--accent); border-color: rgba(94, 184, 255, 0.35); }
+        .etf-chip.down { color: var(--down); border-color: rgba(248, 113, 113, 0.35); }
         .title-badge {
             display: inline-block;
             margin-top: 8px;
@@ -2031,6 +2192,18 @@
             margin-bottom: 12px;
             line-height: 1.45;
         }
+        .auth-storage-warn {
+            display: none;
+            font-size: 0.72rem;
+            color: #fde68a;
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.25);
+            border-radius: 10px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+        .auth-storage-warn.show { display: block; }
         .auth-card,
         .auth-panel-inner {
             width: min(380px, 100%);
@@ -2101,6 +2274,9 @@
                 <section class="panel auth-panel" id="account-panel">
                     <div class="label">로그인 · 가입</div>
                     <p class="auth-guest-hint">로그인 없이도 종목·경기·시세는 볼 수 있습니다. 베팅·랭킹·내 지갑만 계정이 필요합니다.</p>
+                    <div class="auth-storage-warn" id="auth-storage-warn">
+                        ⚠️ 지금 서버는 계정을 DB에 저장하지 않습니다. 재시작·슬립 후 가입 정보가 사라질 수 있어요. 같은 닉네임으로 다시 가입해 주세요.
+                    </div>
                     <div id="account-signed-out">
                         <div class="auth-sub">닉네임 + PIN 4자리 · 베팅·순위는 계정으로 저장돼요</div>
                         <div id="auth-login-panel">
@@ -2193,6 +2369,16 @@
                     </div>
                     <div class="ops-crown" id="ops-crown" style="display:none">👑 OPS 왕</div>
                     <div id="team-titles"></div>
+                    <section class="panel" id="my-trades-panel">
+                        <div class="label">내 체결 내역</div>
+                        <div class="my-trades-list" id="my-trades-list">
+                            <div class="meta">로그인 후 최근 주문이 표시됩니다</div>
+                        </div>
+                    </section>
+                    <section class="panel watchlist-panel" id="watchlist-panel">
+                        <div class="label">관심종목</div>
+                        <div id="watchlist-list" class="meta">⭐ 종목 옆 별을 눌러 추가</div>
+                    </section>
                     <div class="wallet-nick">
                         <div class="auth-account-tag" id="account-tag">@—</div>
                         <label for="user-id">표시 이름 (닉과 다르게 가능)</label>
@@ -2248,6 +2434,12 @@
             </aside>
 
             <main class="col-main">
+                <section class="panel" id="market-board-panel">
+                    <div class="label">시장 현황 · 등락</div>
+                    <div class="market-board-grid" id="market-board-grid">
+                        <div class="meta">불러오는 중…</div>
+                    </div>
+                </section>
                 <div class="trade-focus">
                     <section class="panel glass-hero" id="hero">
                         <div class="label">오늘의 픽</div>
@@ -2278,17 +2470,24 @@
                     </section>
 
                     <section class="panel trade-form">
-                        <div class="label">지금 베팅</div>
-                        <label for="qty">베팅 강도</label>
-                        <input class="field" type="number" id="qty" value="5" min="1">
-                        <div class="qty-chips">
-                            <button type="button" data-qty="1" onclick="setQty(1)">가볍게</button>
-                            <button type="button" data-qty="5" class="on" onclick="setQty(5)">보통</button>
-                            <button type="button" data-qty="10" onclick="setQty(10)">세게</button>
+                        <div class="label">주문 · 매수 / 매도</div>
+                        <div class="trade-mode">
+                            <button type="button" class="on" data-mode="buy" onclick="setTradeMode('buy')">매수</button>
+                            <button type="button" data-mode="sell" onclick="setTradeMode('sell')">매도</button>
                         </div>
+                        <div class="trade-position-hint" id="trade-position-hint">종목을 선택하면 보유 현황이 표시됩니다</div>
+                        <label for="qty">수량 (주)</label>
+                        <input class="field" type="number" id="qty" value="5" min="1" oninput="updateTradeUI()">
+                        <div class="qty-chips">
+                            <button type="button" data-qty="1" onclick="setQty(1)">1주</button>
+                            <button type="button" data-qty="5" class="on" onclick="setQty(5)">5주</button>
+                            <button type="button" data-qty="10" onclick="setQty(10)">10주</button>
+                            <button type="button" data-qty="0" onclick="setQtyMax()">전량</button>
+                        </div>
+                        <div class="order-preview" id="order-preview"></div>
                         <div class="btns">
-                            <button class="btn btn-long" id="btn-yes" onclick="order('buy','long')">YES</button>
-                            <button class="btn btn-short" id="btn-no" onclick="order('sell','short')">NO</button>
+                            <button class="btn btn-long" id="btn-yes">YES</button>
+                            <button class="btn btn-short" id="btn-no">NO</button>
                         </div>
                     </section>
                 </div>
@@ -2319,6 +2518,7 @@
                         <button type="button" class="link-btn" id="toggle-lineup" onclick="toggleLineup()">펼치기</button>
                     </div>
                     <div class="lineup-body collapsed" id="lineup-body">
+                        <input class="stock-search" id="stock-search" type="search" placeholder="선수·팀·종목 검색" oninput="renderLineup(lineupCache)">
                         <div id="lineup-list"></div>
                     </div>
                 </section>
@@ -2327,6 +2527,7 @@
             <aside class="col-side col-right">
                 <section class="panel" id="disc-panel">
                     <div class="label">실시간 공시창 · 프리마켓</div>
+                    <div class="disc-sub" id="disc-session-sub">장 상태 확인 중…</div>
                     <ul class="disc-list" id="disc-list"></ul>
                 </section>
 
@@ -2403,6 +2604,9 @@
         const DISPLAY_NAME_KEY = 'yamgu-display-name';
         const NICKNAME_KEY = 'yamgu-nickname';
         const WEEK_SEEN_KEY = 'yamgu-week-seen';
+        const WATCHLIST_KEY = 'yas-watchlist';
+        let tradeMode = 'buy';
+        let tradeAction = { yes: ['buy', 'long'], no: ['sell', 'short'] };
         const YAS_SHARE_BASE = IS_LOCAL_DEV ? 'http://localhost:5173/stock/' : `${location.origin}/stock/`;
         let sessionReady = false;
         let appBooted = false;
@@ -2782,9 +2986,23 @@
         async function bootApp() {
             if (appBooted) return;
             appBooted = true;
+            void checkStoragePersistence();
+            renderWatchlist();
+            updateTradeUI();
             void loadPriceChart(selectedId || 'lee-jung-hoo');
             refresh();
             setInterval(refresh, 30000);
+        }
+
+        async function checkStoragePersistence() {
+            const el = document.getElementById('auth-storage-warn');
+            if (!el) return;
+            try {
+                const res = await fetch(`${API}/amm/health`);
+                if (!res.ok) return;
+                const data = await res.json();
+                el.classList.toggle('show', !data.persistent);
+            } catch (_) {}
         }
 
         async function ensureSession() {
@@ -2868,6 +3086,7 @@
                     <span class="holding-side">
                         <span class="holding-qty ${sideCls}">${holdingSideLabel(h)}</span>
                         <span class="holding-value">${Math.round(h.value || 0).toLocaleString()}P</span>
+                        ${h.unrealizedPnl != null ? `<span class="holding-pnl ${h.unrealizedPnl >= 0 ? 'up' : 'down'}">${h.unrealizedPnl >= 0 ? '+' : ''}${h.unrealizedPnl.toLocaleString()}P (${fmtPct(h.unrealizedPnlPct || 0)})</span>` : ''}
                     </span>
                 </button>`;
             }).join('');
@@ -3090,8 +3309,10 @@
             const titlesEl = document.getElementById('team-titles');
             const titles = me.teamTitles || [];
             titlesEl.innerHTML = titles.length
-                ? titles.map(t =>
-                    `<span class="title-badge">👑 ${t.teamShort} 명예 구단주 ${t.stakePct}%</span>`).join(' ')
+                ? titles.map(t => {
+                    const label = t.role === 'major' ? '대주주' : '명예 구단주';
+                    return `<span class="title-badge">👑 ${t.teamShort} ${label} ${t.stakePct}%</span>`;
+                }).join(' ')
                 : '';
             renderYasdaqStory(me, hub?.instrument);
         }
@@ -3099,7 +3320,7 @@
         function renderSession(session) {
             const el = document.getElementById('session-pill');
             if (!session) { el.textContent = '장 상태 —'; return; }
-            el.textContent = session.label;
+            el.textContent = session.isTradeHot ? (session.label || '24시간장') : session.label;
             el.title = session.detail || '';
             el.className = 'session-pill' + (session.isTradeHot ? ' hot' : '');
         }
@@ -3132,8 +3353,12 @@
             return 'KBO 09:00 · MLB 10:00 갱신 예정';
         }
 
-        function renderDisclosures(items) {
+        function renderDisclosures(items, session) {
             const el = document.getElementById('disc-list');
+            const sub = document.getElementById('disc-session-sub');
+            if (sub && session) {
+                sub.textContent = `${session.label} · ${session.detail || ''}`;
+            }
             if (!items?.length) {
                 el.innerHTML = '<li class="disc-item meta">공시 대기 중 — 프리마켓·월요일에 반영됩니다</li>';
                 return;
@@ -3141,7 +3366,9 @@
             el.innerHTML = items.map(d => {
                 const cls = d.priceDeltaPct >= 0 ? 'up' : 'down';
                 const sign = d.priceDeltaPct >= 0 ? '+' : '';
-                return `<li class="disc-item">
+                const safeId = d.instrumentId ? String(d.instrumentId).replace(/'/g, "\\'") : '';
+                const click = safeId ? ` onclick="selectStock('${safeId}')"` : '';
+                return `<li class="disc-item clickable"${click}>
                     <span class="disc-delta ${cls}">${sign}${d.priceDeltaPct}%</span>
                     ${d.headline}
                     <div class="disc-meta">${d.session || ''} · ${fmtTime(d.at)}</div>
@@ -3160,11 +3387,22 @@
             el.innerHTML = etfs.map(e => {
                 const firstId = e.members?.[0]?.instrumentId || e.memberIds?.[0] || '';
                 const firstName = e.members?.[0]?.playerName || '';
+                const ch = Number(e.changePct ?? 0);
+                const chCls = ch >= 0 ? 'up' : 'down';
+                const chSign = ch >= 0 ? '+' : '';
+                const chips = (e.members || []).map(m => {
+                    const mp = Number(m.changePct ?? 0);
+                    const mc = mp >= 0 ? 'up' : 'down';
+                    const ms = mp >= 0 ? '+' : '';
+                    const mid = String(m.instrumentId).replace(/'/g, "\\'");
+                    return `<button type="button" class="etf-chip ${mc}" onclick="event.stopPropagation(); selectStock('${mid}')">${m.teamShort} ${ms}${mp.toFixed(1)}%</button>`;
+                }).join('');
                 return `<button type="button" class="etf-card" ${firstId ? `onclick="selectEtf('${firstId}', '${String(e.name).replace(/'/g, "\\'")}', '${String(firstName).replace(/'/g, "\\'")}')"` : ''}>
                     <div class="etf-name" style="color:${e.accent || 'var(--accent)'}">${e.name}</div>
                     <div class="etf-tag">${e.tagline} · ${e.members?.length || 0}종목</div>
-                    <div class="etf-price">바스켓 ${Number(e.basketPrice).toLocaleString()}P</div>
-                    ${firstId ? '<div class="etf-hint">탭 → 대표 종목 선택 · 아래에서 베팅</div>' : ''}
+                    <div class="etf-price">바스켓 ${Number(e.basketPrice).toLocaleString()}P · <span class="${chCls}">${chSign}${ch.toFixed(1)}%</span></div>
+                    <div class="etf-members">${chips}</div>
+                    ${firstId ? '<div class="etf-hint">종목 칩 또는 카드 탭 → 베팅</div>' : ''}
                 </button>`;
             }).join('');
         }
@@ -3179,14 +3417,25 @@
         function renderOwners(teams) {
             const el = document.getElementById('owner-list');
             if (!teams?.length) {
-                el.innerHTML = '<div class="meta">보유 데이터 없음</div>';
+                el.innerHTML = '<div class="meta">보유 데이터 없음 · YES 매수 후 구단주 순위에 반영</div>';
                 return;
             }
             el.innerHTML = teams.map(t => {
                 const o = t.owner;
+                const majors = (t.topHolders || []).filter(h => h.role === 'major');
+                const ownerLabel = o?.role === 'owner'
+                    ? `@${(o.displayName || o.userId).slice(0, 10)}<span class="owner-badge">구단주 ${o.stakePct}%</span>`
+                    : o
+                        ? `@${(o.displayName || o.userId).slice(0, 10)} ${o.stakePct}%`
+                        : '탭해서 YES 베팅 →';
+                const majorLine = majors.length
+                    ? `<span class="owner-majors">대주주 ${majors.map(h =>
+                        `@${(h.displayName || h.userId).slice(0, 8)} ${h.stakePct}%`).join(' · ')}</span>`
+                    : '';
+                const pool = t.totalStake > 0 ? ` · 지분풀 ${Number(t.totalStake).toLocaleString()}P` : '';
                 return `<button type="button" class="owner-row" onclick="selectStock('${t.instrumentId}')">
-                    <span><strong>${t.teamShort}</strong> ${t.playerName}</span>
-                    <span>${o ? `@${(o.displayName || o.userId).slice(0, 10)}<span class="owner-badge">구단주 ${o.stakePct}%</span>` : '탭해서 베팅 →'}</span>
+                    <span><strong>${t.teamShort}</strong> ${t.playerName}<span class="owner-majors">${pool}${t.holderCount ? ` · ${t.holderCount}명` : ''}</span>${majorLine}</span>
+                    <span>${ownerLabel}</span>
                 </button>`;
             }).join('');
         }
@@ -3250,6 +3499,207 @@
             document.querySelectorAll('.qty-chips button').forEach(b => {
                 b.classList.toggle('on', Number(b.dataset.qty) === n);
             });
+            updateTradeUI();
+        }
+
+        function setQtyMax() {
+            const pos = getPositionForSelected();
+            if (tradeMode === 'sell' && pos.longShares > 0) {
+                setQty(pos.longShares);
+                return;
+            }
+            if (tradeMode === 'buy' && pos.shortShares > 0) {
+                setQty(pos.shortShares);
+                return;
+            }
+            toast('전량 매도·청산할 보유가 없어요');
+        }
+
+        function getWatchlist() {
+            try {
+                return JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]');
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function toggleWatchlist(instrumentId, ev) {
+            ev?.stopPropagation();
+            const list = getWatchlist();
+            const idx = list.indexOf(instrumentId);
+            if (idx >= 0) list.splice(idx, 1);
+            else list.push(instrumentId);
+            localStorage.setItem(WATCHLIST_KEY, JSON.stringify(list.slice(0, 20)));
+            renderWatchlist();
+            renderLineup(lineupCache);
+        }
+
+        function isWatchlisted(id) {
+            return getWatchlist().includes(id);
+        }
+
+        function renderWatchlist() {
+            const el = document.getElementById('watchlist-list');
+            if (!el) return;
+            const ids = getWatchlist();
+            if (!ids.length) {
+                el.innerHTML = '<div class="meta">⭐ 종목 옆 별을 눌러 추가</div>';
+                return;
+            }
+            const lookup = new Map();
+            for (const i of lineupCache) lookup.set(i.instrumentId, i);
+            for (const m of hub?.memes || []) lookup.set(m.id, m);
+            el.innerHTML = ids.map(id => {
+                const i = lookup.get(id);
+                if (!i) return '';
+                const name = i.playerName || i.name;
+                const safeId = String(id).replace(/'/g, "\\'");
+                return `<div class="watch-row">
+                    <button type="button" class="watch-star on" onclick="toggleWatchlist('${safeId}', event)">★</button>
+                    <button type="button" class="board-row" style="flex:1;margin:0" onclick="selectStock('${safeId}')">
+                        <span class="br-name">${name}</span>
+                        <span class="br-pct">${Number(i.price || 0).toLocaleString()}P</span>
+                    </button>
+                </div>`;
+            }).join('') || '<div class="meta">관심종목 없음</div>';
+        }
+
+        function getPositionForSelected() {
+            return myHoldings.find(h => h.instrumentId === selectedId)
+                || { instrumentId: selectedId, longShares: 0, shortShares: 0, value: 0 };
+        }
+
+        function getSelectedInstrument() {
+            return hub?.memes?.find(x => x.id === selectedId)
+                || lineupCache.find(x => x.instrumentId === selectedId)
+                || hub?.instrument;
+        }
+
+        function setTradeMode(mode) {
+            tradeMode = mode;
+            document.querySelectorAll('.trade-mode button').forEach(b => {
+                b.classList.toggle('on', b.dataset.mode === mode);
+            });
+            updateTradeUI();
+        }
+
+        function updateTradeUI() {
+            const pos = getPositionForSelected();
+            const inst = getSelectedInstrument();
+            const qty = parseInt(document.getElementById('qty')?.value, 10) || 0;
+            const price = inst?.price || hub?.instrument?.price || 0;
+            const hint = document.getElementById('trade-position-hint');
+            const preview = document.getElementById('order-preview');
+            const btnYes = document.getElementById('btn-yes');
+            const btnNo = document.getElementById('btn-no');
+            if (!btnYes || !btnNo) return;
+
+            if (tradeMode === 'buy') {
+                btnYes.textContent = inst?.yesBet || 'YES 매수';
+                btnYes.disabled = false;
+                tradeAction.yes = ['buy', 'long'];
+                if (pos.shortShares > 0) {
+                    btnNo.textContent = `NO 청산 (${pos.shortShares}주)`;
+                    btnNo.disabled = false;
+                    tradeAction.no = ['buy', 'short'];
+                } else {
+                    btnNo.textContent = inst?.noBet ? `${inst.noBet}` : 'NO 숏';
+                    btnNo.disabled = false;
+                    tradeAction.no = ['sell', 'short'];
+                }
+            } else {
+                if (pos.longShares > 0) {
+                    btnYes.textContent = `YES 매도 (${pos.longShares}주)`;
+                    btnYes.disabled = false;
+                    tradeAction.yes = ['sell', 'long'];
+                } else {
+                    btnYes.textContent = 'YES 보유 없음';
+                    btnYes.disabled = true;
+                }
+                btnNo.textContent = inst?.noBet || 'NO 숏';
+                btnNo.disabled = false;
+                tradeAction.no = ['sell', 'short'];
+            }
+
+            if (hint) {
+                if (pos.longShares || pos.shortShares) {
+                    let txt = `보유 YES ${pos.longShares || 0}주 · NO ${pos.shortShares || 0}주`;
+                    if (pos.avgLongPrice) txt += ` · 평단 ${pos.avgLongPrice.toLocaleString()}P`;
+                    if (pos.unrealizedPnl != null) {
+                        const sign = pos.unrealizedPnl >= 0 ? '+' : '';
+                        txt += ` · 평가 ${sign}${pos.unrealizedPnl.toLocaleString()}P (${fmtPct(pos.unrealizedPnlPct || 0)})`;
+                    }
+                    hint.textContent = txt;
+                } else {
+                    hint.textContent = '미보유 · 매수 탭에서 YES/NO 진입';
+                }
+            }
+
+            if (preview && qty > 0 && price > 0) {
+                const amount = price * qty;
+                const cash = hub?.me?.points ?? 0;
+                if (tradeMode === 'buy') {
+                    preview.textContent = `예상 필요 ${amount.toLocaleString()}P · 주문 후 잔고 약 ${Math.max(0, cash - amount).toLocaleString()}P`;
+                } else if (tradeAction.yes[0] === 'sell' && tradeAction.yes[1] === 'long') {
+                    preview.textContent = `예상 수령 ${amount.toLocaleString()}P · 주문 후 잔고 약 ${(cash + amount).toLocaleString()}P`;
+                } else {
+                    preview.textContent = `예상 변동 ${amount.toLocaleString()}P · 현재 잔고 ${cash.toLocaleString()}P`;
+                }
+            } else if (preview) {
+                preview.textContent = '';
+            }
+
+            btnYes.onclick = () => submitTrade('yes');
+            btnNo.onclick = () => submitTrade('no');
+        }
+
+        function submitTrade(side) {
+            const action = side === 'yes' ? tradeAction.yes : tradeAction.no;
+            if (!action) return;
+            order(action[0], action[1], side);
+        }
+
+        function renderMarketBoard(board) {
+            const el = document.getElementById('market-board-grid');
+            if (!el) return;
+            if (!board?.gainers?.length && !board?.losers?.length) {
+                el.innerHTML = '<div class="meta" style="grid-column:1/-1">시장 데이터 불러오는 중…</div>';
+                return;
+            }
+            const row = (i) => {
+                const pct = Number(i.changePct ?? 0);
+                const cls = pct >= 0 ? 'up' : 'down';
+                const sign = pct >= 0 ? '+' : '';
+                const id = i.id || i.instrumentId;
+                const safeId = String(id).replace(/'/g, "\\'");
+                return `<button type="button" class="board-row" onclick="selectStock('${safeId}')">
+                    <span class="br-name">${i.playerName || i.name}</span>
+                    <span class="br-pct ${cls}">${sign}${pct.toFixed(1)}%</span>
+                </button>`;
+            };
+            el.innerHTML = `
+                <div><div class="board-col-title">상승</div>${(board.gainers || []).slice(0, 5).map(row).join('') || '<div class="meta">—</div>'}</div>
+                <div><div class="board-col-title">하락</div>${(board.losers || []).slice(0, 5).map(row).join('') || '<div class="meta">—</div>'}</div>`;
+        }
+
+        function renderMyTrades(trades) {
+            const el = document.getElementById('my-trades-list');
+            if (!el) return;
+            if (!sessionReady) {
+                el.innerHTML = '<div class="meta">로그인 후 최근 주문이 표시됩니다</div>';
+                return;
+            }
+            if (!trades?.length) {
+                el.innerHTML = '<div class="meta">아직 체결 내역이 없어요</div>';
+                return;
+            }
+            el.innerHTML = trades.slice(0, 20).map(t => {
+                const sign = t.pointsDelta >= 0 ? '+' : '';
+                return `<div class="my-trade-row">
+                    <span>${actionKo(t.action)} · ${t.instrumentName || '종목'} ${t.quantity}주</span>
+                    <span>${sign}${t.pointsDelta.toLocaleString()}P</span>
+                </div>`;
+            }).join('');
         }
 
         async function quickBet(instrumentId, type, side) {
@@ -3266,10 +3716,7 @@
 
         function renderBetCta(inst) {
             document.getElementById('bet-cta').textContent = betCta(inst);
-            const yes = inst?.yesBet || inst?.longThesis || 'YES';
-            const no = inst?.noBet || inst?.shortThesis || 'NO';
-            document.getElementById('btn-yes').textContent = yes;
-            document.getElementById('btn-no').textContent = no;
+            updateTradeUI();
         }
 
         function toggleGuide() {
@@ -3468,18 +3915,31 @@
             }
             renderLeaderboard(data.leaderboard, data.me);
             renderSession(data.session);
-            renderDisclosures(data.disclosures);
+            renderDisclosures(data.disclosures, data.session);
             renderEtfs(data.etfs);
             renderOwners(data.shareholders);
             updateYasStrip(inst, data.session);
             renderYasdaqStory(data.me, inst);
             if (lineupCache.length) renderLineup(lineupCache);
             if (data.memes?.length) renderMemes(data.memes);
+            renderMarketBoard(data.marketBoard);
+            renderMyTrades(data.me?.myTrades);
+            renderWatchlist();
+            updateTradeUI();
         }
 
         function renderLineup(items) {
             lineupCache = Array.isArray(items) ? items : [];
             const el = document.getElementById('lineup-list');
+            const q = (document.getElementById('stock-search')?.value || '').trim().toLowerCase();
+            let filtered = lineupCache;
+            if (q) {
+                filtered = lineupCache.filter(i =>
+                    (i.playerName || '').toLowerCase().includes(q) ||
+                    (i.teamShort || '').toLowerCase().includes(q) ||
+                    (i.teamName || '').toLowerCase().includes(q) ||
+                    (i.symbol || '').toLowerCase().includes(q));
+            }
             if (!lineupCache.length) {
                 el.innerHTML = `<div class="lineup-empty">
                     종목을 불러오지 못했습니다.<br>
@@ -3487,7 +3947,11 @@
                 </div>`;
                 return;
             }
-            el.innerHTML = lineupCache.map(i => {
+            if (!filtered.length) {
+                el.innerHTML = '<div class="lineup-empty">검색 결과 없음</div>';
+                return;
+            }
+            el.innerHTML = filtered.map(i => {
                 const metric = i.metricLabel || 'OPS';
                 const oracle = i.metric === 'era'
                     ? Number(i.oracleValue).toFixed(2)
@@ -3496,20 +3960,29 @@
                 const ownedBadge = owned
                     ? `<span class="lineup-owned">${holdingBadgeText(owned)}</span>`
                     : '';
+                const starCls = isWatchlisted(i.instrumentId) ? ' on' : '';
+                const safeId = String(i.instrumentId).replace(/'/g, "\\'");
+                const chMap = new Map((hub?.marketBoard?.all || []).map(x => [x.id, x.changePct]));
+                const ch = Number(chMap.get(i.instrumentId) ?? i.changePct ?? 0);
+                const chCls = ch >= 0 ? 'up' : 'down';
+                const chSign = ch >= 0 ? '+' : '';
                 return `
-                <button type="button" class="lineup-item ${i.instrumentId === selectedId ? 'active' : ''}"
-                     style="border-left: 3px solid ${i.accent || 'var(--accent)'}"
-                     onclick="selectStock('${i.instrumentId}')">
+                <div class="lineup-item ${i.instrumentId === selectedId ? 'active' : ''}"
+                     style="border-left: 3px solid ${i.accent || 'var(--accent)'};display:flex;align-items:center;gap:6px">
+                    <button type="button" class="watch-star${starCls}" onclick="toggleWatchlist('${safeId}', event)">${starCls ? '★' : '☆'}</button>
+                    <button type="button" style="flex:1;border:none;background:transparent;color:inherit;text-align:left;display:flex;align-items:center;gap:8px;padding:0;cursor:pointer;font:inherit"
+                        onclick="selectStock('${safeId}')">
                     <span class="lineup-team">${i.teamShort}</span>
-                    <div>
+                    <div style="flex:1">
                         <div class="lineup-name">${i.playerName}${ownedBadge}</div>
-                        <div class="lineup-meta">${metric} ${oracle}</div>
+                        <div class="lineup-meta">${metric} ${oracle} · <span style="color:var(--${ch >= 0 ? 'accent-neon' : 'down-neon'})">${chSign}${ch.toFixed(1)}%</span></div>
                     </div>
                     <span class="lineup-stat">
                         <span class="lineup-stat-val">${Number(i.price).toLocaleString()}P</span>
                         <span class="lineup-stat-lbl">시세</span>
                     </span>
-                </button>`;
+                    </button>
+                </div>`;
             }).join('');
         }
 
@@ -3701,6 +4174,7 @@
                 document.getElementById('hero-metric').textContent = inst.metricLabel;
                 renderBetCta(inst);
                 renderPriceChart(inst.priceHistory);
+                updateYasStrip(inst, hub?.session);
                 renderLineup(lineupCache);
                 if (hub?.memes) renderMemes(hub.memes);
                 if (hub?.me) renderWalletHoldings(hub.me);
@@ -3712,12 +4186,21 @@
             }
         }
 
-        async function order(type, side) {
+        async function order(type, side, btnSide) {
             if (orderBusy) return;
             if (!ensureUserNick()) return;
             const qty = parseInt(document.getElementById('qty').value, 10);
             if (!Number.isFinite(qty) || qty < 1) {
-                toast('베팅 수량은 1 이상이어야 해요');
+                toast('수량은 1주 이상이어야 해요');
+                return;
+            }
+            const pos = getPositionForSelected();
+            if (type === 'sell' && side === 'long' && qty > pos.longShares) {
+                toast(`보유 YES ${pos.longShares}주까지만 매도할 수 있어요`);
+                return;
+            }
+            if (type === 'buy' && side === 'short' && btnSide === 'no' && qty > pos.shortShares) {
+                toast(`NO 포지션 ${pos.shortShares}주까지만 청산할 수 있어요`);
                 return;
             }
             orderBusy = true;
@@ -3817,7 +4300,7 @@
             if (payload?.item) {
                 const list = hub?.disclosures ? [payload.item, ...hub.disclosures] : [payload.item];
                 if (hub) hub.disclosures = list.slice(0, 8);
-                renderDisclosures(list.slice(0, 8));
+                renderDisclosures(list.slice(0, 8), hub?.session);
                 if (payload.instrument?.id === selectedId) {
                     document.getElementById('hero-price').textContent =
                         payload.instrument.price.toLocaleString() + ' P';

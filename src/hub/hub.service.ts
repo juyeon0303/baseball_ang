@@ -8,8 +8,7 @@ import { getMarketSession } from '../market/market-session.util';
 import { MarketService } from '../market/market.service';
 import { ShareholderService } from '../market/shareholder.service';
 import { OffDayDemoService } from '../market/off-day-demo.service';
-import { InstrumentState } from '../market/market.types';
-import { LeaderboardResult } from '../market/market.types';
+import { InstrumentState, LeaderboardResult, TradeRecord } from '../market/market.types';
 import { getWeekKey, getWeekLabel } from '../market/week.util';
 
 @Injectable()
@@ -46,6 +45,8 @@ export class HubService {
     });
 
     const instrument = await this.safeInstrument(featuredId);
+    const instrumentEnriched = await this.market.enrichInstrument(instrument);
+    const marketBoard = await this.safeMarketBoard();
     const leaderboard = await this.safeLeaderboard();
     const trades = await this.safeTrades();
     const crowd = await this.safeCrowd(featuredId);
@@ -74,11 +75,15 @@ export class HubService {
             displayName: label(leaderboard.opsKing.userId),
           }
         : null;
-    const shareholders = shareholderBoard.teams.slice(0, 6).map((team) => ({
+    const shareholders = shareholderBoard.teams.map((team) => ({
       ...team,
       owner: team.owner
         ? { ...team.owner, displayName: label(team.owner.userId) }
         : null,
+      topHolders: team.topHolders.map((h) => ({
+        ...h,
+        displayName: label(h.userId),
+      })),
     }));
     let me: {
       rank: number | null;
@@ -98,9 +103,14 @@ export class HubService {
         longShares: number;
         shortShares: number;
         value: number;
+        avgLongPrice?: number;
+        avgShortPrice?: number;
+        unrealizedPnl?: number;
+        unrealizedPnlPct?: number;
       }>;
       isOpsKing: boolean;
-      teamTitles: Array<{ teamShort: string; stakePct: number }>;
+      teamTitles: Array<{ teamShort: string; stakePct: number; role?: 'owner' | 'major' }>;
+      myTrades?: Array<TradeRecord & { displayName?: string }>;
     } | null = null;
 
     if (userId) {
@@ -119,6 +129,10 @@ export class HubService {
           holdings: port.holdings,
           isOpsKing: port.isOpsKing,
           teamTitles: shareholderBoard.myTitles,
+          myTrades: (port.recentTrades || []).map((row) => ({
+            ...row,
+            displayName: label(userId),
+          })),
         };
       } catch (e) {
         this.logger.warn(`hub me skipped for ${userId}: ${e}`);
@@ -127,7 +141,8 @@ export class HubService {
 
     return {
       featuredId,
-      instrument,
+      instrument: instrumentEnriched,
+      marketBoard,
       game,
       session,
       plays: this.games.getSnapshot()?.plays?.slice(0, 5) ?? [],
@@ -150,6 +165,15 @@ export class HubService {
       demoMode: this.offDayDemo.isActive(),
       demoMessage: this.offDayDemo.getLastMessage(),
     };
+  }
+
+  private async safeMarketBoard() {
+    try {
+      return await this.market.getMarketBoard(8);
+    } catch (e) {
+      this.logger.warn(`hub marketBoard fallback: ${e}`);
+      return { updatedAt: new Date().toISOString(), gainers: [], losers: [], all: [] };
+    }
   }
 
   private async safeInstrument(featuredId: string): Promise<InstrumentState> {

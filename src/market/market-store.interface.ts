@@ -43,6 +43,10 @@ export interface IMarketStore {
     limit?: number,
     instrumentId?: string,
   ): Promise<TradeRecord[]> | TradeRecord[];
+  getUserTrades(
+    userId: string,
+    limit?: number,
+  ): Promise<TradeRecord[]> | TradeRecord[];
   getPosition?(
     userId: string,
     instrumentId: string,

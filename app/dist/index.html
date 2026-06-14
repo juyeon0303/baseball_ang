@@ -225,6 +225,271 @@
             font-size: 0.68rem;
             color: var(--faint);
         }
+        .player-stat-card.clickable {
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .player-stat-card.clickable:active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .stats-full-link {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 4px;
+            font-size: 0.76rem;
+        }
+        .stats-team-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0 12px;
+        }
+        .stats-team-filter button {
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .stats-team-filter button.on {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .stats-detail {
+            margin-bottom: 12px;
+        }
+        .stats-detail-card {
+            padding: 14px 14px 12px;
+            border-radius: 12px;
+            background: linear-gradient(145deg, var(--surface-inset), var(--surface2));
+            border: 1px solid var(--border);
+        }
+        .stats-detail-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .stats-detail-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .stats-detail-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        .stats-detail-meta {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        .stats-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .stats-detail-grid .stat-box {
+            text-align: center;
+            padding: 8px 4px;
+            border-radius: 8px;
+            background: var(--surface-inset);
+            border: 1px solid var(--border);
+        }
+        .stats-detail-grid .stat-box .val {
+            display: block;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .stats-detail-grid .stat-box .lbl {
+            display: block;
+            font-size: 0.62rem;
+            color: var(--faint);
+            margin-top: 2px;
+        }
+        .stats-player-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .stats-player-pick {
+            text-align: left;
+            border: 1px solid var(--border);
+            background: var(--surface-inset);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            color: var(--text);
+        }
+        .stats-player-pick.on {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent-soft);
+        }
+        .stats-player-pick .sp-name {
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+        .stats-player-pick .sp-team {
+            font-size: 0.68rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        .stats-player-pick .sp-ops {
+            font-size: 0.72rem;
+            color: var(--accent);
+            margin-top: 4px;
+            font-weight: 700;
+        }
+        .stats-toolbar {
+            display: grid;
+            gap: 8px;
+            margin: 8px 0 10px;
+        }
+        .stats-search {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            background: var(--surface-inset);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+        }
+        .stats-role-filter {
+            display: flex;
+            gap: 6px;
+        }
+        .stats-role-filter button {
+            flex: 1;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            border-radius: 8px;
+            padding: 7px 8px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .stats-role-filter button.on {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .stats-roster-meta {
+            font-size: 0.68rem;
+            color: var(--faint);
+            margin-bottom: 8px;
+        }
+        .stats-source-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0 10px;
+        }
+        .stats-source-badges span {
+            font-size: 0.62rem;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .stats-source-badges span.on {
+            border-color: var(--highlight);
+            color: var(--highlight);
+        }
+        .stats-source-badges span.off {
+            opacity: 0.55;
+        }
+        .stats-cat-tabs {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            margin-bottom: 10px;
+            padding-bottom: 2px;
+        }
+        .stats-cat-tabs button {
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.66rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .stats-cat-tabs button.on {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .stats-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        .stats-metric-grid .stat-box {
+            text-align: center;
+            padding: 8px 4px;
+            border-radius: 8px;
+            background: var(--surface-inset);
+            border: 1px solid var(--border);
+        }
+        .stats-metric-grid .stat-box .val {
+            display: block;
+            font-size: 0.92rem;
+            font-weight: 800;
+        }
+        .stats-metric-grid .stat-box .lbl {
+            display: block;
+            font-size: 0.58rem;
+            color: var(--faint);
+            margin-top: 2px;
+            word-break: keep-all;
+        }
+        .stats-table-wrap {
+            overflow-x: auto;
+            margin-top: 8px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .stats-table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.68rem;
+        }
+        .stats-table-wrap th,
+        .stats-table-wrap td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .stats-table-wrap th {
+            background: var(--surface2);
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .stats-list-scroll {
+            max-height: 42vh;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+        .play-now {
             margin-top: 10px;
             padding: 10px 12px;
             border-radius: 10px;
@@ -305,18 +570,185 @@
         .tl-impact.game_end { border-left: 2px solid var(--highlight); padding-left: 8px; font-weight: 600; }
         .tl-impact.game_start { border-left: 2px solid var(--live); padding-left: 8px; }
         .tl-impact.inning { color: var(--faint); }
+        .timeline-hint {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin: -2px 0 10px;
+            line-height: 1.45;
+        }
         .timeline {
-            max-height: 480px;
+            max-height: 520px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
-        .inning-filter {
+        .inning-filter { margin-bottom: 10px; }
+        .inning-nav-scroll {
             display: flex;
-            flex-wrap: wrap;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 2px 2px 6px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .inning-nav-scroll::-webkit-scrollbar { display: none; }
+        .inn-tab {
+            flex-shrink: 0;
+            min-width: 42px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .inn-tab.all { min-width: 52px; }
+        .inn-tab.live-dot::after {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-left: 4px;
+            border-radius: 50%;
+            background: var(--live);
+            vertical-align: middle;
+        }
+        .inn-tab.on {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(94, 184, 255, 0.14);
+            box-shadow: 0 0 0 1px rgba(94, 184, 255, 0.2);
+        }
+        .inning-nav-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .inn-tool {
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            font: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .inn-tool.on {
+            border-color: var(--live);
+            color: var(--live);
+            background: rgba(74, 222, 128, 0.1);
+        }
+        .inn-count { font-size: 0.68rem; color: var(--faint); white-space: nowrap; }
+        .tl-section {
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--surface-inset);
+        }
+        .tl-section.live {
+            border-color: color-mix(in srgb, var(--live) 40%, var(--border));
+            box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.08);
+        }
+        .tl-section-head {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border: none;
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            text-align: left;
+            font: inherit;
+        }
+        .tl-section.live .tl-section-head {
+            background: rgba(74, 222, 128, 0.06);
+        }
+        .tl-section-inn {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--accent);
+            min-width: 36px;
+        }
+        .tl-section-sub {
+            font-size: 0.72rem;
+            color: var(--muted);
+            flex: 1;
+        }
+        .tl-section-count {
+            font-size: 0.68rem;
+            color: var(--faint);
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.12);
+        }
+        .tl-section-chevron {
+            font-size: 0.62rem;
+            color: var(--muted);
+            transition: transform 0.2s ease;
+        }
+        .tl-section.collapsed .tl-section-chevron { transform: rotate(-90deg); }
+        .tl-section-body { padding: 4px 10px 8px; }
+        .tl-section.collapsed .tl-section-body { display: none; }
+        .tl-section-preview {
+            display: none;
+            padding: 8px 12px 10px;
+            font-size: 0.76rem;
+            color: var(--muted);
+            line-height: 1.45;
+            border-top: 1px dashed var(--border);
+        }
+        .tl-section.collapsed .tl-section-preview { display: block; }
+        .tl-half-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--accent);
+            padding: 8px 4px 4px;
+            margin-top: 4px;
+        }
+        .tl-half-label:first-child { margin-top: 0; }
+        .tl-card {
+            padding: 8px 6px;
+            border-bottom: 1px dashed rgba(148, 163, 184, 0.22);
+            border-radius: 8px;
+        }
+        .tl-card:last-child { border-bottom: none; }
+        .tl-card-row {
+            display: flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 3px;
         }
+        .tl-card-text {
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--text);
+        }
+        .tl-card.tl-impact.run {
+            border-left: 3px solid var(--danger);
+            padding-left: 10px;
+            background: rgba(232, 93, 93, 0.06);
+        }
+        .tl-card.tl-impact.game_end {
+            border-left: 3px solid var(--highlight);
+            padding-left: 10px;
+            background: rgba(252, 211, 77, 0.06);
+        }
+        .tl-card.tl-impact.game_start {
+            border-left: 3px solid var(--live);
+            padding-left: 10px;
+        }
+        .tl-card.pitch { opacity: 0.78; }
+        .tl-card.pitch .tl-card-text { font-size: 0.74rem; color: var(--muted); }
         .inn-chip {
             border: 1px solid var(--border);
             background: var(--surface2);
@@ -1526,7 +1958,8 @@
                 <div class="review-box" id="feed-review-body">—</div>
             </div>
             <div class="panel" id="timeline-panel">
-                <div class="label">문자 중계 · 1~9회 전체</div>
+                <div class="label">문자 중계 · 회별 보기</div>
+                <p class="timeline-hint">회 번호를 눌러 해당 이닝만 볼 수 있어요. <strong>핵심만</strong>이면 투구·잡음은 숨깁니다.</p>
                 <div class="inning-filter" id="inning-filter"></div>
                 <div class="timeline" id="play-timeline"></div>
             </div>
@@ -1553,6 +1986,39 @@
                         onkeydown="if(event.key==='Enter')sendChat()">
                     <button type="button" class="chat-send" onclick="sendChat()">전송</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- 선수 스탯 -->
+        <div class="tab-panel" id="tab-stats">
+            <div class="panel">
+                <div class="label">선수 스탯 · 2026 시즌</div>
+                <p style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;line-height:1.45">
+                    KBO 등록 선수 전원 · 공식 기록실 기본·일자·상황·통산 + 고급 추정 지표. 이름 검색·팀·타/투 필터 지원.
+                </p>
+                <div class="stats-toolbar">
+                    <input type="search" class="stats-search" id="stats-search-input" placeholder="선수 이름 검색" oninput="onStatsSearchInput()">
+                    <div class="stats-role-filter" id="stats-role-filter">
+                        <button type="button" class="on" onclick="setStatsRoleFilter('all')">전체</button>
+                        <button type="button" onclick="setStatsRoleFilter('hitter')">타자</button>
+                        <button type="button" onclick="setStatsRoleFilter('pitcher')">투수</button>
+                    </div>
+                </div>
+                <button type="button" class="link-btn" style="font-size:0.72rem;margin-bottom:2px" onclick="loadPlayerStatsTab(true)">새로고침</button>
+                <div class="stats-roster-meta" id="stats-roster-meta"></div>
+                <div class="stats-team-filter" id="stats-team-filter"></div>
+                <div class="stats-detail" id="stats-detail">
+                    <div class="empty">불러오는 중…</div>
+                </div>
+                <div class="stats-list-scroll">
+                    <div class="stats-player-list" id="stats-player-list"></div>
+                </div>
+                <div class="player-stat-note" style="margin-top:10px">KBO 공식 · Basic/Daily/Situation/Total · 캐시 6시간</div>
+            </div>
+            <div class="panel" id="stats-live-panel" style="display:none">
+                <div class="label">지금 보는 경기 선수</div>
+                <p style="font-size:0.74rem;color:var(--muted);margin-bottom:8px">중계 탭과 연동 · 타석·마운드 선수</p>
+                <div class="player-stats-panel" id="stats-live-players"></div>
             </div>
         </div>
 
@@ -1635,6 +2101,7 @@
         <button type="button" class="on" data-tab="home" onclick="goTab('home')"><span class="ico">🏠</span>홈</button>
         <button type="button" data-tab="games" onclick="goTab('games')"><span class="ico">⚾</span>경기</button>
         <button type="button" data-tab="feed" onclick="goTab('feed')"><span class="ico">📻</span>중계</button>
+        <button type="button" data-tab="stats" onclick="goTab('stats')"><span class="ico">📊</span>스탯</button>
         <button type="button" data-tab="myteam" onclick="goTab('myteam')"><span class="ico">💙</span>내 구단</button>
         <button type="button" data-tab="account" onclick="goTab('account')"><span class="ico">👤</span>계정</button>
     </nav>
@@ -1911,8 +2378,21 @@
             '두산': '#9AAFD4', '삼성': '#5EB0FF', '롯데': '#8CB8FF', '한화': '#FF9F43', '키움': '#E85D7A',
         };
         let snapshot = null;
+        let recap = null;
         let playerStatsCache = null;
         let playerStatsGameId = null;
+        let seasonStatsCache = null;
+        let statsRosterCache = null;
+        let statsCatalog = null;
+        let statsFullCache = null;
+        let statsTeamFilter = 'all';
+        let statsRoleFilter = 'all';
+        let statsSearchQuery = '';
+        let statsSelectedName = null;
+        let statsSelectedId = null;
+        let statsActiveGroupIdx = 0;
+        let statsSearchTimer = null;
+        let pendingStatPlayer = null;
         let showRecapMode = false;
         let isGameDay = true;
         let plays = [];
@@ -1931,6 +2411,9 @@
         let shareDeepGameToast = null;
         let winPickSnap = null;
         let timelineInning = 'all';
+        let timelineHidePitch = localStorage.getItem('pb-tl-pitch') !== '0';
+        let timelineCollapsed = new Set();
+        let timelineCollapseInitFor = null;
         let standingsRows = [];
         let standingsMeta = null;
         const relayCache = {};
@@ -2287,7 +2770,7 @@
             return Number(v).toFixed(digits);
         }
 
-        function statRowHtml(row) {
+        function statRowHtml(row, opts = {}) {
             const s = row.stats || {};
             const chips = row.role === 'pitcher'
                 ? [
@@ -2307,13 +2790,304 @@
                     `G <strong>${s.games ?? '—'}</strong>`,
                 ];
             const roleLabel = row.role === 'pitcher' ? '투수' : '타자';
-            return `<div class="player-stat-card">
+            const click = opts.clickable
+                ? ` onclick="goPlayerStats('${String(row.name).replace(/'/g, "\\'")}')"`
+                : '';
+            return `<div class="player-stat-card${opts.clickable ? ' clickable' : ''}"${click}>
                 <div class="player-stat-head">
                     <span class="player-stat-name">${row.name}</span>
                     <span class="player-stat-role">${roleLabel}${row.team ? ' · ' + row.team : ''}</span>
                 </div>
                 <div class="player-stat-grid">${chips.map(c => `<span>${c}</span>`).join('')}</div>
             </div>`;
+        }
+
+        function statDetailHtml(row, catalogEntry, fullBundle) {
+            if (fullBundle) {
+                return statFullDetailHtml(fullBundle, catalogEntry);
+            }
+            if (!row) {
+                return '<div class="empty">선수를 선택해 주세요</div>';
+            }
+            const s = row.stats || {};
+            const accent = catalogEntry?.accent || '#5eb8ff';
+            const teamLabel = catalogEntry?.teamShort || row.team || '';
+            const roleLabel = row.role === 'pitcher' ? '투수' : '타자';
+            const boxes = row.role === 'pitcher'
+                ? [
+                    ['ERA', fmtStatNum(s.era)],
+                    ['IP', s.ip != null ? s.ip : '—'],
+                    ['WHIP', fmtStatNum(s.whip)],
+                    ['SO', s.so ?? '—'],
+                    ['BB', s.bb ?? '—'],
+                    ['W-L', `${s.w ?? '—'}-${s.l ?? '—'}`],
+                ]
+                : [
+                    ['AVG', fmtStatNum(s.avg)],
+                    ['OPS', fmtStatNum(s.ops)],
+                    ['HR', s.hr ?? '—'],
+                    ['RBI', s.rbi ?? '—'],
+                    ['H', s.hits ?? '—'],
+                    ['G', s.games ?? '—'],
+                ];
+            return `<div class="stats-detail-card">
+                <div class="stats-detail-head">
+                    <div class="stats-detail-badge" style="background:${accent}">${teamLabel.slice(0, 2)}</div>
+                    <div>
+                        <div class="stats-detail-name">${row.name}</div>
+                        <div class="stats-detail-meta">${teamLabel} · ${roleLabel}${row.position ? ' · ' + row.position : ''}</div>
+                    </div>
+                </div>
+                <div class="stats-detail-grid">
+                    ${boxes.map(([lbl, val]) =>
+                        `<div class="stat-box"><span class="val">${val}</span><span class="lbl">${lbl}</span></div>`
+                    ).join('')}
+                </div>
+            </div>`;
+        }
+
+        function statFullDetailHtml(bundle, catalogEntry) {
+            const p = bundle.player || {};
+            const accent = catalogEntry?.accent || '#5eb8ff';
+            const teamLabel = p.team || catalogEntry?.teamShort || '';
+            const roleLabel = p.role === 'pitcher' ? '투수' : '타자';
+            const groups = bundle.groups || [];
+            const src = bundle.sources || {};
+            const badges = [
+                `<span class="${src.kbo ? 'on' : 'off'}">KBO</span>`,
+                `<span class="${src.statiz ? 'on' : 'off'}">Statiz</span>`,
+                `<span class="${src.naver ? 'on' : 'off'}">네이버</span>`,
+            ].join('');
+            const tabs = groups.map((g, i) =>
+                `<button type="button" class="${statsActiveGroupIdx === i ? 'on' : ''}" onclick="setStatsGroup(${i})">${escHtml(g.label || g.id)}</button>`
+            ).join('');
+            const active = groups[statsActiveGroupIdx] || groups[0];
+            const metrics = active?.metrics || {};
+            const metricBoxes = Object.entries(metrics).map(([k, v]) =>
+                `<div class="stat-box"><span class="val">${escHtml(String(v))}</span><span class="lbl">${escHtml(k)}</span></div>`
+            ).join('');
+            const tableHtml = active && bundle.tables?.length
+                ? renderStatsTableForGroup(active, bundle.tables)
+                : '';
+            const notes = [src.statizNote, src.naverNote].filter(Boolean).map(n =>
+                `<div class="player-stat-note">${escHtml(n)}</div>`
+            ).join('');
+            return `<div class="stats-detail-card">
+                <div class="stats-detail-head">
+                    <div class="stats-detail-badge" style="background:${accent}">${escHtml(teamLabel.slice(0, 2))}</div>
+                    <div>
+                        <div class="stats-detail-name">${escHtml(p.name || '')}</div>
+                        <div class="stats-detail-meta">${escHtml(teamLabel)} · ${roleLabel}${p.position ? ' · ' + escHtml(p.position) : ''}${p.backNo ? ' · #' + escHtml(p.backNo) : ''}</div>
+                    </div>
+                </div>
+                <div class="stats-source-badges">${badges}</div>
+                ${groups.length ? `<div class="stats-cat-tabs">${tabs}</div>` : ''}
+                ${metricBoxes ? `<div class="stats-metric-grid">${metricBoxes}</div>` : '<div class="empty" style="padding:10px">지표 없음</div>'}
+                ${tableHtml}
+                ${notes}
+            </div>`;
+        }
+
+        function renderStatsTableForGroup(group, tables) {
+            const pageHint = (group.id || '').split('_')[1];
+            const table = tables.find(t => t.page === pageHint) || tables[0];
+            if (!table?.rows?.length) return '';
+            const headers = table.headers.slice(0, 12);
+            const rows = table.rows.slice(0, 8);
+            return `<div class="stats-table-wrap"><table>
+                <thead><tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead>
+                <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${escHtml(r[h] ?? '—')}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table></div>`;
+        }
+
+        function escHtml(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        }
+
+        function setStatsGroup(idx) {
+            statsActiveGroupIdx = idx;
+            renderPlayerStatsTab();
+        }
+
+        function setStatsRoleFilter(role) {
+            statsRoleFilter = role;
+            document.querySelectorAll('#stats-role-filter button').forEach(btn => {
+                btn.classList.toggle('on', btn.textContent === (role === 'all' ? '전체' : role === 'hitter' ? '타자' : '투수'));
+            });
+            void loadPlayerStatsTab(false);
+        }
+
+        function onStatsSearchInput() {
+            const el = document.getElementById('stats-search-input');
+            statsSearchQuery = el?.value?.trim() || '';
+            clearTimeout(statsSearchTimer);
+            statsSearchTimer = setTimeout(() => void loadPlayerStatsTab(false), 350);
+        }
+
+        function goPlayerStats(name) {
+            pendingStatPlayer = name || null;
+            goTab('stats');
+        }
+
+        function setStatsTeamFilter(team) {
+            statsTeamFilter = team;
+            void loadPlayerStatsTab(false);
+        }
+
+        function selectStatsPlayer(name, playerId) {
+            statsSelectedName = name;
+            statsSelectedId = playerId || null;
+            statsActiveGroupIdx = 0;
+            statsFullCache = null;
+            void loadPlayerFullStats();
+        }
+
+        function renderStatsTeamFilter() {
+            const el = document.getElementById('stats-team-filter');
+            if (!el) return;
+            const teams = ['LG', 'KT', 'SSG', 'NC', '두산', 'KIA', '롯데', '삼성', '한화', '키움'];
+            const mk = (label, val) =>
+                `<button type="button" class="${statsTeamFilter === val ? 'on' : ''}" onclick="setStatsTeamFilter('${val}')">${label}</button>`;
+            el.innerHTML = mk('전체', 'all') + teams.map(t => mk(t, t)).join('');
+        }
+
+        function findStatRow(name, rows) {
+            if (!name || !rows?.length) return null;
+            return rows.find(r => r.name === name)
+                || rows.find(r => name.includes(r.name) || r.name.includes(name));
+        }
+
+        function renderStatsLiveSection() {
+            const panel = document.getElementById('stats-live-panel');
+            const el = document.getElementById('stats-live-players');
+            if (!panel || !el) return;
+            const g = watchId ? findGame(watchId) : null;
+            const rows = playerStatsCache?.players || [];
+            if (!g || !rows.length) {
+                panel.style.display = 'none';
+                el.innerHTML = '';
+                return;
+            }
+            panel.style.display = '';
+            const order = [];
+            const pick = (name, role) => rows.find(r =>
+                r.name === name || (name && r.name.includes(name)) ||
+                (role && r.role === role && !order.includes(r))
+            );
+            if (g.batter) {
+                const row = pick(g.batter, 'hitter');
+                if (row && !order.includes(row)) order.push(row);
+            }
+            if (g.pitcher) {
+                const row = pick(g.pitcher, 'pitcher');
+                if (row && !order.includes(row)) order.push(row);
+            }
+            el.innerHTML = order.map(r => statRowHtml(r, { clickable: true })).join('')
+                || '<div class="empty" style="padding:12px">경기 선수 스탯 없음</div>';
+        }
+
+        function renderPlayerStatsTab() {
+            const roster = statsRosterCache?.players || statsCatalog || [];
+            const detailEl = document.getElementById('stats-detail');
+            const listEl = document.getElementById('stats-player-list');
+            const metaEl = document.getElementById('stats-roster-meta');
+            if (!detailEl || !listEl) return;
+
+            renderStatsTeamFilter();
+            if (metaEl && statsRosterCache) {
+                metaEl.textContent = `등록 ${statsRosterCache.total ?? roster.length}명 · 표시 ${roster.length}명`;
+            }
+
+            if (!statsSelectedName && roster[0]) {
+                statsSelectedName = roster[0].name;
+                statsSelectedId = roster[0].kboPlayerId || null;
+            }
+
+            const selectedCatalog = roster.find(c => c.name === statsSelectedName)
+                || roster.find(c => c.kboPlayerId === statsSelectedId);
+            const selectedRow = statsFullCache?.player
+                ? { name: statsFullCache.player.name, role: statsFullCache.player.role, team: statsFullCache.player.team, stats: statsFullCache.kbo?.summary || {} }
+                : findStatRow(statsSelectedName, seasonStatsCache?.players || []);
+            detailEl.innerHTML = statDetailHtml(selectedRow, selectedCatalog, statsFullCache);
+
+            if (!roster.length) {
+                listEl.innerHTML = '<div class="empty">표시할 선수가 없습니다</div>';
+            } else {
+                listEl.innerHTML = roster.map(entry => {
+                    const on = entry.name === statsSelectedName ? ' on' : '';
+                    const roleHint = entry.roleHint === 'pitcher' ? '투' : '타';
+                    const safeName = String(entry.name).replace(/'/g, "\\'");
+                    const pid = entry.kboPlayerId || '';
+                    return `<button type="button" class="stats-player-pick${on}" onclick="selectStatsPlayer('${safeName}', ${pid || 'null'})">
+                        <div class="sp-name">${escHtml(entry.name)}</div>
+                        <div class="sp-team">${escHtml(entry.teamShort || '')} · ${roleHint}${entry.position ? ' · ' + escHtml(entry.position) : ''}</div>
+                        <div class="sp-ops">${pid ? '#' + pid : ''}</div>
+                    </button>`;
+                }).join('');
+            }
+
+            renderStatsLiveSection();
+        }
+
+        async function loadPlayerFullStats() {
+            const detailEl = document.getElementById('stats-detail');
+            if (!statsSelectedName && !statsSelectedId) return;
+            if (detailEl) detailEl.innerHTML = '<div class="empty">상세 스탯 불러오는 중…</div>';
+            try {
+                const q = new URLSearchParams();
+                if (statsSelectedId) q.set('playerId', String(statsSelectedId));
+                else if (statsSelectedName) q.set('name', statsSelectedName);
+                const res = await fetch(`${API}/amm/games/players/full?${q}`);
+                if (!res.ok) throw new Error('full fail');
+                statsFullCache = await res.json();
+                renderPlayerStatsTab();
+            } catch (_) {
+                if (detailEl) detailEl.innerHTML = '<div class="empty">상세 스탯을 불러올 수 없습니다</div>';
+            }
+        }
+
+        async function loadPlayerStatsTab(force = false) {
+            const listEl = document.getElementById('stats-player-list');
+            const detailEl = document.getElementById('stats-detail');
+            if (!listEl || !detailEl) return;
+
+            if (pendingStatPlayer) {
+                statsSelectedName = pendingStatPlayer;
+                statsSelectedId = null;
+                statsFullCache = null;
+                pendingStatPlayer = null;
+            }
+
+            if (force) {
+                statsRosterCache = null;
+                statsCatalog = null;
+                statsFullCache = null;
+                seasonStatsCache = null;
+            }
+
+            if (!statsRosterCache) {
+                listEl.innerHTML = '<div class="empty">선수 목록 불러오는 중…</div>';
+                detailEl.innerHTML = '<div class="empty">불러오는 중…</div>';
+            }
+
+            try {
+                const q = new URLSearchParams();
+                if (statsSearchQuery) q.set('q', statsSearchQuery);
+                if (statsTeamFilter !== 'all') q.set('team', statsTeamFilter);
+                if (statsRoleFilter !== 'all') q.set('role', statsRoleFilter);
+                q.set('limit', '120');
+                const res = await fetch(`${API}/amm/games/players/roster?${q}`);
+                if (!res.ok) throw new Error('roster fail');
+                statsRosterCache = await res.json();
+                statsCatalog = statsRosterCache.players || [];
+                renderPlayerStatsTab();
+                if (!statsFullCache && (statsSelectedName || statsSelectedId)) {
+                    await loadPlayerFullStats();
+                }
+            } catch (_) {
+                listEl.innerHTML = '<div class="empty">선수 목록을 불러올 수 없습니다</div>';
+                detailEl.innerHTML = '<div class="empty">잠시 후 다시 시도해 주세요</div>';
+            }
         }
 
         function renderPlayerStatsPanel(data, game) {
@@ -2343,8 +3117,9 @@
                 if (!order.includes(row)) order.push(row);
             }
             el.style.display = '';
-            el.innerHTML = order.map(statRowHtml).join('') +
-                '<div class="player-stat-note">2026 시즌 · KBO 공식 기록실</div>';
+            el.innerHTML = order.map(r => statRowHtml(r, { clickable: true })).join('') +
+                '<button type="button" class="link-btn stats-full-link" onclick="goPlayerStats()">선수 스탯 전체 보기 →</button>' +
+                '<div class="player-stat-note">2026 시즌 · KBO 공식 기록실 · 카드 탭하면 상세</div>';
         }
 
         async function loadPlayerStats(force = false) {
@@ -2366,6 +3141,9 @@
                 renderPlayerStatsPanel(data, g);
             } catch (_) {
                 renderPlayerStatsPanel(null, g);
+            }
+            if (document.getElementById('tab-stats')?.classList.contains('active')) {
+                renderStatsLiveSection();
             }
         }
 
@@ -2800,6 +3578,7 @@
             document.querySelectorAll('.bottom-nav button').forEach(b => {
                 b.classList.toggle('on', b.dataset.tab === name);
             });
+            if (name === 'stats') void loadPlayerStatsTab();
         }
 
         async function pickGame(id) {
@@ -2808,6 +3587,12 @@
             watchId = id;
             phaseManual = false;
             timelineInning = 'all';
+            const innMeta = parseInningMeta(g?.inning);
+            if (g?.status === 'live' && innMeta?.num) {
+                timelineInning = String(innMeta.num);
+            }
+            timelineCollapsed.clear();
+            timelineCollapseInitFor = null;
             localStorage.setItem('watch-game', id);
             renderHero(g);
             renderGamesList();
@@ -3304,28 +4089,173 @@
             return parseInt(m[2], 10) * 2 + (m[1] === '▼' ? 1 : 0);
         }
 
+        function parseInningMeta(label) {
+            if (!label) return null;
+            const m = String(label).match(/([▲▼])(\d+)/);
+            if (!m) return null;
+            return {
+                half: m[1] === '▲' ? 'top' : 'bottom',
+                num: parseInt(m[2], 10),
+                raw: label,
+            };
+        }
+
+        function inningHalfKo(label, game) {
+            const meta = parseInningMeta(label);
+            if (!meta) return '';
+            if (meta.half === 'top') return `초 · ${game?.awayTeam || '원정'}`;
+            return `말 · ${game?.homeTeam || '홈'}`;
+        }
+
+        function timelinePlayVisible(p) {
+            if (!timelineHidePitch) return true;
+            if (p.relayKind === 'pitch') return false;
+            if (p.relayKind === 'info' || p.relayKind === 'visit') return false;
+            return true;
+        }
+
+        function timelineHighlightPlay(p) {
+            if (p.impact === 'run' || p.impact === 'game_end' || p.impact === 'game_start') return true;
+            if (p.relayKind === 'run') return true;
+            const type = p.playType || '';
+            const text = p.text || '';
+            return /홈런|2루타|3루타|안타|1루타|득점|홈인|볼넷|4구|삼진/.test(type + text);
+        }
+
+        function buildInningGroups(list) {
+            const labels = [...new Set((list || []).map(p => p.inning).filter(Boolean))]
+                .sort((a, b) => inningOrderKey(a) - inningOrderKey(b));
+            return labels.map(label => ({
+                key: label,
+                label,
+                meta: parseInningMeta(label),
+                plays: list.filter(p => p.inning === label),
+            }));
+        }
+
+        function filterTimelinePlays(source) {
+            let list = (source || []).filter(timelinePlayVisible);
+            if (timelineInning !== 'all') {
+                const num = parseInt(timelineInning, 10);
+                list = list.filter(p => parseInningMeta(p.inning)?.num === num);
+            }
+            return list;
+        }
+
+        function ensureTimelineCollapse(game, groups) {
+            if (!game || timelineCollapseInitFor === watchId || timelineInning !== 'all') return;
+            timelineCollapseInitFor = watchId;
+            timelineCollapsed.clear();
+            const liveKey = game.inning;
+            for (const g of groups) {
+                if (g.key !== liveKey) timelineCollapsed.add(g.key);
+            }
+        }
+
         function setTimelineInning(v) {
             timelineInning = v;
             renderTimeline();
         }
 
-        function renderInningFilter(sourcePlays) {
+        function toggleTimelinePitch() {
+            timelineHidePitch = !timelineHidePitch;
+            localStorage.setItem('pb-tl-pitch', timelineHidePitch ? '1' : '0');
+            renderTimeline();
+        }
+
+        function toggleTimelineSection(key) {
+            if (timelineCollapsed.has(key)) timelineCollapsed.delete(key);
+            else timelineCollapsed.add(key);
+            renderTimeline();
+        }
+
+        function timelinePlayHtml(p) {
+            const badge = playBadgeMeta(p);
+            const pitchCls = p.relayKind === 'pitch' ? ' pitch' : '';
+            return `<div class="tl-card${impactClass(p.impact)}${pitchCls}">
+                <div class="tl-card-row">
+                    <span class="tl-badge ${badge.cls}">${badge.label}</span>
+                    ${p.team ? `<span class="tl-team">${p.team}</span>` : ''}
+                </div>
+                <div class="tl-card-text">${p.text || ''}</div>
+            </div>`;
+        }
+
+        function timelineSectionPreview(group) {
+            const hit = group.plays.find(timelineHighlightPlay);
+            const sample = hit || group.plays[group.plays.length - 1];
+            if (!sample) return '기록 없음';
+            const prefix = sample.team ? `${sample.team} · ` : '';
+            return prefix + (sample.text || '').slice(0, 72);
+        }
+
+        function renderTimelineGrouped(list, game) {
+            const groups = buildInningGroups(list);
+            ensureTimelineCollapse(game, groups);
+            const liveKey = game?.status === 'live' ? game.inning : null;
+            return groups.map(group => {
+                const collapsed = timelineCollapsed.has(group.key);
+                const liveCls = group.key === liveKey ? ' live' : '';
+                const safeKey = String(group.key).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return `<div class="tl-section${liveCls}${collapsed ? ' collapsed' : ''}">
+                    <button type="button" class="tl-section-head" onclick="toggleTimelineSection('${safeKey}')">
+                        <span class="tl-section-inn">${group.label}</span>
+                        <span class="tl-section-sub">${inningHalfKo(group.label, game)}</span>
+                        <span class="tl-section-count">${group.plays.length}건</span>
+                        <span class="tl-section-chevron">▼</span>
+                    </button>
+                    <div class="tl-section-preview">${timelineSectionPreview(group)}</div>
+                    <div class="tl-section-body">${group.plays.map(timelinePlayHtml).join('')}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderTimelineFlat(list, game) {
+            const groups = buildInningGroups(list);
+            if (groups.length <= 1) {
+                const plays = groups[0]?.plays || list;
+                return plays.map(timelinePlayHtml).join('');
+            }
+            return groups.map(group => `
+                <div class="tl-half-label">${group.label} · ${inningHalfKo(group.label, game)}</div>
+                ${group.plays.map(timelinePlayHtml).join('')}
+            `).join('');
+        }
+
+        function renderInningFilter(sourcePlays, visiblePlays) {
             const el = document.getElementById('inning-filter');
             if (!el) return;
-            const labels = [...new Set((sourcePlays || []).map(p => p.inning).filter(Boolean))]
-                .sort((a, b) => inningOrderKey(a) - inningOrderKey(b));
-            if (labels.length < 2) {
-                el.innerHTML = labels.length
-                    ? `<span class="meta">${labels.join(' · ')} 포함 · ${sourcePlays.length}건</span>`
-                    : '';
-                return;
-            }
-            const chips = ['all', ...labels].map(v => {
+            const g = findGame(watchId);
+            const nums = [...new Set((sourcePlays || [])
+                .map(p => parseInningMeta(p.inning)?.num)
+                .filter(Boolean))].sort((a, b) => a - b);
+            const liveNum = g?.status === 'live' ? parseInningMeta(g.inning)?.num : null;
+            const maxInn = Math.max(nums.length ? nums[nums.length - 1] : 0, liveNum || 0, 9);
+            const tabs = ['all'];
+            for (let i = 1; i <= maxInn; i += 1) tabs.push(String(i));
+
+            const scroll = tabs.map(v => {
                 const label = v === 'all' ? '전체' : v;
                 const on = timelineInning === v ? ' on' : '';
-                return `<button type="button" class="inn-chip${on}" onclick="setTimelineInning('${v}')">${label}</button>`;
+                const extra = v !== 'all' && liveNum === parseInt(v, 10) ? ' live-dot' : '';
+                const cls = v === 'all' ? 'inn-tab all' : 'inn-tab';
+                return `<button type="button" class="${cls}${on}${extra}" onclick="setTimelineInning('${v}')">${label}</button>`;
             }).join('');
-            el.innerHTML = chips + `<span class="meta" style="margin-left:auto">${sourcePlays.length}건</span>`;
+
+            const pitchOn = timelineHidePitch ? ' on' : '';
+            const pitchLabel = timelineHidePitch ? '핵심만' : '전체 보기';
+            const count = (visiblePlays || []).length;
+            const total = (sourcePlays || []).filter(timelinePlayVisible).length;
+
+            el.innerHTML = `
+                <div class="inning-nav-scroll">${scroll}</div>
+                <div class="inning-nav-tools">
+                    <button type="button" class="inn-tool${pitchOn}" onclick="toggleTimelinePitch()">${pitchLabel}</button>
+                    <span class="inn-count">${count}${count !== total ? ` / ${total}` : ''}건</span>
+                </div>`;
+            requestAnimationFrame(() => {
+                el.querySelector('.inn-tab.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+            });
         }
 
         function renderTimeline() {
@@ -3334,14 +4264,11 @@
             const source = cached?.length
                 ? cached
                 : plays.filter(p => !watchId || p.gameId === watchId);
-            renderInningFilter(source);
-            let list = [...source];
-            if (timelineInning !== 'all') {
-                list = list.filter(p => p.inning === timelineInning);
-            }
-            list.reverse();
+            const g = findGame(watchId);
+            const list = filterTimelinePlays(source);
+            renderInningFilter(source, list);
+
             if (!list.length) {
-                const g = findGame(watchId);
                 if (g?.status === 'scheduled') {
                     el.innerHTML = '<div class="empty">경기 시작 전입니다<br>개막 후 1~9회 문자 중계가 표시됩니다</div>';
                     return;
@@ -3350,23 +4277,20 @@
                     el.innerHTML = '<div class="empty">중계를 불러오지 못했습니다<br>잠시 후 다시 시도해 주세요</div>';
                     return;
                 }
+                if (source.length && timelineHidePitch) {
+                    el.innerHTML = '<div class="empty">표시할 핵심 기록이 없습니다<br><button type="button" class="link-btn" onclick="toggleTimelinePitch()">전체 보기</button>로 투구까지 볼 수 있어요</div>';
+                    return;
+                }
                 const loading = g && (g.status === 'live' || g.status === 'final');
                 el.innerHTML = loading
                     ? '<div class="empty">중계 불러오는 중…</div>'
                     : '<div class="empty">아직 타석 기록이 없습니다<br>경기를 선택하면 중계가 표시됩니다</div>';
                 return;
             }
-            el.innerHTML = list.map(p => {
-                const badge = playBadgeMeta(p);
-                const pitchCls = p.relayKind === 'pitch' ? ' pitch' : '';
-                const inn = p.inning ? `<span class="tl-time">${p.inning}</span>` : `<span class="tl-time">${fmtTime(p.at)}</span>`;
-                return `
-                <div class="tl-item${impactClass(p.impact)}${pitchCls}">
-                    ${inn}
-                    <span class="tl-badge ${badge.cls}">${badge.label}</span>
-                    ${p.team ? `<span class="tl-team">${p.team}</span> ` : ''}${p.text}
-                </div>`;
-            }).join('');
+
+            el.innerHTML = timelineInning === 'all'
+                ? renderTimelineGrouped(list, g)
+                : renderTimelineFlat(list, g);
         }
 
         function gagaHtml(msg) {

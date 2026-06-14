@@ -29,6 +29,9 @@ import {
   UserWeekStat,
 } from './market.types';
 import { getWeekKey, getWeekLabel } from './week.util';
+import { getEffectiveStorageMode, isPersistentStorage } from '../persist/storage-mode';
+import { getMarketSession, isMarketHoursEnforced } from './market-session.util';
+import { isKboGameDay } from '../stats/game-day.util';
 import { PricingService } from './pricing.service';
 import { THEME_ETFS } from './etf-lineup';
 
@@ -67,7 +70,11 @@ export class MarketService {
     const priceHistory = await Promise.resolve(
       this.store.getPriceHistory(instrumentId),
     );
-    return { ...instrument, priceHistory };
+    return {
+      ...instrument,
+      changePct: this.calcChangePct(priceHistory),
+      priceHistory,
+    };
   }
 
   async getStatus(selectedId = LEE_JUNG_HOO_OPS_ID) {
@@ -84,6 +91,8 @@ export class MarketService {
     return {
       serverTime: new Date().toISOString(),
       storageMode: process.env.STORAGE_MODE ?? 'memory',
+      effectiveStorage: getEffectiveStorageMode(),
+      persistent: isPersistentStorage(),
       selectedId,
       instrument,
       lineup: await Promise.resolve(this.store.getLineup()),
@@ -112,6 +121,58 @@ export class MarketService {
 
   async getRecentTrades(limit = 30, instrumentId?: string) {
     return Promise.resolve(this.store.getRecentTrades(limit, instrumentId));
+  }
+
+  async getUserTrades(userId: string, limit = 40) {
+    return Promise.resolve(this.store.getUserTrades(userId, limit));
+  }
+
+  calcChangePct(history: PriceSnapshot[]): number {
+    if (!history?.length || history.length < 2) return 0;
+    const first = history[0]?.price ?? 0;
+    const last = history[history.length - 1]?.price ?? 0;
+    if (!first) return 0;
+    return Math.round(((last - first) / first) * 1000) / 10;
+  }
+
+  async enrichInstrument(inst: InstrumentState): Promise<InstrumentState> {
+    const history = await Promise.resolve(this.store.getPriceHistory(inst.id));
+    const changePct = this.calcChangePct(history);
+    let yesBet = inst.yesBet;
+    let noBet = inst.noBet;
+    if (inst.kind === 'player' && !yesBet) {
+      if (inst.metric === 'era') {
+        yesBet = 'ERA↓';
+        noBet = 'ERA↑ (숏)';
+      } else if (inst.metric === 'ops') {
+        yesBet = 'OPS↑';
+        noBet = 'OPS↓ (숏)';
+      } else {
+        yesBet = 'YES';
+        noBet = 'NO (숏)';
+      }
+    }
+    return { ...inst, changePct, yesBet, noBet };
+  }
+
+  async getMarketBoard(limit = 12) {
+    const lineup = await this.getLineup();
+    const memes = await this.getMemeLineup();
+    const rows = await Promise.all(
+      [...lineup, ...memes].map((inst) => this.enrichInstrument(inst)),
+    );
+    rows.sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0));
+    const gainers = rows.filter((r) => (r.changePct ?? 0) > 0).slice(0, limit);
+    const losers = [...rows]
+      .filter((r) => (r.changePct ?? 0) < 0)
+      .sort((a, b) => (a.changePct ?? 0) - (b.changePct ?? 0))
+      .slice(0, limit);
+    return {
+      updatedAt: new Date().toISOString(),
+      gainers,
+      losers,
+      all: rows,
+    };
   }
 
   async getStoreStats() {
@@ -237,6 +298,10 @@ export class MarketService {
       longShares: number;
       shortShares: number;
       value: number;
+      avgLongPrice: number;
+      avgShortPrice: number;
+      unrealizedPnl: number;
+      unrealizedPnlPct: number;
     }> = [];
     for (const [posInstrumentId, p] of Object.entries(wallet.positions)) {
       if (p.longShares === 0 && p.shortShares === 0) continue;
@@ -246,6 +311,17 @@ export class MarketService {
       const inst = await Promise.resolve(
         this.store.getInstrument(posInstrumentId),
       );
+      const longCost = p.longCost ?? 0;
+      const shortCredit = p.shortCredit ?? 0;
+      const longPnl =
+        p.longShares > 0 ? p.longShares * inst.price - longCost : 0;
+      const shortPnl =
+        p.shortShares > 0 ? shortCredit - p.shortShares * inst.price : 0;
+      const unrealizedPnl = Math.round(longPnl + shortPnl);
+      const basis =
+        longCost + (p.shortShares > 0 ? shortCredit : 0);
+      const unrealizedPnlPct =
+        basis > 0 ? Math.round((unrealizedPnl / basis) * 1000) / 10 : 0;
       holdings.push({
         instrumentId: posInstrumentId,
         teamShort: inst.teamShort,
@@ -255,6 +331,16 @@ export class MarketService {
         longShares: p.longShares,
         shortShares: p.shortShares,
         value: p.longShares * inst.price - p.shortShares * inst.price,
+        avgLongPrice:
+          p.longShares > 0
+            ? Math.round(longCost / p.longShares)
+            : 0,
+        avgShortPrice:
+          p.shortShares > 0
+            ? Math.round(shortCredit / p.shortShares)
+            : 0,
+        unrealizedPnl,
+        unrealizedPnlPct,
       });
     }
     holdings.sort(
@@ -276,7 +362,7 @@ export class MarketService {
       isOpsKing: lbAll.opsKing?.userId === userId,
       holdings,
       recentTrades: await Promise.resolve(
-        this.store.getRecentTrades(10, instrumentId),
+        this.store.getUserTrades(userId, 15),
       ),
     };
   }
@@ -287,6 +373,7 @@ export class MarketService {
     quantity: number,
     side: OrderSide = 'long',
   ): Promise<OrderResult> {
+    this.assertMarketOpen();
     await this.assertInstrument(instrumentId);
     this.assertQuantity(quantity);
     await this.touchWeekStat(userId);
@@ -305,6 +392,7 @@ export class MarketService {
       }
       wallet.points -= cost;
       pos.longShares += quantity;
+      pos.longCost = (pos.longCost ?? 0) + cost;
       return this.finalizeTrade(userId, instrumentId, {
         action: 'open_long',
         quantity,
@@ -321,8 +409,16 @@ export class MarketService {
     if (wallet.points < cost) {
       throw new BadRequestException('숏 청산에 필요한 포인트가 부족합니다.');
     }
+    const avgShort =
+      pos.shortShares > 0
+        ? (pos.shortCredit ?? 0) / pos.shortShares
+        : price;
     wallet.points -= cost;
     pos.shortShares -= quantity;
+    pos.shortCredit = Math.max(
+      0,
+      (pos.shortCredit ?? 0) - avgShort * quantity,
+    );
     return this.finalizeTrade(userId, instrumentId, {
       action: 'close_short',
       quantity,
@@ -339,6 +435,7 @@ export class MarketService {
     quantity: number,
     side: OrderSide = 'long',
   ): Promise<OrderResult> {
+    this.assertMarketOpen();
     await this.assertInstrument(instrumentId);
     this.assertQuantity(quantity);
     await this.touchWeekStat(userId);
@@ -355,7 +452,10 @@ export class MarketService {
       if (pos.longShares < quantity) {
         throw new BadRequestException('보유 롱 수량이 부족합니다.');
       }
+      const avgLong =
+        pos.longShares > 0 ? (pos.longCost ?? 0) / pos.longShares : price;
       pos.longShares -= quantity;
+      pos.longCost = Math.max(0, (pos.longCost ?? 0) - avgLong * quantity);
       wallet.points += proceeds;
       return this.finalizeTrade(userId, instrumentId, {
         action: 'close_long',
@@ -368,6 +468,7 @@ export class MarketService {
     }
 
     pos.shortShares += quantity;
+    pos.shortCredit = (pos.shortCredit ?? 0) + proceeds;
     wallet.points += proceeds;
     return this.finalizeTrade(userId, instrumentId, {
       action: 'open_short',
@@ -396,35 +497,45 @@ export class MarketService {
       accent: string;
       leverage?: number;
       basketPrice: number;
+      changePct: number;
       members: Array<{
         instrumentId: string;
         playerName: string;
         teamShort: string;
         price: number;
+        changePct: number;
       }>;
     }> = [];
     for (const etf of THEME_ETFS) {
       let sum = 0;
+      let changeSum = 0;
       const members: Array<{
         instrumentId: string;
         playerName: string;
         teamShort: string;
         price: number;
+        changePct: number;
       }> = [];
       for (const id of etf.memberIds) {
         if (!(await Promise.resolve(this.store.hasInstrument(id)))) continue;
         const inst = await Promise.resolve(this.store.getInstrument(id));
+        const enriched = await this.enrichInstrument(inst);
         sum += inst.price;
+        changeSum += enriched.changePct ?? 0;
         members.push({
           instrumentId: id,
           playerName: inst.playerName,
           teamShort: inst.teamShort,
           price: inst.price,
+          changePct: enriched.changePct ?? 0,
         });
       }
       rows.push({
         ...etf,
         basketPrice: members.length ? Math.round(sum / members.length) : 0,
+        changePct: members.length
+          ? Math.round((changeSum / members.length) * 10) / 10
+          : 0,
         members,
       });
     }
@@ -606,9 +717,29 @@ export class MarketService {
     instrumentId: string,
   ): Position {
     if (!wallet.positions[instrumentId]) {
-      wallet.positions[instrumentId] = { longShares: 0, shortShares: 0 };
+      wallet.positions[instrumentId] = {
+        longShares: 0,
+        shortShares: 0,
+        longCost: 0,
+        shortCredit: 0,
+      };
     }
     return wallet.positions[instrumentId];
+  }
+
+  private assertMarketOpen(): void {
+    if (!isMarketHoursEnforced()) return;
+    const tz = process.env.GAMES_TZ ?? 'Asia/Seoul';
+    const session = getMarketSession({
+      timeZone: tz,
+      isGameDay: isKboGameDay(tz),
+      hasLiveGame: false,
+    });
+    if (!session.isTradeHot) {
+      throw new BadRequestException(
+        `${session.label} · ${session.detail} — 지금은 주문할 수 없습니다.`,
+      );
+    }
   }
 
   private broadcast(instrument: InstrumentState): void {

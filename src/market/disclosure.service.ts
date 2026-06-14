@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { ModuleRef } from '@nestjs/core';
+import { LocalJsonStore } from '../persist/local-json-store';
 import { StockStreamGateway } from '../amm/stock-stream.gateway';
 import { isKboGameDay } from '../stats/game-day.util';
 import { GamesService } from '../games/games.service';
@@ -14,6 +15,12 @@ interface Template {
   kind: DisclosureKind;
   headline: (s: LineupSeed) => string;
   deltaPct: number;
+}
+
+interface DisclosureFeedFile {
+  updatedAt: string;
+  seq: number;
+  items: DisclosureItem[];
 }
 
 const TEMPLATES: Template[] = [
@@ -52,6 +59,9 @@ const TEMPLATES: Template[] = [
 @Injectable()
 export class DisclosureService implements OnModuleInit {
   private readonly logger = new Logger(DisclosureService.name);
+  private readonly store = new LocalJsonStore<DisclosureFeedFile>(
+    'disclosure-feed.json',
+  );
   private seq = 0;
   private feed: DisclosureItem[] = [];
 
@@ -64,7 +74,12 @@ export class DisclosureService implements OnModuleInit {
 
   onModuleInit(): void {
     if (this.config.get('DISCLOSURE_ENABLED') === 'false') return;
-    setTimeout(() => void this.pulse('boot').catch(() => {}), 12_000);
+    this.loadFromDisk();
+    if (this.feed.length === 0) {
+      void this.seedBootFeed();
+    } else {
+      setTimeout(() => void this.pulse('boot').catch(() => {}), 12_000);
+    }
   }
 
   /** 프리마켓·월요일 20분마다 공시 펄스 */
@@ -83,11 +98,15 @@ export class DisclosureService implements OnModuleInit {
     return this.feed.slice(0, limit);
   }
 
-  async pulse(trigger: string): Promise<DisclosureItem | null> {
+  getSessionContext(): ReturnType<typeof getMarketSession> {
     const tz = this.config.get('GAMES_TZ') ?? 'Asia/Seoul';
     const gameDay = isKboGameDay(tz);
     const live = this.games.getTodayGames().some((g) => g.status === 'live');
-    const session = getMarketSession({ timeZone: tz, hasLiveGame: live, isGameDay: gameDay });
+    return getMarketSession({ timeZone: tz, hasLiveGame: live, isGameDay: gameDay });
+  }
+
+  async pulse(trigger: string): Promise<DisclosureItem | null> {
+    const session = this.getSessionContext();
 
     const seed = KBO_TEAM_STOCKS[Math.floor(Math.random() * KBO_TEAM_STOCKS.length)];
     const tpl = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
@@ -111,6 +130,7 @@ export class DisclosureService implements OnModuleInit {
 
     this.feed.unshift(item);
     this.feed = this.feed.slice(0, 40);
+    this.persistFeed();
     this.logger.debug(`공시 [${trigger}] ${item.headline} → ${tpl.deltaPct}%`);
 
     try {
@@ -121,5 +141,27 @@ export class DisclosureService implements OnModuleInit {
     }
 
     return item;
+  }
+
+  private loadFromDisk(): void {
+    const cached = this.store.load();
+    if (!cached?.items?.length) return;
+    this.feed = cached.items;
+    this.seq = cached.seq ?? cached.items.length;
+  }
+
+  private persistFeed(): void {
+    this.store.save({
+      updatedAt: new Date().toISOString(),
+      seq: this.seq,
+      items: this.feed,
+    });
+  }
+
+  private async seedBootFeed(): Promise<void> {
+    for (let i = 0; i < 3; i++) {
+      await this.pulse('boot-seed');
+      await new Promise((r) => setTimeout(r, 400));
+    }
   }
 }

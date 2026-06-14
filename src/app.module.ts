@@ -46,6 +46,9 @@ import { PostgresMarketStoreService } from './market/postgres-market-store.servi
 import { PricingService } from './market/pricing.service';
 import { PresenceService } from './presence/presence.service';
 import { KboRecordProvider } from './stats/kbo-record.provider';
+import { KboRosterProvider } from './stats/kbo-roster.provider';
+import { StatizRecordProvider } from './stats/statiz-record.provider';
+import { NaverKboRecordProvider } from './stats/naver-kbo-record.provider';
 import { LiveStatsSyncService } from './stats/live-stats-sync.service';
 import { MemeOracleProvider } from './stats/meme-oracle.provider';
 import { MemeSyncService } from './stats/meme-sync.service';
@@ -61,7 +64,9 @@ const ENTITIES = [
   CommunityMessageEntity,
 ];
 
-const usePostgres = process.env.STORAGE_MODE === 'postgres';
+const usePostgres =
+  process.env.STORAGE_MODE === 'postgres' &&
+  !!process.env.DATABASE_URL?.trim();
 
 @Module({
   imports: [
@@ -150,6 +155,9 @@ const usePostgres = process.env.STORAGE_MODE === 'postgres';
     GameLiveService,
     HubService,
     KboRecordProvider,
+    KboRosterProvider,
+    StatizRecordProvider,
+    NaverKboRecordProvider,
     MlbRecordProvider,
     LiveStatsSyncService,
     MemeOracleProvider,

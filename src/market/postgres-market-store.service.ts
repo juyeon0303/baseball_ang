@@ -292,6 +292,15 @@ export class PostgresMarketStoreService implements IMarketStore, OnModuleInit {
     return rows.map(toTradeRecord);
   }
 
+  async getUserTrades(userId: string, limit = 30): Promise<TradeRecord[]> {
+    const rows = await this.tradeRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+    return rows.map(toTradeRecord);
+  }
+
   private async recordOpsTrade(
     userId: string,
     instrumentId: string,

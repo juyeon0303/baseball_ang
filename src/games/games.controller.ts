@@ -74,6 +74,100 @@ export class GamesController {
     }
   }
 
+  @Get('players/catalog')
+  async getPlayerCatalog() {
+    try {
+      await this.playerStats.getRoster({ limit: 1 });
+    } catch {
+      /* roster sync optional */
+    }
+    return {
+      updatedAt: new Date().toISOString(),
+      players: this.playerStats.getPlayerCatalog(),
+    };
+  }
+
+  @Get('players/roster')
+  async getPlayerRoster(
+    @Query('q') q?: string,
+    @Query('team') team?: string,
+    @Query('role') role?: 'hitter' | 'pitcher' | 'all',
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      const n = Math.min(200, Math.max(1, parseInt(limit ?? '80', 10) || 80));
+      return await this.playerStats.getRoster({ q, team, role, limit: n });
+    } catch (e) {
+      throw new BadRequestException('선수 목록을 불러올 수 없습니다.');
+    }
+  }
+
+  @Post('players/roster/refresh')
+  async refreshPlayerRoster() {
+    try {
+      return await this.playerStats.refreshRoster(true);
+    } catch (e) {
+      throw new BadRequestException('선수 목록 갱신에 실패했습니다.');
+    }
+  }
+
+  @Get('players/full')
+  async getFullPlayerStats(
+    @Query('name') name?: string,
+    @Query('playerId') playerId?: string,
+  ) {
+    const id = playerId ? parseInt(playerId, 10) : undefined;
+    const trimmed = name?.trim();
+    if (!id && !trimmed) {
+      throw new BadRequestException('name 또는 playerId가 필요합니다.');
+    }
+    try {
+      const bundle = await this.playerStats.getFullPlayerStats({
+        playerId: id,
+        name: trimmed,
+      });
+      if (!bundle) {
+        throw new BadRequestException('선수 스탯을 찾을 수 없습니다.');
+      }
+      return bundle;
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException('선수 상세 스탯을 불러올 수 없습니다.');
+    }
+  }
+
+  @Get('players/teams')
+  getPlayerTeams() {
+    return { teams: this.playerStats.getTeams() };
+  }
+
+  @Get('players/season')
+  async getPlayerSeasonBoard() {
+    try {
+      return await this.playerStats.getSeasonStatsBoard();
+    } catch (e) {
+      throw new BadRequestException('선수 시즌 스탯을 불러올 수 없습니다.');
+    }
+  }
+
+  @Get('players/stats')
+  async getPlayerStatsByName(@Query('name') name?: string) {
+    const trimmed = name?.trim();
+    if (!trimmed) {
+      throw new BadRequestException('선수 이름이 필요합니다.');
+    }
+    try {
+      const row = await this.playerStats.getPlayerStatsByName(trimmed);
+      if (!row) {
+        throw new BadRequestException('선수 스탯을 찾을 수 없습니다.');
+      }
+      return row;
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException('선수 스탯을 불러올 수 없습니다.');
+    }
+  }
+
   @Get(':gameId/player-stats')
   async getPlayerStats(@Param('gameId') gameId: string) {
     try {

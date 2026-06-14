@@ -26,6 +26,8 @@ export interface InstrumentState {
   fairPrice: number;
   accent: string;
   updatedAt: string;
+  /** 최근 시세 구간 등락률 (%) */
+  changePct?: number;
   /** 밈·베팅 UI 전용 */
   betCta?: string;
   narrative?: string;
@@ -38,6 +40,10 @@ export interface InstrumentState {
 export interface Position {
   longShares: number;
   shortShares: number;
+  /** 롱 매수 누적 원가 (P) */
+  longCost?: number;
+  /** 숏 진입 누적 크레딧 (P) */
+  shortCredit?: number;
 }
 
 export interface UserWallet {

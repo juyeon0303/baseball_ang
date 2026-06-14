@@ -2,16 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { assertValidDatabaseUrl } from './database/database-url.util';
+import { isPostgresConfigured } from './persist/storage-mode';
 import { mountProductionUis } from './web-ui.util';
 
 async function bootstrap() {
-  if (process.env.STORAGE_MODE === 'postgres' && !process.env.DATABASE_URL) {
+  if (process.env.STORAGE_MODE === 'postgres' && !process.env.DATABASE_URL?.trim()) {
     console.error(
-      '[boot] STORAGE_MODE=postgres 이지만 DATABASE_URL이 없습니다. Render Environment에 Supabase URI를 설정하세요.',
+      '[boot] STORAGE_MODE=postgres 이지만 DATABASE_URL이 없습니다. 계정·지갑은 data/ JSON 파일로 임시 저장됩니다. Render Environment에 Supabase URI를 설정하세요.',
     );
-  } else if (process.env.STORAGE_MODE === 'postgres' && process.env.DATABASE_URL) {
+  } else if (isPostgresConfigured()) {
     try {
-      assertValidDatabaseUrl(process.env.DATABASE_URL);
+      assertValidDatabaseUrl(process.env.DATABASE_URL!);
     } catch (e) {
       console.error('[boot]', e instanceof Error ? e.message : e);
       process.exit(1);

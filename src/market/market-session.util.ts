@@ -1,4 +1,4 @@
-/** KBO 장 세션 — 프리마켓(09~18) / 라이브(경기) / 애프터(22~24) */
+/** KBO 테마 장 세션 라벨 — 기본 24시간 거래(코인형). MARKET_ENFORCE_HOURS=true 시 구 KBO 휴장 적용 */
 
 export type MarketSessionKind =
   | 'premarket'
@@ -13,6 +13,11 @@ export interface MarketSessionInfo {
   isTradeHot: boolean;
 }
 
+/** true면 새벽 02~09 등 휴장 구간 주문 차단 (레거시 KBO 장) */
+export function isMarketHoursEnforced(): boolean {
+  return process.env.MARKET_ENFORCE_HOURS === 'true';
+}
+
 export function hourInTz(timeZone = 'Asia/Seoul', date = new Date()): number {
   return Number(
     new Intl.DateTimeFormat('en-US', {
@@ -24,6 +29,27 @@ export function hourInTz(timeZone = 'Asia/Seoul', date = new Date()): number {
 }
 
 export function getMarketSession(
+  opts: {
+    timeZone?: string;
+    hasLiveGame?: boolean;
+    isGameDay?: boolean;
+    date?: Date;
+  } = {},
+): MarketSessionInfo {
+  const session = getMarketSessionLegacy(opts);
+  if (!isMarketHoursEnforced()) {
+    return {
+      ...session,
+      isTradeHot: true,
+      detail: session.kind === 'closed'
+        ? '24시간 거래 — 언제든 YES/NO 주문 가능'
+        : `${session.detail} · 24시간 거래`,
+    };
+  }
+  return session;
+}
+
+function getMarketSessionLegacy(
   opts: {
     timeZone?: string;
     hasLiveGame?: boolean;

@@ -2,11 +2,16 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
+import { createDebouncedFlush } from '../persist/debounced-flush';
+import { LocalJsonStore } from '../persist/local-json-store';
+import { getEffectiveStorageMode } from '../persist/storage-mode';
 import {
   hashPin,
   normalizeNickname,
@@ -26,13 +31,40 @@ interface MemoryAccount extends AuthAccount {
   pinHash: string;
 }
 
+interface AuthAccountsFile {
+  version: 1;
+  accounts: MemoryAccount[];
+}
+
 @Injectable()
-export class AuthAccountService {
+export class AuthAccountService implements OnModuleInit {
+  private readonly logger = new Logger(AuthAccountService.name);
   private readonly memoryByNick = new Map<string, MemoryAccount>();
   private readonly memoryById = new Map<string, MemoryAccount>();
   private readonly displayCache = new Map<string, string>();
+  private readonly accountStore = new LocalJsonStore<AuthAccountsFile>(
+    'auth-accounts.json',
+  );
+  private readonly scheduleFilePersist = createDebouncedFlush(() =>
+    this.flushAccountsToFile(),
+  );
 
   constructor(private readonly userRepo?: Repository<UserEntity>) {}
+
+  onModuleInit(): void {
+    if (this.userRepo) return;
+    const data = this.accountStore.load();
+    if (!data?.accounts?.length) return;
+    for (const account of data.accounts) {
+      if (!account?.accountId || !account?.nickname || !account?.pinHash) {
+        continue;
+      }
+      this.memoryByNick.set(account.nickname.toLowerCase(), account);
+      this.memoryById.set(account.accountId, account);
+      this.displayCache.set(account.accountId, account.displayName);
+    }
+    this.logger.log(`계정 ${data.accounts.length}건 파일에서 복원 (${getEffectiveStorageMode()})`);
+  }
 
   async register(nicknameRaw: string, pin: string): Promise<AuthAccount> {
     const nickname = normalizeNickname(nicknameRaw);
@@ -67,6 +99,7 @@ export class AuthAccountService {
     } else {
       this.memoryByNick.set(nickname.toLowerCase(), account);
       this.memoryById.set(accountId, account);
+      this.scheduleFilePersist();
     }
     this.displayCache.set(accountId, nickname);
     return this.toPublic(account);
@@ -104,6 +137,7 @@ export class AuthAccountService {
       const mem = this.memoryById.get(accountId);
       if (!mem) throw new UnauthorizedException('계정을 찾을 수 없어요.');
       mem.displayName = name;
+      this.scheduleFilePersist();
     }
     this.displayCache.set(accountId, name);
     return name;
@@ -132,6 +166,19 @@ export class AuthAccountService {
     }
     const mem = this.memoryById.get(accountId);
     if (mem) this.displayCache.set(accountId, mem.displayName);
+  }
+
+  getPersistedAccountCount(): number {
+    if (this.userRepo) return 0;
+    return this.memoryById.size;
+  }
+
+  private flushAccountsToFile(): void {
+    if (this.userRepo) return;
+    this.accountStore.save({
+      version: 1,
+      accounts: [...this.memoryById.values()],
+    });
   }
 
   private async nicknameTaken(nickname: string): Promise<boolean> {

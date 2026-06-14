@@ -52,6 +52,7 @@ tmp-kbo-sample.html
 scripts/probe-*.js
 
 # Runtime data
+/data/
 pids
 *.pid
 *.seed
