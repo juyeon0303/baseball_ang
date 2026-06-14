@@ -616,6 +616,124 @@
         .feed-play-stack .player-stats-panel { margin-top: 4px; }
         .feed-wpa-bar { margin-bottom: 10px; }
         .chat-panel-compact .gaga-feed { max-height: 160px; }
+        .home-games-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        @media (max-width: 340px) {
+            .home-games-grid { grid-template-columns: 1fr; }
+        }
+        .game-card.compact {
+            padding: 10px;
+            margin-bottom: 0;
+        }
+        .game-card.mine {
+            border-color: rgba(252, 211, 77, 0.55);
+            background:
+                linear-gradient(145deg, rgba(252, 211, 77, 0.1), transparent 50%),
+                var(--surface2);
+            box-shadow: 0 0 0 1px rgba(252, 211, 77, 0.15);
+        }
+        .game-card.mine .mine-star {
+            color: var(--highlight);
+            margin-right: 2px;
+        }
+        .game-card.compact .game-card-head {
+            font-size: 0.65rem;
+            margin-bottom: 4px;
+        }
+        .game-card.compact .game-card-body {
+            font-size: 0.78rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+        .game-card.compact .game-card-score {
+            font-size: 0.95rem;
+            align-self: flex-end;
+            width: 100%;
+            text-align: right;
+        }
+        #tab-feed.feed-live-mode .feed-live-viewport {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: calc(100dvh - var(--strip-h) - var(--nav-h) - 118px);
+            min-height: 320px;
+        }
+        #tab-feed.feed-live-mode .feed-relay-stack { gap: 6px; }
+        #tab-feed.feed-live-mode .feed-stack-label { display: none; }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live {
+            margin-top: 0;
+            padding: 8px 10px;
+        }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live > .label { display: none; }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-top { margin-bottom: 4px; }
+        #tab-feed.feed-live-mode .broadcast-panel.compact-live .bc-pitch-log {
+            max-height: 28px;
+            overflow: hidden;
+        }
+        #tab-feed.feed-live-mode .feed-play-strip { display: none; }
+        #tab-feed.feed-live-mode .timeline-panel-compact {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 8px 10px;
+        }
+        #tab-feed.feed-live-mode .timeline-panel-compact .timeline-hint { display: none; }
+        #tab-feed.feed-live-mode .timeline-panel-compact .timeline {
+            flex: 1;
+            min-height: 0;
+            max-height: none;
+            overflow-y: auto;
+        }
+        #tab-feed.feed-live-mode .timeline-panel-compact .tl-card { padding: 5px 4px; }
+        #tab-feed.feed-live-mode .timeline-panel-compact .tl-card-text {
+            font-size: 0.76rem;
+            line-height: 1.4;
+        }
+        #tab-feed.feed-live-mode .timeline-panel-compact .tl-section-head { padding: 6px 8px; }
+        #tab-feed.feed-live-mode .chat-panel-compact { padding: 8px 10px; }
+        #tab-feed.feed-live-mode .chat-panel-compact.collapsed .gaga-feed,
+        #tab-feed.feed-live-mode .chat-panel-compact.collapsed .emoji-bar,
+        #tab-feed.feed-live-mode .chat-panel-compact.collapsed .input-row,
+        #tab-feed.feed-live-mode .chat-panel-compact.collapsed .nick-input,
+        #tab-feed.feed-live-mode .chat-panel-compact.collapsed .chat-hint { display: none; }
+        #tab-feed.feed-live-mode .chat-panel-compact .gaga-feed { max-height: 100px; }
+        .feed-score-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 6px 8px;
+            border-radius: 10px;
+            background: rgba(8, 12, 20, 0.55);
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .feed-score-strip strong {
+            font-size: 1.05rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--highlight);
+        }
+        .feed-chat-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+            padding: 0;
+            text-align: left;
+        }
+        .feed-chat-toggle .chev { color: var(--muted); font-size: 0.7rem; }
         .inning-filter { margin-bottom: 10px; }
         .inning-nav-scroll {
             display: flex;
@@ -1870,14 +1988,9 @@
                     </div>
                 </div>
 
-            <div class="panel" id="live-section" style="display:none">
-                <div class="label">라이브 NOW</div>
-                <div id="live-list"></div>
-            </div>
-
-            <div class="panel" id="myteam-home" style="display:none">
-                <div class="label">내 구단 경기</div>
-                <div id="myteam-home-body"></div>
+            <div class="panel bento-wide" id="home-games-panel" style="display:none">
+                <div class="label" id="home-games-label">오늘 경기</div>
+                <div class="home-games-grid" id="home-games-list"></div>
             </div>
 
             <div class="panel bento-wide" id="recap-section" style="display:none">
@@ -1924,9 +2037,15 @@
                 </div>
             </div>
             <div id="feed-relay-stack" class="feed-relay-stack hidden">
+                <div class="feed-live-viewport" id="feed-live-viewport">
                 <div class="feed-stack-label">LIVE · 중계</div>
-                <div class="panel broadcast-panel" id="feed-broadcast" style="display:none">
+                <div class="panel broadcast-panel compact-live" id="feed-broadcast" style="display:none">
                     <div class="label">실시간 중계 · 카운트 · 주자</div>
+                    <div class="feed-score-strip" id="feed-score-strip">
+                        <span id="feed-away-short">—</span>
+                        <strong id="feed-score-line">0 : 0</strong>
+                        <span id="feed-home-short">—</span>
+                    </div>
                     <div class="bc-top">
                         <span class="bc-inning" id="feed-bc-inning">—</span>
                         <span class="bc-meta" id="feed-bc-meta">—</span>
@@ -1958,11 +2077,14 @@
                     <div class="label">지금 이 타석</div>
                     <div class="play-now" id="feed-play-now">타석 소식 대기 중</div>
                 </div>
-                <div class="panel chat-panel-compact" id="chat-panel">
-                    <div class="label">이 경기 중계창</div>
+                <div class="panel chat-panel-compact collapsed" id="chat-panel">
+                    <button type="button" class="feed-chat-toggle label" onclick="toggleFeedChat()">
+                        <span>이 경기 중계창 · 응원 채팅</span>
+                        <span class="chev" id="feed-chat-chev">▸</span>
+                    </button>
                     <div class="auth-account-tag" id="account-tag">@—</div>
                     <input class="nick-input" id="nick" value="" placeholder="표시 이름 (채팅·랭킹용)" style="margin-bottom:4px;width:100%" onblur="onDisplayNameBlur()">
-                    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
+                    <p class="chat-hint" style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
                         로그인 없이도 중계는 볼 수 있습니다 · 채팅·예측은 <button type="button" class="link-btn" style="padding:0;font-size:inherit" onclick="goTab('account')">계정 탭</button>에서 로그인
                     </p>
                     <div class="gaga-feed" id="gaga-feed"></div>
@@ -1987,6 +2109,7 @@
                     <p class="timeline-hint">회 번호를 눌러 해당 이닝만 볼 수 있어요. <strong>핵심만</strong>이면 투구·잡음은 숨깁니다.</p>
                     <div class="inning-filter" id="inning-filter"></div>
                     <div class="timeline" id="play-timeline"></div>
+                </div>
                 </div>
             </div>
             <div id="feed-play-stack" class="feed-play-stack hidden">
@@ -2126,7 +2249,7 @@
             <div class="panel">
                 <div class="label">응원 구단 선택</div>
                 <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
-                    내 구단 경기가 홈에 먼저 뜨고, 일정·순위도 여기서 확인합니다.
+                    내 구단은 ★로 표시되고 맨 앞에 정렬됩니다 · 다른 경기도 홈에서 모두 볼 수 있어요.
                 </p>
                 <div class="team-grid" id="team-grid"></div>
                 <div class="my-game-box" id="my-game-box">구단을 골라 주세요</div>
@@ -2464,6 +2587,7 @@
         let timelineCollapseInitFor = null;
         let timelineInningNavInitFor = null;
         let inningNavUserScroll = false;
+        let feedChatOpen = localStorage.getItem('pb-feed-chat') === '1';
         let standingsRows = [];
         let standingsMeta = null;
         const relayCache = {};
@@ -2555,7 +2679,7 @@
                 sub = `참여 ${winPickSnap?.totalPicks || 0}명 · 결과와 비교해 보세요`;
             } else if (myTeam) {
                 head = `${myTeam}`;
-                sub = '내 구단 경기가 홈에 표시됩니다';
+                sub = '★ 표시된 내 구단 · 다른 경기도 아래에서 선택할 수 있어요';
             } else if (hasFinalToday()) {
                 const n = (snapshot?.games || []).filter(g => g.status === 'final').length;
                 head = `오늘 ${n}경기 종료`;
@@ -3538,6 +3662,24 @@
             document.getElementById('feed-review-panel')?.classList.toggle('hidden', !isReview);
             document.getElementById('timeline-panel')?.classList.toggle('hidden', isPreview);
             document.getElementById('chat-panel')?.classList.toggle('hidden', isPreview);
+            const g = findGame(watchId);
+            const feedLiveMode = isLive && g?.status === 'live';
+            document.getElementById('tab-feed')?.classList.toggle('feed-live-mode', feedLiveMode);
+            if (feedLiveMode) {
+                const chat = document.getElementById('chat-panel');
+                chat?.classList.toggle('collapsed', !feedChatOpen);
+                const chev = document.getElementById('feed-chat-chev');
+                if (chev) chev.textContent = feedChatOpen ? '▾' : '▸';
+            }
+        }
+
+        function toggleFeedChat() {
+            feedChatOpen = !feedChatOpen;
+            localStorage.setItem('pb-feed-chat', feedChatOpen ? '1' : '0');
+            document.getElementById('chat-panel')?.classList.toggle('collapsed', !feedChatOpen);
+            const chev = document.getElementById('feed-chat-chev');
+            if (chev) chev.textContent = feedChatOpen ? '▾' : '▸';
+            microTap([8]);
         }
 
         function previewRowsHtml(g) {
@@ -3900,8 +4042,7 @@
             localStorage.setItem('watch-game', id);
             renderHero(g);
             renderGamesList();
-            renderLiveStrip();
-            renderMyTeamHome();
+            renderHomeGamesBoard();
             renderRecapSection();
             if (g.status === 'scheduled') {
                 gamePhase = 'preview';
@@ -4283,6 +4424,12 @@
             if (feedTitle) {
                 feedTitle.textContent = `${g.awayTeam} vs ${g.homeTeam} · ${statusKo(g.status)}`;
             }
+            const feedAway = document.getElementById('feed-away-short');
+            const feedHome = document.getElementById('feed-home-short');
+            const feedScore = document.getElementById('feed-score-line');
+            if (feedAway) feedAway.textContent = g.awayTeam;
+            if (feedHome) feedHome.textContent = g.homeTeam;
+            if (feedScore) feedScore.textContent = `${g.awayScore} : ${g.homeScore}`;
             updateZeroStrip(g);
             renderPulseStory();
         }
@@ -4309,61 +4456,74 @@
             renderSituation(g);
         }
 
-        function renderLiveStrip() {
-            const live = (snapshot?.games || []).filter(g => g.status === 'live');
-            const sec = document.getElementById('live-section');
-            const el = document.getElementById('live-list');
-            if (!live.length) {
-                sec.style.display = 'none';
-                return;
-            }
-            sec.style.display = '';
-            el.innerHTML = live.map(g => `
-                <button type="button" class="game-card ${g.id === watchId ? 'active' : ''}"
-                    onclick="pickGame('${g.id}')">
-                    <div class="game-card-head"><span>${g.inning}</span><span class="status-badge live">LIVE</span></div>
-                    <div class="game-card-body">
-                        <span>${g.awayTeam} vs ${g.homeTeam}</span>
-                        <span class="game-card-score">${g.awayScore}:${g.homeScore}</span>
-                    </div>
-                </button>`).join('');
+        function isMyTeamGame(g) {
+            return !!(myTeam && g && (g.homeTeam === myTeam || g.awayTeam === myTeam));
         }
 
-        function renderMyTeamHome() {
-            const sec = document.getElementById('myteam-home');
-            const el = document.getElementById('myteam-home-body');
-            if (!myTeam) { sec.style.display = 'none'; return; }
-            let g = (snapshot?.games || []).find(x => x.homeTeam === myTeam || x.awayTeam === myTeam);
-            if (!g && shouldUseRecapPrimary()) {
-                g = recap.games.find(x => x.homeTeam === myTeam || x.awayTeam === myTeam);
+        function collectHomeGames() {
+            let games = [...(snapshot?.games || [])];
+            const seen = new Set(games.map(x => x.id));
+            if (showRecapMode && recap?.games?.length && !hasLiveToday() && !hasFinalToday()) {
+                const liveOrSoon = games.filter(x => x.status === 'live' || x.status === 'scheduled');
+                if (liveOrSoon.length) {
+                    for (const x of recap.games) {
+                        if (!seen.has(x.id)) {
+                            games.push(x);
+                            seen.add(x.id);
+                        }
+                    }
+                } else {
+                    games = recap.games;
+                }
             }
-            if (!g) {
-                sec.style.display = '';
-                el.innerHTML = `<div class="empty">${myTeam} 경기 없음 (오늘 일정)</div>`;
-                return;
-            }
-            sec.style.display = '';
-            el.innerHTML = `
-                <button type="button" class="game-card ${g.id === watchId ? 'active' : ''}"
-                    onclick="pickGame('${g.id}')">
-                    <div class="game-card-head"><span>${g.inning}</span><span class="status-badge ${g.status === 'live' ? 'live' : ''}">${statusKo(g.status)}</span></div>
-                    <div class="game-card-body">
-                        <span>${g.awayTeam} vs ${g.homeTeam}</span>
-                        <span class="game-card-score">${g.awayScore}:${g.homeScore}</span>
-                    </div>
-                </button>`;
+            return sortHomeGames(games);
         }
 
-        function gameCardHtml(g) {
+        function sortHomeGames(games) {
+            const order = { live: 0, scheduled: 1, final: 2 };
+            return [...games].sort((a, b) => {
+                const am = isMyTeamGame(a) ? 0 : 1;
+                const bm = isMyTeamGame(b) ? 0 : 1;
+                if (am !== bm) return am - bm;
+                const ao = order[a.status] ?? 9;
+                const bo = order[b.status] ?? 9;
+                if (ao !== bo) return ao - bo;
+                return 0;
+            });
+        }
+
+        function renderHomeGamesBoard() {
+            const panel = document.getElementById('home-games-panel');
+            const el = document.getElementById('home-games-list');
+            const label = document.getElementById('home-games-label');
+            if (!panel || !el) return;
+            const games = collectHomeGames();
+            if (!games.length) {
+                panel.style.display = 'none';
+                return;
+            }
+            panel.style.display = '';
+            const liveN = games.filter(x => x.status === 'live').length;
+            let title = liveN ? `오늘 경기 · LIVE ${liveN}` : '오늘 경기';
+            if (myTeam) title += ' · ★ 내 구단';
+            if (label) label.textContent = title;
+            el.innerHTML = games.map(x => gameCardHtml(x, { compact: true })).join('');
+        }
+
+        function gameCardHtml(g, opts = {}) {
+            const compact = opts.compact ? ' compact' : '';
+            const mine = isMyTeamGame(g) ? ' mine' : '';
+            const active = g.id === watchId ? ' active' : '';
+            const star = isMyTeamGame(g) ? '<span class="mine-star">★</span>' : '';
             return `
-                <button type="button" class="game-card ${g.id === watchId ? 'active' : ''}"
+                <button type="button" class="game-card${compact}${mine}${active}"
                     onclick="pickGame('${g.id}')">
                     <div class="game-card-head">
-                        <span>${g.inning}${g.stadium ? ' · ' + g.stadium : ''}</span>
+                        <span>${g.inning}${g.stadium && !opts.compact ? ' · ' + g.stadium : ''}</span>
                         <span class="status-badge ${g.status === 'live' ? 'live' : g.status === 'final' ? 'final' : ''}">${statusKo(g.status)}</span>
                     </div>
                     <div class="game-card-body">
-                        <span><span class="team-dot" style="background:${teamDotColor(g.awayTeam)}"></span>${g.awayTeam} vs <span class="team-dot" style="background:${teamDotColor(g.homeTeam)}"></span>${g.homeTeam}</span>
+                        <span>${star}<span class="team-dot" style="background:${teamDotColor(g.awayTeam)}"></span>${g.awayTeam} vs <span class="team-dot" style="background:${teamDotColor(g.homeTeam)}"></span>${g.homeTeam}</span>
                         <span class="game-card-score">${g.awayScore}:${g.homeScore}</span>
                     </div>
                 </button>`;
@@ -4468,6 +4628,7 @@
             if (!game || timelineCollapseInitFor === watchId || timelineInning !== 'all') return;
             timelineCollapseInitFor = watchId;
             timelineCollapsed.clear();
+            if (document.getElementById('tab-feed')?.classList.contains('feed-live-mode')) return;
             const liveKey = game.status === 'live' ? game.inning : null;
             const expandKeys = new Set();
             if (liveKey) {
@@ -4697,7 +4858,7 @@
             myTeam = team;
             localStorage.setItem('my-team', team);
             renderTeamGrid();
-            renderMyTeamHome();
+            renderHomeGamesBoard();
             renderMyTeamSchedule();
             renderStandings();
             let g = (snapshot?.games || []).find(x => x.homeTeam === team || x.awayTeam === team);
@@ -4738,8 +4899,7 @@
                 renderHero(recap.games[0]);
                 watchId = recap.games[0].id;
             }
-            renderLiveStrip();
-            renderMyTeamHome();
+            renderHomeGamesBoard();
             renderGamesList();
             renderTeamGrid();
             renderMyTeamSchedule();

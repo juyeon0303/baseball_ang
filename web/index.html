@@ -142,7 +142,10 @@
 
             .col-left,
             .col-right {
-                overflow: hidden;
+                overflow-x: hidden;
+                overflow-y: auto;
+                max-height: calc(100vh - var(--strip-h) - 88px);
+                padding-right: 2px;
             }
 
             .col-main .hero-stat-val {
@@ -3397,15 +3400,37 @@
             return 'KBO 09:00 · MLB 10:00 갱신 예정';
         }
 
+        function staticDisclosureFallback(session) {
+            const sessionLabel = session?.label || '프리마켓';
+            const samples = [
+                { headline: '[키움] 이주형 선발 확정 — 오늘 마운드/타선 핵심', instrumentId: 'kiwoom-joo', priceDeltaPct: 2.2 },
+                { headline: '[NC] 김주원 기용 확대 시사 — “흐름 탈 때까지”', instrumentId: 'nc-kim', priceDeltaPct: 1.8 },
+                { headline: '[삼성] 구자욱 “오늘 장난 없음” — 팬심 상승', instrumentId: 'ss-koo', priceDeltaPct: 1.2 },
+            ];
+            const now = Date.now();
+            return samples.map((s, i) => ({
+                ...s,
+                id: `disc-fallback-${i}`,
+                session: sessionLabel,
+                at: new Date(now - i * 480_000).toISOString(),
+            }));
+        }
+
         function renderDisclosures(items, session) {
             const el = document.getElementById('disc-list');
             const sub = document.getElementById('disc-session-sub');
             if (sub && session) {
                 sub.textContent = `${session.label} · ${session.detail || ''}`;
+            } else if (sub && !session) {
+                sub.textContent = '장 상태 확인 중…';
             }
             if (!items?.length) {
-                el.innerHTML = '<li class="disc-item meta disc-skeleton">공시 불러오는 중…</li>';
-                return;
+                if (hubLoaded) {
+                    items = staticDisclosureFallback(session);
+                } else {
+                    el.innerHTML = '<li class="disc-item meta disc-skeleton">공시 불러오는 중…</li>';
+                    return;
+                }
             }
             el.innerHTML = items.map(d => {
                 const cls = d.priceDeltaPct >= 0 ? 'up' : 'down';
@@ -3460,9 +3485,22 @@
 
         function renderOwners(teams) {
             const el = document.getElementById('owner-list');
-            const rows = teams?.length ? teams : [];
+            let rows = teams?.length ? teams : [];
+            if (!rows.length && lineupCache.length) {
+                rows = lineupCache.slice(0, 10).map(i => ({
+                    teamShort: i.teamShort,
+                    playerName: i.playerName,
+                    instrumentId: i.instrumentId,
+                    totalStake: 0,
+                    holderCount: 0,
+                    owner: null,
+                    topHolders: [],
+                }));
+            }
             if (!rows.length) {
-                el.innerHTML = '<div class="meta">구단주 순위 불러오는 중…</div>';
+                el.innerHTML = hubLoaded
+                    ? '<div class="meta">구단주 데이터 없음 · YES 베팅하면 순위에 올라요</div>'
+                    : '<div class="meta">구단주 순위 불러오는 중…</div>';
                 return;
             }
             el.innerHTML = rows.map(t => {
@@ -3707,8 +3745,21 @@
         function renderMarketBoard(board) {
             const el = document.getElementById('market-board-grid');
             if (!el) return;
-            if (!board?.gainers?.length && !board?.losers?.length) {
-                el.innerHTML = '<div class="meta" style="grid-column:1/-1">시장 데이터 불러오는 중…</div>';
+            let gainers = board?.gainers || [];
+            let losers = board?.losers || [];
+            if (!gainers.length && !losers.length && board?.all?.length) {
+                const sorted = [...board.all].sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0));
+                gainers = sorted.filter(r => (r.changePct ?? 0) > 0).slice(0, 5);
+                losers = sorted.filter(r => (r.changePct ?? 0) < 0).slice(-5).reverse();
+                if (!gainers.length && !losers.length) {
+                    gainers = sorted.slice(0, 5);
+                    losers = sorted.slice(-5).reverse();
+                }
+            }
+            if (!gainers.length && !losers.length) {
+                el.innerHTML = hubLoaded
+                    ? '<div class="meta" style="grid-column:1/-1">등락 데이터 없음 · 잠시 후 새로고침</div>'
+                    : '<div class="meta" style="grid-column:1/-1">시장 데이터 불러오는 중…</div>';
                 return;
             }
             const row = (i) => {
@@ -3723,8 +3774,8 @@
                 </button>`;
             };
             el.innerHTML = `
-                <div><div class="board-col-title">상승</div>${(board.gainers || []).slice(0, 5).map(row).join('') || '<div class="meta">—</div>'}</div>
-                <div><div class="board-col-title">하락</div>${(board.losers || []).slice(0, 5).map(row).join('') || '<div class="meta">—</div>'}</div>`;
+                <div><div class="board-col-title">상승</div>${gainers.slice(0, 5).map(row).join('') || '<div class="meta">—</div>'}</div>
+                <div><div class="board-col-title">하락</div>${losers.slice(0, 5).map(row).join('') || '<div class="meta">—</div>'}</div>`;
         }
 
         function renderMyTrades(trades) {
@@ -3897,10 +3948,37 @@
             }
         }
 
+        function renderSideRail(data = {}) {
+            try { renderDisclosures(data.disclosures, data.session); } catch (e) { console.warn('disc', e); }
+            try { renderEtfs(data.etfs); } catch (e) { console.warn('etf', e); }
+            try { renderOwners(data.shareholders); } catch (e) { console.warn('owners', e); }
+            try {
+                const king = data.weekKing;
+                document.getElementById('crown').innerHTML = king
+                    ? king.isPulse
+                        ? `<strong>${king.displayName}</strong> · 오늘 장 <span class="up">${fmtPct(king.weeklyReturnPct)}</span>`
+                        : `<strong>@${king.displayName || king.userId}</strong> · 이번 주 ${fmtPct(king.weeklyReturnPct)}`
+                    : '<span class="meta">첫 YES 베팅을 남기면 순위에 올라요</span>';
+            } catch (e) { console.warn('crown', e); }
+            try {
+                const feed = document.getElementById('feed');
+                const trades = data.recentTrades || [];
+                feed.innerHTML = trades.length
+                    ? trades.map(t => `
+                        <li>
+                            <span>@${(t.displayName || t.userId || 'guest').slice(0, 8)}</span>
+                            <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.instrumentName || '픽'} · ${Number(t.price || 0).toLocaleString()}P</span>
+                        </li>`).join('')
+                    : '<li class="meta">첫 YES/NO 베팅이 여기에 실시간으로 쌓입니다</li>';
+            } catch (e) { console.warn('feed', e); }
+            try { renderMarketBoard(data.marketBoard); } catch (e) { console.warn('board', e); }
+        }
+
         function renderHub(data) {
             hub = data;
             renderDemoBanner(data);
             const inst = data.instrument;
+            if (!inst) return;
             selectedId = data.featuredId;
 
             document.getElementById('hero-name').textContent = inst.playerName;
@@ -3914,46 +3992,33 @@
             document.getElementById('hero-metric').textContent = inst.metricLabel;
             renderBetCta(inst);
 
-            const lp = data.crowd.longPct;
+            const crowd = data.crowd || { longPct: 50, shortPct: 50 };
+            const lp = crowd.longPct ?? 50;
             document.getElementById('crowd-long').style.width = lp + '%';
             document.getElementById('crowd-text').textContent =
-                `YES ${lp}% · NO ${data.crowd.shortPct}% · ${data.liveCount}명 참여 중`;
+                `YES ${lp}% · NO ${crowd.shortPct ?? 100 - lp}% · ${data.liveCount ?? 0}명 참여 중`;
 
             const g = data.game;
-            document.getElementById('game-line').textContent =
-                `${g.awayTeam} vs ${g.homeTeam} · ${g.inning}`;
-            document.getElementById('game-score').textContent =
-                `${g.awayScore} : ${g.homeScore}`;
-            const badge = document.getElementById('game-badge');
-            badge.textContent = g.status === 'live' ? 'LIVE' : g.status === 'final' ? '종료' : '예정';
-            badge.className = 'game-badge' + (g.status === 'live' ? ' live' : g.status === 'final' ? ' final' : '');
+            if (g) {
+                document.getElementById('game-line').textContent =
+                    `${g.awayTeam} vs ${g.homeTeam} · ${g.inning}`;
+                document.getElementById('game-score').textContent =
+                    `${g.awayScore} : ${g.homeScore}`;
+                const badge = document.getElementById('game-badge');
+                badge.textContent = g.status === 'live' ? 'LIVE' : g.status === 'final' ? '종료' : '예정';
+                badge.className = 'game-badge' + (g.status === 'live' ? ' live' : g.status === 'final' ? ' final' : '');
+            }
             const play = (data.plays && data.plays[0]) || null;
             document.getElementById('play-ticker').innerHTML = play
                 ? `<span class="impact">${play.team || 'KBO'}</span> ${play.text}`
-                : (g.status === 'live' ? '경기 진행 중 — 타석 소식 대기' : '오늘 경기 일정');
+                : (g?.status === 'live' ? '경기 진행 중 — 타석 소식 대기' : '오늘 경기 일정');
             document.getElementById('live-line').textContent =
-                `${data.liveCount}명 접속 · ${g.status === 'live' ? '연동 종목: ' + (data.instrument?.playerName || '') : '탭하면 종목 보기'}`;
+                `${data.liveCount ?? 0}명 접속 · ${g?.status === 'live' ? '연동 종목: ' + (data.instrument?.playerName || '') : '탭하면 종목 보기'}`;
             liveLineMeta = {
                 count: data.liveCount ?? 0,
-                gameStatus: g.status,
+                gameStatus: g?.status || 'scheduled',
                 instrumentName: data.instrument?.playerName || '',
             };
-
-            const king = data.weekKing;
-            document.getElementById('crown').innerHTML = king
-                ? king.isPulse
-                    ? `<strong>${king.displayName}</strong> · 오늘 장 <span class="up">${fmtPct(king.weeklyReturnPct)}</span>`
-                    : `<strong>@${king.displayName || king.userId}</strong> · 이번 주 ${fmtPct(king.weeklyReturnPct)}`
-                : '<span class="meta">첫 YES 베팅을 남기면 순위에 올라요</span>';
-
-            const feed = document.getElementById('feed');
-            feed.innerHTML = data.recentTrades.length
-                ? data.recentTrades.map(t => `
-                    <li>
-                        <span>@${(t.displayName || t.userId).slice(0, 8)}</span>
-                        <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.instrumentName || '픽'} · ${t.price.toLocaleString()}P</span>
-                    </li>`).join('')
-                : '<li class="meta">첫 YES/NO 베팅이 여기에 실시간으로 쌓입니다</li>';
 
             if (data.me) {
                 renderWallet(data.me);
@@ -3962,14 +4027,11 @@
             }
             renderLeaderboard(data.leaderboard, data.me);
             renderSession(data.session);
-            renderDisclosures(data.disclosures, data.session);
-            renderEtfs(data.etfs);
-            renderOwners(data.shareholders);
+            renderSideRail(data);
             updateYasStrip(inst, data.session);
             renderYasdaqStory(data.me, inst);
             if (lineupCache.length) renderLineup(lineupCache);
             if (data.memes?.length) renderMemes(data.memes);
-            renderMarketBoard(data.marketBoard);
             renderMyTrades(data.me?.myTrades);
             renderWatchlist();
             updateTradeUI();
@@ -4118,18 +4180,23 @@
         }
 
         async function loadHubSidePanels(hubData) {
-            const needsDisc = !hubData?.disclosures?.length;
-            const needsEtf = !hubData?.etfs?.length;
-            const needsOwners = !hubData?.shareholders?.length;
-            if (!needsDisc && !needsEtf && !needsOwners) return hubData;
+            const merged = { ...(hubData || {}) };
+            const needsDisc = !merged.disclosures?.length;
+            const needsEtf = !merged.etfs?.length;
+            const needsOwners = !merged.shareholders?.length;
+            const needsBoard = !merged.marketBoard?.gainers?.length
+                && !merged.marketBoard?.losers?.length
+                && !merged.marketBoard?.all?.length;
+            const needsTrades = !merged.recentTrades?.length;
+            if (!needsDisc && !needsEtf && !needsOwners && !needsBoard && !needsTrades) return merged;
             try {
-                const jobs = [];
-                if (needsDisc) jobs.push(fetch(`${API}/amm/disclosures`).catch(() => null));
-                else jobs.push(null);
-                if (needsEtf) jobs.push(fetch(`${API}/amm/etfs`).catch(() => null));
-                else jobs.push(null);
-                const [discRes, etfRes] = await Promise.all(jobs);
-                const merged = { ...hubData };
+                const [discRes, etfRes, ownerRes, boardRes, tradesRes] = await Promise.all([
+                    needsDisc ? fetch(`${API}/amm/disclosures`).catch(() => null) : null,
+                    needsEtf ? fetch(`${API}/amm/etfs`).catch(() => null) : null,
+                    needsOwners ? fetch(`${API}/amm/shareholders`, { headers: authHeaders(false) }).catch(() => null) : null,
+                    needsBoard ? fetch(`${API}/amm/market-board`).catch(() => null) : null,
+                    needsTrades ? fetch(`${API}/amm/trades?limit=8`).catch(() => null) : null,
+                ]);
                 if (discRes?.ok) {
                     const disc = await discRes.json();
                     merged.disclosures = disc.disclosures || [];
@@ -4139,12 +4206,29 @@
                     const etf = await etfRes.json();
                     merged.etfs = etf.etfs || [];
                 }
-                if (needsOwners && !merged.shareholders?.length) {
-                    merged.shareholders = merged.shareholders || [];
+                if (ownerRes?.ok) {
+                    const owners = await ownerRes.json();
+                    merged.shareholders = owners.teams || owners.shareholders || [];
+                }
+                if (boardRes?.ok) {
+                    merged.marketBoard = await boardRes.json();
+                }
+                if (tradesRes?.ok) {
+                    const tr = await tradesRes.json();
+                    merged.recentTrades = tr.trades || [];
+                }
+                if (!merged.weekKing && merged.marketBoard?.gainers?.[0]) {
+                    const g = merged.marketBoard.gainers[0];
+                    merged.weekKing = {
+                        userId: 'market_pulse',
+                        displayName: `${g.teamShort}·${g.playerName}`,
+                        weeklyReturnPct: g.changePct ?? 0,
+                        isPulse: true,
+                    };
                 }
                 return merged;
             } catch (_) {
-                return hubData;
+                return merged;
             }
         }
 
@@ -4194,12 +4278,13 @@
                 document.getElementById('boot-error').classList.remove('show');
                 if (lineupCache.length) renderLineup(lineupCache);
                 renderMemes(memes);
-                await loadHubSidePanels({ session: null }).then((side) => {
-                    if (side?.disclosures?.length) {
-                        renderDisclosures(side.disclosures, side.session);
-                    }
-                    if (side?.etfs?.length) renderEtfs(side.etfs);
+                const side = await loadHubSidePanels({
+                    session: null,
+                    marketBoard: hub?.marketBoard,
+                    weekKing: hub?.weekKing,
                 });
+                hubLoaded = true;
+                renderSideRail(side);
                 await loadPriceChart(selectedId || 'lee-jung-hoo');
                 return;
             }
