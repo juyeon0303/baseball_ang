@@ -26,9 +26,9 @@
             --glass: rgba(255, 255, 255, 0.04);
             --glass-border: rgba(148, 163, 184, 0.22);
             --border: rgba(51, 65, 85, 0.55);
-            --text: #f1f5f9;
-            --muted: #b8c5d6;
-            --faint: #8fa3bc;
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --faint: #94a3b8;
             --accent: #5eb8ff;
             --accent-neon: #38bdf8;
             --accent-soft: rgba(94, 184, 255, 0.16);
@@ -52,8 +52,8 @@
                 var(--bg);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
-            font-size: 15px;
-            line-height: 1.5;
+            font-size: 16px;
+            line-height: 1.55;
             padding-bottom: calc(var(--nav-h) + 12px);
             -webkit-font-smoothing: antialiased;
         }
@@ -105,11 +105,10 @@
         }
         .panel:active { transform: scale(0.995); }
         .label {
-            font-size: 0.66rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--muted);
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
             margin-bottom: 8px;
         }
         .hero-card {
@@ -153,9 +152,9 @@
         }
         .status-badge.live { background: rgba(74, 222, 128, 0.15); color: var(--live); }
         .status-badge.final { background: rgba(148, 163, 184, 0.16); color: var(--final); }
-        .team-name { font-size: 0.92rem; font-weight: 700; color: var(--text); }
+        .team-name { font-size: 1rem; font-weight: 700; color: var(--text); }
         .team-score {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
             line-height: 1;
@@ -171,20 +170,31 @@
         .matchup > div:last-child { text-align: right; }
         .match-meta {
             margin-top: 10px;
-            font-size: 0.74rem;
+            font-size: 0.8rem;
             color: var(--muted);
             text-align: center;
+            line-height: 1.45;
         }
         .duel-line {
             margin-top: 10px;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border-radius: 10px;
             background: var(--surface-inset);
             border: 1px solid var(--border);
-            font-size: 0.82rem;
+            font-size: 0.9rem;
             color: var(--text);
+            line-height: 1.45;
         }
         .duel-line strong { color: var(--highlight); }
+        .broadcast-panel .duel-line {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(8, 12, 20, 0.45);
+            border: 1px solid var(--border);
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
         .player-stats-panel {
             margin-top: 8px;
             display: grid;
@@ -491,13 +501,13 @@
         }
         .play-now {
             margin-top: 10px;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border-radius: 10px;
             background: var(--surface-inset);
             border: 1px solid var(--border);
             border-left: 3px solid var(--highlight);
-            font-size: 0.84rem;
-            line-height: 1.5;
+            font-size: 0.92rem;
+            line-height: 1.55;
             color: var(--text);
         }
         .play-now .team { color: var(--highlight); font-weight: 700; }
@@ -515,9 +525,9 @@
             border: none;
             background: transparent;
             color: var(--faint);
-            font-size: 0.74rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            padding: 7px 4px;
+            padding: 8px 4px;
             border-radius: 8px;
             cursor: pointer;
         }
@@ -546,12 +556,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.88rem;
+            font-size: 0.92rem;
             font-weight: 600;
             color: var(--text);
+            line-height: 1.4;
         }
         .game-card-score {
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
             color: var(--text);
@@ -571,10 +582,10 @@
         .tl-impact.game_start { border-left: 2px solid var(--live); padding-left: 8px; }
         .tl-impact.inning { color: var(--faint); }
         .timeline-hint {
-            font-size: 0.72rem;
+            font-size: 0.78rem;
             color: var(--muted);
             margin: -2px 0 10px;
-            line-height: 1.45;
+            line-height: 1.5;
         }
         .timeline {
             max-height: 520px;
@@ -689,10 +700,10 @@
             max-height: none;
             overflow-y: auto;
         }
-        #tab-feed.feed-live-mode .timeline-panel-compact .tl-card { padding: 5px 4px; }
+        #tab-feed.feed-live-mode .timeline-panel-compact .tl-card { padding: 7px 5px; }
         #tab-feed.feed-live-mode .timeline-panel-compact .tl-card-text {
-            font-size: 0.76rem;
-            line-height: 1.4;
+            font-size: 0.88rem;
+            line-height: 1.5;
         }
         #tab-feed.feed-live-mode .timeline-panel-compact .tl-section-head { padding: 6px 8px; }
         #tab-feed.feed-live-mode .chat-panel-compact { padding: 8px 10px; }
@@ -707,16 +718,17 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin-bottom: 6px;
-            padding: 6px 8px;
+            margin-bottom: 8px;
+            padding: 8px 10px;
             border-radius: 10px;
             background: rgba(8, 12, 20, 0.55);
             border: 1px solid var(--border);
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             font-weight: 700;
+            line-height: 1.3;
         }
         .feed-score-strip strong {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             font-variant-numeric: tabular-nums;
             color: var(--highlight);
         }
@@ -746,14 +758,14 @@
         .inning-nav-scroll::-webkit-scrollbar { display: none; }
         .inn-tab {
             flex-shrink: 0;
-            min-width: 42px;
+            min-width: 44px;
             border: 1px solid var(--border);
             background: var(--surface2);
             color: var(--muted);
             font: inherit;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             font-weight: 700;
-            padding: 8px 12px;
+            padding: 9px 13px;
             border-radius: 10px;
             cursor: pointer;
         }
@@ -881,8 +893,8 @@
             margin-bottom: 3px;
         }
         .tl-card-text {
-            font-size: 0.82rem;
-            line-height: 1.5;
+            font-size: 0.88rem;
+            line-height: 1.55;
             color: var(--text);
         }
         .tl-card.tl-impact.run {
@@ -981,11 +993,11 @@
             padding: 8px 10px;
         }
         .gaga-msg {
-            font-size: 0.8rem;
-            padding: 6px 0;
+            font-size: 0.86rem;
+            padding: 8px 0;
             border-bottom: 1px dashed var(--border);
             color: var(--text);
-            line-height: 1.45;
+            line-height: 1.5;
         }
         .gaga-msg:last-child { border-bottom: none; }
         .gaga-msg.system { text-align: center; color: var(--muted); font-size: 0.7rem; }
@@ -1065,7 +1077,7 @@
             border: none;
             background: transparent;
             color: var(--muted);
-            font-size: 0.68rem;
+            font-size: 0.74rem;
             font-weight: 600;
             padding-top: 6px;
             cursor: pointer;
@@ -1328,21 +1340,21 @@
         }
         .diamond {
             position: relative;
-            width: 52px;
-            height: 44px;
+            width: 58px;
+            height: 48px;
         }
         .diamond .base {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: var(--border);
             transform: rotate(45deg);
             border-radius: 2px;
         }
-        .diamond .base.on { background: var(--live); box-shadow: 0 0 6px rgba(74, 222, 128, 0.5); }
-        .diamond .base.second { top: 2px; left: 21px; }
-        .diamond .base.first { bottom: 4px; right: 2px; }
-        .diamond .base.third { bottom: 4px; left: 2px; }
+        .diamond .base.on { background: var(--live); box-shadow: 0 0 8px rgba(74, 222, 128, 0.55); }
+        .diamond .base.second { top: 0; left: 23px; }
+        .diamond .base.first { bottom: 2px; right: 0; }
+        .diamond .base.third { bottom: 2px; left: 0; }
         .count-text {
             font-size: 0.82rem;
             font-weight: 800;
@@ -1371,48 +1383,51 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
-            font-size: 0.72rem;
+            margin-bottom: 10px;
+            font-size: 0.82rem;
         }
         .bc-inning {
             font-weight: 800;
+            font-size: 0.92rem;
             color: var(--live);
             letter-spacing: -0.02em;
         }
-        .bc-meta { color: var(--muted); }
+        .bc-meta { display: none; }
         .bc-grid {
             display: grid;
             grid-template-columns: auto 1fr auto;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
-        .bc-count-col { display: flex; flex-direction: column; gap: 4px; }
+        .bc-count-col { display: flex; flex-direction: column; gap: 5px; }
         .bc-pill {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.62rem;
+            gap: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
             color: var(--muted);
-            min-width: 42px;
+            min-width: 48px;
         }
         .bc-pill strong {
-            font-size: 1rem;
+            font-size: 1.12rem;
             color: var(--text);
             font-variant-numeric: tabular-nums;
         }
         .bc-count-big {
-            font-size: 1.35rem;
+            font-size: 1.5rem;
             font-weight: 900;
             color: var(--highlight);
             font-variant-numeric: tabular-nums;
             text-align: right;
+            min-width: 52px;
         }
         .bc-pitch-row, .bc-play-row {
-            margin-top: 8px;
-            padding-top: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px dashed rgba(51, 65, 85, 0.55);
-            font-size: 0.78rem;
-            line-height: 1.45;
+            font-size: 0.88rem;
+            line-height: 1.55;
         }
         .bc-label {
             display: inline-block;
@@ -1934,7 +1949,6 @@
                 <div class="broadcast-panel situation-bar" id="situation-bar" style="display:none">
                     <div class="bc-top">
                         <span class="bc-inning" id="bc-inning">—</span>
-                        <span class="bc-meta" id="bc-bases-label">주자 없음 · 0사</span>
                     </div>
                     <div class="bc-grid">
                         <div class="bc-count-col">
@@ -2048,7 +2062,6 @@
                     </div>
                     <div class="bc-top">
                         <span class="bc-inning" id="feed-bc-inning">—</span>
-                        <span class="bc-meta" id="feed-bc-meta">—</span>
                     </div>
                     <div class="bc-grid">
                         <div class="bc-count-col">
@@ -4249,9 +4262,6 @@
                 const archived = !!relay?.archived || g?.status === 'final';
                 innEl.textContent = g?.inning || sit.inning || (archived ? '종료' : 'LIVE');
             }
-            const metaEl = el('bc-meta');
-            const outs = sit.outs ?? 0;
-            if (metaEl) metaEl.textContent = `${basesLabelFromSit(sit)} · ${outs}사`;
 
             if (el('sit-b')) el('sit-b').textContent = sit.balls;
             if (el('sit-s')) el('sit-s').textContent = sit.strikes;
@@ -4322,8 +4332,6 @@
             if (bar) bar.style.display = 'none';
             const sit = resolveSituation(g);
             applyBroadcastToPrefix('feed', g, sit, g?.relay);
-            const duel = document.getElementById('duel-line');
-            if (duel) duel.style.display = 'none';
         }
 
         function syncGameRelay(gameId, payload) {
