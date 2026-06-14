@@ -72,11 +72,13 @@ export class DisclosureService implements OnModuleInit {
     private readonly moduleRef: ModuleRef,
   ) {}
 
+  private seedAttempts = 0;
+
   onModuleInit(): void {
     if (this.config.get('DISCLOSURE_ENABLED') === 'false') return;
     this.loadFromDisk();
     if (this.feed.length === 0) {
-      void this.seedBootFeed();
+      setTimeout(() => void this.seedBootFeed(), 8_000);
     } else {
       setTimeout(() => void this.pulse('boot').catch(() => {}), 12_000);
     }
@@ -95,7 +97,47 @@ export class DisclosureService implements OnModuleInit {
   }
 
   getFeed(limit = 12): DisclosureItem[] {
-    return this.feed.slice(0, limit);
+    if (this.feed.length > 0) return this.feed.slice(0, limit);
+    void this.scheduleSeedRetry();
+    return this.buildStaticFeed(limit);
+  }
+
+  private buildStaticFeed(limit: number): DisclosureItem[] {
+    const session = this.getSessionContext();
+    const now = Date.now();
+    const count = Math.min(limit, TEMPLATES.length, KBO_TEAM_STOCKS.length);
+    return Array.from({ length: count }, (_, i) => {
+      const tpl = TEMPLATES[i % TEMPLATES.length];
+      const seed = KBO_TEAM_STOCKS[i % KBO_TEAM_STOCKS.length];
+      return {
+        id: `disc-static-${i}`,
+        at: new Date(now - i * 480_000).toISOString(),
+        session: session.label,
+        kind: tpl.kind,
+        headline: tpl.headline(seed),
+        teamShort: seed.teamShort,
+        playerName: seed.playerName,
+        instrumentId: seed.id,
+        priceDeltaPct: tpl.deltaPct,
+        source: tpl.kind === 'rumor' ? 'team_feed' : 'kbo_official',
+      };
+    });
+  }
+
+  private scheduleSeedRetry(): void {
+    if (this.seedAttempts >= 6 || this.feed.length >= 3) return;
+    this.seedAttempts += 1;
+    const delay = this.seedAttempts * 10_000;
+    setTimeout(() => {
+      void (async () => {
+        if (this.feed.length >= 3) return;
+        const item = await this.pulse(`retry-${this.seedAttempts}`);
+        if (!item && this.seedAttempts < 6) this.scheduleSeedRetry();
+        else if (this.feed.length < 3 && this.seedAttempts < 6) {
+          this.scheduleSeedRetry();
+        }
+      })();
+    }, delay);
   }
 
   getSessionContext(): ReturnType<typeof getMarketSession> {
@@ -160,8 +202,10 @@ export class DisclosureService implements OnModuleInit {
 
   private async seedBootFeed(): Promise<void> {
     for (let i = 0; i < 3; i++) {
-      await this.pulse('boot-seed');
-      await new Promise((r) => setTimeout(r, 400));
+      const item = await this.pulse('boot-seed');
+      if (item) await new Promise((r) => setTimeout(r, 400));
+      else await new Promise((r) => setTimeout(r, 4_000));
     }
+    if (this.feed.length < 3) this.scheduleSeedRetry();
   }
 }

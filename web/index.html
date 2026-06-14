@@ -3360,7 +3360,7 @@
                 sub.textContent = `${session.label} · ${session.detail || ''}`;
             }
             if (!items?.length) {
-                el.innerHTML = '<li class="disc-item meta">공시 대기 중 — 프리마켓·월요일에 반영됩니다</li>';
+                el.innerHTML = '<li class="disc-item meta">공시 불러오는 중…</li>';
                 return;
             }
             el.innerHTML = items.map(d => {
@@ -3897,8 +3897,10 @@
 
             const king = data.weekKing;
             document.getElementById('crown').innerHTML = king
-                ? `<strong>@${king.displayName || king.userId}</strong> · 이번 주 ${fmtPct(king.weeklyReturnPct)}`
-                : '아직 1위가 없습니다';
+                ? king.isPulse
+                    ? `<strong>${king.displayName}</strong> · 오늘 장 <span class="up">${fmtPct(king.weeklyReturnPct)}</span>`
+                    : `<strong>@${king.displayName || king.userId}</strong> · 이번 주 ${fmtPct(king.weeklyReturnPct)}`
+                : '첫 YES 베팅을 남기면 순위에 올라요';
 
             const feed = document.getElementById('feed');
             feed.innerHTML = data.recentTrades.length
@@ -3907,7 +3909,7 @@
                         <span>@${(t.displayName || t.userId).slice(0, 8)}</span>
                         <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.instrumentName || '픽'} · ${t.price.toLocaleString()}P</span>
                     </li>`).join('')
-                : '<li>아직 거래 내역이 없습니다</li>';
+                : '<li class="meta">첫 YES/NO 베팅이 여기에 실시간으로 쌓입니다</li>';
 
             if (data.me) {
                 renderWallet(data.me);
@@ -4071,6 +4073,37 @@
             }
         }
 
+        async function loadHubSidePanels(hubData) {
+            const needsDisc = !hubData?.disclosures?.length;
+            const needsEtf = !hubData?.etfs?.length;
+            const needsOwners = !hubData?.shareholders?.length;
+            if (!needsDisc && !needsEtf && !needsOwners) return hubData;
+            try {
+                const jobs = [];
+                if (needsDisc) jobs.push(fetch(`${API}/amm/disclosures`).catch(() => null));
+                else jobs.push(null);
+                if (needsEtf) jobs.push(fetch(`${API}/amm/etfs`).catch(() => null));
+                else jobs.push(null);
+                const [discRes, etfRes] = await Promise.all(jobs);
+                const merged = { ...hubData };
+                if (discRes?.ok) {
+                    const disc = await discRes.json();
+                    merged.disclosures = disc.disclosures || [];
+                    merged.session = merged.session || disc.session;
+                }
+                if (etfRes?.ok) {
+                    const etf = await etfRes.json();
+                    merged.etfs = etf.etfs || [];
+                }
+                if (needsOwners && !merged.shareholders?.length) {
+                    merged.shareholders = merged.shareholders || [];
+                }
+                return merged;
+            } catch (_) {
+                return hubData;
+            }
+        }
+
         async function refresh() {
             let apiOk = false;
             let roadmap = [];
@@ -4117,6 +4150,12 @@
                 document.getElementById('boot-error').classList.remove('show');
                 if (lineupCache.length) renderLineup(lineupCache);
                 renderMemes(memes);
+                await loadHubSidePanels({ session: null }).then((side) => {
+                    if (side?.disclosures?.length) {
+                        renderDisclosures(side.disclosures, side.session);
+                    }
+                    if (side?.etfs?.length) renderEtfs(side.etfs);
+                });
                 await loadPriceChart(selectedId || 'lee-jung-hoo');
                 return;
             }
@@ -4125,25 +4164,17 @@
             hubLoaded = true;
             setSyncStatus(true, '연결됨');
             const hubData = await hubRes.json();
-            if (!hubData.etfs?.length) {
-                try {
-                    const etfRes = await fetch(`${API}/amm/etfs`);
-                    if (etfRes.ok) {
-                        const etfData = await etfRes.json();
-                        hubData.etfs = etfData.etfs || [];
-                    }
-                } catch (_) {}
-            }
+            const hubMerged = await loadHubSidePanels(hubData);
             if (!lineupCache.length) {
                 await reloadLineup();
             } else {
                 renderLineup(lineupCache);
             }
-            if (hubData.memes?.length) {
-                memes = normalizeMemes(hubData.memes);
+            if (hubMerged.memes?.length) {
+                memes = normalizeMemes(hubMerged.memes);
             }
-            hubData.memes = memes;
-            renderHub(hubData);
+            hubMerged.memes = memes;
+            renderHub(hubMerged);
             renderMemes(memes);
             await maybeApplyDeepLink();
             await loadPriceChart(selectedId);

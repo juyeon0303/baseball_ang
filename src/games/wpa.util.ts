@@ -23,7 +23,18 @@ export function estimateHomeWinPct(game: TodayGame): number {
   const { inning, isTop } = parseInningLabel(game.inning);
   const progress = Math.min(1, Math.max(0, (inning - 1 + (isTop ? 0 : 0.5)) / 9));
   const leverage = 0.12 + progress * 0.88;
-  const logit = margin * leverage * 0.38;
+  let logit = margin * leverage * 0.38;
+  const sit = game.situation;
+  if (sit?.bases) {
+    let rb = 0;
+    if (sit.bases.first) rb += 0.08;
+    if (sit.bases.second) rb += 0.14;
+    if (sit.bases.third) rb += 0.2;
+    logit += rb * leverage;
+  }
+  if (sit && sit.outs != null) {
+    logit -= (2 - Math.min(2, sit.outs)) * 0.04 * leverage;
+  }
   let p = 1 / (1 + Math.exp(-logit));
   p = p * 0.94 + 0.03;
   return Math.round(Math.max(0.02, Math.min(0.98, p)) * 1000) / 1000;

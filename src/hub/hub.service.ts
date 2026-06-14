@@ -54,6 +54,9 @@ export class HubService {
     const etfs = await this.safeEtfs();
     const shareholderBoard = await this.safeShareholderBoard(userId);
 
+    const tradeRows =
+      trades.length > 0 ? trades : await this.market.getShowcaseTrades(8);
+
     const memes = [...memeLineup].sort(
       (a, b) => b.oracleValue - a.oracleValue || b.price - a.price,
     );
@@ -63,7 +66,7 @@ export class HubService {
       ...row,
       displayName: label(row.userId),
     }));
-    const recentTrades = trades.map((row) => ({
+    const recentTrades = tradeRows.map((row) => ({
       ...row,
       displayName: label(row.userId),
     }));
@@ -74,7 +77,7 @@ export class HubService {
             ...leaderboard.opsKing,
             displayName: label(leaderboard.opsKing.userId),
           }
-        : null;
+        : this.market.getPulseWeekKing(marketBoard);
     const shareholders = shareholderBoard.teams.map((team) => ({
       ...team,
       owner: team.owner

@@ -40,9 +40,8 @@ export class GameLiveService {
       prev != null ? Math.round((homeWinPct - prev) * 1000) / 10 : undefined;
     const changed =
       prev == null ||
-      Math.abs(homeWinPct - prev) >= 0.008 ||
-      play?.impact === 'run' ||
-      play?.impact === 'game_end';
+      play != null ||
+      Math.abs(homeWinPct - prev) >= 0.003;
 
     if (!changed) return null;
 

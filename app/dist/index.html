@@ -2414,6 +2414,8 @@
         let timelineHidePitch = localStorage.getItem('pb-tl-pitch') !== '0';
         let timelineCollapsed = new Set();
         let timelineCollapseInitFor = null;
+        let timelineInningNavInitFor = null;
+        let inningNavUserScroll = false;
         let standingsRows = [];
         let standingsMeta = null;
         const relayCache = {};
@@ -2588,6 +2590,7 @@
             localStorage.setItem('pb-' + key, prefs[key] ? '1' : '0');
             document.getElementById('pref-' + key).classList.toggle('on', prefs[key]);
             microTap(prefs[key] ? [8, 20, 8] : [12]);
+            if (key === 'sound' && prefs.sound) playSfx('tap');
             popEl('pref-' + key);
         }
 
@@ -2597,23 +2600,123 @@
             setTimeout(() => { el.className = 'flash-overlay'; }, 280);
         }
 
-        function playCrack(kind) {
+        function ensureAudio() {
+            if (!prefs.sound) return null;
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') void audioCtx.resume();
+            return audioCtx;
+        }
+
+        function sfxTone(ctx, opts) {
+            const {
+                freq,
+                type = 'sine',
+                start,
+                dur,
+                peak = 0.07,
+                attack = 0.012,
+            } = opts;
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = type;
+            o.frequency.setValueAtTime(freq, start);
+            o.connect(g);
+            g.connect(ctx.destination);
+            g.gain.setValueAtTime(0.0001, start);
+            g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), start + attack);
+            g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+            o.start(start);
+            o.stop(start + dur + 0.04);
+        }
+
+        function sfxNoise(ctx, start, dur, peak, freq = 900) {
+            const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+            const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+            const ch = buf.getChannelData(0);
+            for (let i = 0; i < len; i += 1) {
+                ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
+            }
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            const filt = ctx.createBiquadFilter();
+            filt.type = 'bandpass';
+            filt.frequency.value = freq;
+            filt.Q.value = 0.7;
+            const g = ctx.createGain();
+            src.connect(filt);
+            filt.connect(g);
+            g.connect(ctx.destination);
+            g.gain.setValueAtTime(peak, start);
+            g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+            src.start(start);
+            src.stop(start + dur + 0.02);
+        }
+
+        /** run:cheer | run:muted | game_end | tap */
+        function playSfx(kind, variant) {
             if (!prefs.sound) return;
             try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const ctx = audioCtx;
-                const o = ctx.createOscillator();
-                const g = ctx.createGain();
-                o.connect(g);
-                g.connect(ctx.destination);
-                o.type = kind === 'run' ? 'square' : 'sine';
-                o.frequency.value = kind === 'run' ? 180 : 440;
-                g.gain.setValueAtTime(0.0001, ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02);
-                g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (kind === 'run' ? 0.35 : 0.2));
-                o.start();
-                o.stop(ctx.currentTime + 0.4);
+                const ctx = ensureAudio();
+                if (!ctx) return;
+                const t = ctx.currentTime;
+
+                if (kind === 'run' && variant === 'cheer') {
+                    sfxNoise(ctx, t, 0.07, 0.1, 1100);
+                    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                        sfxTone(ctx, {
+                            freq: f,
+                            type: 'triangle',
+                            start: t + 0.04 + i * 0.065,
+                            dur: 0.28,
+                            peak: 0.055 - i * 0.006,
+                        });
+                    });
+                    return;
+                }
+
+                if (kind === 'run') {
+                    sfxTone(ctx, { freq: 146.83, type: 'sine', start: t, dur: 0.22, peak: 0.045 });
+                    sfxTone(ctx, {
+                        freq: 110,
+                        type: 'sine',
+                        start: t + 0.04,
+                        dur: 0.28,
+                        peak: 0.03,
+                    });
+                    return;
+                }
+
+                if (kind === 'game_end') {
+                    [392, 523.25, 659.25, 783.99].forEach((f, i) => {
+                        sfxTone(ctx, {
+                            freq: f,
+                            type: 'triangle',
+                            start: t + i * 0.11,
+                            dur: 0.38,
+                            peak: 0.06,
+                        });
+                    });
+                    sfxNoise(ctx, t + 0.08, 0.18, 0.035, 600);
+                    return;
+                }
+
+                if (kind === 'tap') {
+                    sfxTone(ctx, {
+                        freq: 660,
+                        type: 'sine',
+                        start: t,
+                        dur: 0.05,
+                        peak: 0.025,
+                        attack: 0.004,
+                    });
+                }
             } catch (_) {}
+        }
+
+        function playCrack(kind) {
+            playSfx(kind === 'run' ? 'run' : kind, kind === 'run' ? 'cheer' : undefined);
         }
 
         function triggerDopamine(play, game) {
@@ -2623,13 +2726,16 @@
             const forMyTeam = mySide && scoringTeam === myTeam;
             if (play.impact === 'run') {
                 if (prefs.haptic && navigator.vibrate) {
-                    navigator.vibrate(forMyTeam ? [60, 30, 120, 30, 180] : [40, 80, 40]);
+                    navigator.vibrate(
+                        forMyTeam ? [35, 40, 55, 35, 90] : [28, 55, 28],
+                    );
                 }
                 flashScreen(forMyTeam ? 'win' : 'run');
-                playCrack('run');
+                playSfx('run', forMyTeam ? 'cheer' : 'muted');
             } else if (play.impact === 'game_end') {
-                if (prefs.haptic && navigator.vibrate) navigator.vibrate([120, 60, 160]);
+                if (prefs.haptic && navigator.vibrate) navigator.vibrate([80, 50, 120, 50, 180]);
                 flashScreen('win');
+                playSfx('game_end');
             }
         }
 
@@ -2681,17 +2787,60 @@
                 return;
             }
             updateWpaRecapHint();
+            const homePcts = pts.map(p => p.homeWinPct);
+            let yMin = Math.min(...homePcts);
+            let yMax = Math.max(...homePcts);
+            const span = yMax - yMin;
+            const yPad = Math.max(0.05, span * 0.2);
+            yMin = Math.max(0, yMin - yPad);
+            yMax = Math.min(1, yMax + yPad);
+            if (yMax - yMin < 0.1) {
+                const mid = (yMin + yMax) / 2;
+                yMin = Math.max(0, mid - 0.05);
+                yMax = Math.min(1, mid + 0.05);
+            }
+            const yRange = yMax - yMin || 0.1;
+            const yScale = (pct) => pad + (1 - (pct - yMin) / yRange) * (h - pad * 2);
             const xs = pts.map((_, i) => pad + (i / (pts.length - 1)) * (w - pad * 2));
-            const ys = pts.map(p => pad + (1 - p.homeWinPct) * (h - pad * 2));
+            const ys = pts.map(p => yScale(p.homeWinPct));
+            const dpr = window.devicePixelRatio || 1;
+            ctx.strokeStyle = 'rgba(184,197,214,0.2)';
+            ctx.lineWidth = 1 * dpr;
+            [0.25, 0.5, 0.75].forEach((pct) => {
+                const v = yMin + yRange * pct;
+                if (v < 0 || v > 1) return;
+                const y = yScale(v);
+                ctx.beginPath();
+                ctx.moveTo(pad, y);
+                ctx.lineTo(w - pad, y);
+                ctx.stroke();
+            });
+            if (0.5 >= yMin && 0.5 <= yMax) {
+                ctx.strokeStyle = 'rgba(184,197,214,0.35)';
+                ctx.setLineDash([4 * dpr, 4 * dpr]);
+                const y50 = yScale(0.5);
+                ctx.beginPath();
+                ctx.moveTo(pad, y50);
+                ctx.lineTo(w - pad, y50);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
             ctx.strokeStyle = '#3d9ee5';
-            ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
+            ctx.lineWidth = 2.5 * dpr;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
             ctx.beginPath();
             pts.forEach((p, i) => {
                 if (i === 0) ctx.moveTo(xs[i], ys[i]);
                 else ctx.lineTo(xs[i], ys[i]);
             });
             ctx.stroke();
-            ctx.fillStyle = 'rgba(61,186,106,0.15)';
+            ctx.fillStyle = 'rgba(61,186,106,0.12)';
+            ctx.beginPath();
+            pts.forEach((p, i) => {
+                if (i === 0) ctx.moveTo(xs[i], ys[i]);
+                else ctx.lineTo(xs[i], ys[i]);
+            });
             ctx.lineTo(xs[xs.length - 1], h - pad);
             ctx.lineTo(xs[0], h - pad);
             ctx.closePath();
@@ -2763,6 +2912,77 @@
             if (bundle.batter) g.batter = bundle.batter;
             if (bundle.pitcher) g.pitcher = bundle.pitcher;
             if (bundle.inning) g.inning = bundle.inning;
+        }
+
+        function mergeSnapshotGames(prevGames, nextGames) {
+            if (!prevGames?.length || !nextGames?.length) return nextGames;
+            return nextGames.map((game) => {
+                const prev = prevGames.find((p) => p.id === game.id);
+                if (!prev || game.status !== 'live') return game;
+                return {
+                    ...game,
+                    situation: game.situation ?? prev.situation,
+                    relay: game.relay ?? prev.relay,
+                    batter: game.batter ?? prev.batter,
+                    pitcher: game.pitcher ?? prev.pitcher,
+                };
+            });
+        }
+
+        function playSortKey(p) {
+            if (p?.seqno != null) return p.seqno;
+            return inningOrderKey(p?.inning) * 1e6 + new Date(p?.at || 0).getTime();
+        }
+
+        function mergePlayIntoRelayCache(play) {
+            if (!play?.id || !play?.gameId) return;
+            let bundle = relayCache[play.gameId];
+            if (!bundle) {
+                relayCache[play.gameId] = { plays: [play] };
+                return;
+            }
+            if (!bundle.plays) bundle.plays = [];
+            if (bundle.plays.some((p) => p.id === play.id)) return;
+            bundle.plays.push(play);
+            bundle.plays.sort((a, b) => playSortKey(a) - playSortKey(b));
+        }
+
+        function applySituationFromPlay(g, play) {
+            if (!g || !play) return;
+            const hasCount =
+                play.balls != null ||
+                play.strikes != null ||
+                play.outs != null ||
+                play.bases;
+            if (!hasCount) return;
+            const prev = g.situation || {};
+            const bases = play.bases || prev.bases || {
+                first: false,
+                second: false,
+                third: false,
+            };
+            const balls = play.balls ?? prev.balls ?? 0;
+            const strikes = play.strikes ?? prev.strikes ?? 0;
+            const outs = play.outs ?? prev.outs ?? 0;
+            g.situation = {
+                ...prev,
+                balls,
+                strikes,
+                outs,
+                bases: { ...bases },
+                countText: `${balls}-${strikes}`,
+                basesLabel: basesLabelFromSit({ bases }),
+                inning: play.inning || prev.inning || g.inning,
+            };
+            if (relayCache[g.id]) {
+                relayCache[g.id].situation = g.situation;
+            }
+        }
+
+        function scrollInningTabInNav(tabEl) {
+            const nav = tabEl?.closest('.inning-nav-scroll');
+            if (!nav || !tabEl) return;
+            nav.scrollLeft = tabEl.offsetLeft - (nav.clientWidth - tabEl.offsetWidth) / 2;
         }
 
         function fmtStatNum(v, digits = 3) {
@@ -3070,13 +3290,42 @@
                 detailEl.innerHTML = '<div class="empty">불러오는 중…</div>';
             }
 
+            const q = new URLSearchParams();
+            if (statsSearchQuery) q.set('q', statsSearchQuery);
+            if (statsTeamFilter !== 'all') q.set('team', statsTeamFilter);
+            if (statsRoleFilter !== 'all') q.set('role', statsRoleFilter);
+            q.set('limit', '120');
+
+            async function applyCatalogFallback(note) {
+                const res = await fetch(`${API}/amm/games/players/catalog`);
+                if (!res.ok) throw new Error('catalog fail');
+                const data = await res.json();
+                statsCatalog = data.players || [];
+                statsRosterCache = {
+                    updatedAt: data.updatedAt,
+                    season: new Date().getFullYear(),
+                    total: statsCatalog.length,
+                    players: statsCatalog,
+                };
+                renderPlayerStatsTab();
+                if (note && listEl.querySelector('.stats-sync-note') == null) {
+                    listEl.insertAdjacentHTML(
+                        'afterbegin',
+                        `<div class="meta stats-sync-note" style="margin-bottom:8px">${note}</div>`,
+                    );
+                }
+                if (!statsFullCache && (statsSelectedName || statsSelectedId)) {
+                    await loadPlayerFullStats();
+                }
+            }
+
             try {
-                const q = new URLSearchParams();
-                if (statsSearchQuery) q.set('q', statsSearchQuery);
-                if (statsTeamFilter !== 'all') q.set('team', statsTeamFilter);
-                if (statsRoleFilter !== 'all') q.set('role', statsRoleFilter);
-                q.set('limit', '120');
-                const res = await fetch(`${API}/amm/games/players/roster?${q}`);
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 12000);
+                const res = await fetch(`${API}/amm/games/players/roster?${q}`, {
+                    signal: ctrl.signal,
+                });
+                clearTimeout(timer);
                 if (!res.ok) throw new Error('roster fail');
                 statsRosterCache = await res.json();
                 statsCatalog = statsRosterCache.players || [];
@@ -3085,8 +3334,14 @@
                     await loadPlayerFullStats();
                 }
             } catch (_) {
-                listEl.innerHTML = '<div class="empty">선수 목록을 불러올 수 없습니다</div>';
-                detailEl.innerHTML = '<div class="empty">잠시 후 다시 시도해 주세요</div>';
+                try {
+                    await applyCatalogFallback(
+                        '전체 로스터 동기화 중 — 10구단 대표 선수부터 표시합니다',
+                    );
+                } catch (__) {
+                    listEl.innerHTML = '<div class="empty">선수 목록을 불러올 수 없습니다</div>';
+                    detailEl.innerHTML = '<div class="empty">잠시 후 다시 시도해 주세요</div>';
+                }
             }
         }
 
@@ -3587,12 +3842,9 @@
             watchId = id;
             phaseManual = false;
             timelineInning = 'all';
-            const innMeta = parseInningMeta(g?.inning);
-            if (g?.status === 'live' && innMeta?.num) {
-                timelineInning = String(innMeta.num);
-            }
             timelineCollapsed.clear();
             timelineCollapseInitFor = null;
+            timelineInningNavInitFor = null;
             localStorage.setItem('watch-game', id);
             renderHero(g);
             renderGamesList();
@@ -3891,6 +4143,14 @@
             if (payload.awayScore != null) g.awayScore = payload.awayScore;
             if (payload.homeScore != null) g.homeScore = payload.homeScore;
             if (payload.relay) g.relay = payload.relay;
+            const cached = relayCache[gameId] || {};
+            relayCache[gameId] = {
+                ...cached,
+                situation: payload.situation ?? cached.situation,
+                batter: payload.batter ?? cached.batter,
+                pitcher: payload.pitcher ?? cached.pitcher,
+                relay: payload.relay ?? cached.relay,
+            };
             if (gameId === watchId) {
                 renderHero(g);
                 renderSituation(g);
@@ -4072,14 +4332,19 @@
             playSeen.add(play.id);
             plays.unshift(play);
             plays = plays.slice(0, 50);
-            if (play.gameId === watchId || !watchId) renderPlayBox(play);
-            renderTimeline();
+            mergePlayIntoRelayCache(play);
             const game = findGame(play.gameId);
+            if (game) {
+                applySituationFromPlay(game, play);
+                if (play.inning) game.inning = play.inning;
+            }
+            if (play.gameId === watchId || !watchId) renderPlayBox(play);
+            if (play.gameId === watchId && game) renderSituation(game);
+            renderTimeline();
             if (play.gameId === watchId) triggerDopamine(play, game);
             if (play.gameId === watchId && (play.impact === 'run' || play.impact === 'game_end')) {
                 toast(play.impact === 'run' ? '득점' : '경기 종료');
             }
-            if (play.gameId === watchId) loadLiveExtras();
         }
 
         function inningOrderKey(label) {
@@ -4146,14 +4411,25 @@
             if (!game || timelineCollapseInitFor === watchId || timelineInning !== 'all') return;
             timelineCollapseInitFor = watchId;
             timelineCollapsed.clear();
-            const liveKey = game.inning;
+            const liveKey = game.status === 'live' ? game.inning : null;
+            const expandKeys = new Set();
+            if (liveKey) {
+                const liveIdx = groups.findIndex((g) => g.key === liveKey);
+                if (liveIdx >= 0) {
+                    expandKeys.add(groups[liveIdx].key);
+                    if (liveIdx > 0) expandKeys.add(groups[liveIdx - 1].key);
+                } else if (groups.length) {
+                    expandKeys.add(groups[groups.length - 1].key);
+                }
+            }
             for (const g of groups) {
-                if (g.key !== liveKey) timelineCollapsed.add(g.key);
+                if (!expandKeys.has(g.key)) timelineCollapsed.add(g.key);
             }
         }
 
         function setTimelineInning(v) {
             timelineInning = v;
+            inningNavUserScroll = true;
             renderTimeline();
         }
 
@@ -4254,7 +4530,20 @@
                     <span class="inn-count">${count}${count !== total ? ` / ${total}` : ''}건</span>
                 </div>`;
             requestAnimationFrame(() => {
-                el.querySelector('.inn-tab.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+                const nav = el.querySelector('.inning-nav-scroll');
+                if (!nav) return;
+                if (inningNavUserScroll) {
+                    scrollInningTabInNav(nav.querySelector('.inn-tab.on'));
+                    inningNavUserScroll = false;
+                    return;
+                }
+                if (timelineInningNavInitFor === watchId) return;
+                timelineInningNavInitFor = watchId;
+                const target =
+                    nav.querySelector('.inn-tab.live-dot') ||
+                    nav.querySelector('.inn-tab.on') ||
+                    nav.querySelector('.inn-tab:last-child');
+                scrollInningTabInNav(target);
             });
         }
 
@@ -4366,6 +4655,10 @@
 
         function applySnapshot(snap, recapPayload, showRecap) {
             if (!snap) return;
+            const prevGames = snapshot?.games;
+            if (prevGames?.length && snap.games?.length) {
+                snap = { ...snap, games: mergeSnapshotGames(prevGames, snap.games) };
+            }
             snapshot = snap;
             recap = recapPayload || recap;
             showRecapMode = !!showRecap;
@@ -4429,7 +4722,11 @@
                 }, data.recap, data.showRecap);
                 if (data.plays?.length) {
                     data.plays.slice().reverse().forEach(p => {
-                        if (!playSeen.has(p.id)) { playSeen.add(p.id); plays.push(p); }
+                        if (!playSeen.has(p.id)) {
+                            playSeen.add(p.id);
+                            plays.push(p);
+                            mergePlayIntoRelayCache(p);
+                        }
                     });
                     plays.sort((a, b) => new Date(b.at) - new Date(a.at));
                     plays = plays.slice(0, 50);
@@ -4443,7 +4740,11 @@
             if (playsRes?.ok) {
                 const data = await playsRes.json();
                 (data.plays || []).forEach(p => {
-                    if (!playSeen.has(p.id)) { playSeen.add(p.id); plays.push(p); }
+                    if (!playSeen.has(p.id)) {
+                        playSeen.add(p.id);
+                        plays.push(p);
+                        mergePlayIntoRelayCache(p);
+                    }
                 });
                 plays.sort((a, b) => new Date(b.at) - new Date(a.at));
                 plays = plays.slice(0, 50);
@@ -4497,7 +4798,12 @@
             if (data.gameId !== watchId) return;
             wpaTimeline = data.timeline || wpaTimeline;
             renderWpaBar(wpaTimeline, findGame(watchId));
+            const canvas = document.getElementById('wpa-canvas');
+            const savedScrollY = window.scrollY;
             drawWpaChart();
+            if (Math.abs(window.scrollY - savedScrollY) > 2) {
+                window.scrollTo({ top: savedScrollY, behavior: 'instant' in window ? 'instant' : 'auto' });
+            }
         });
         socket.on('sentimentUpdate', snap => {
             if (snap.gameId !== watchId) return;
@@ -4517,6 +4823,7 @@
             applySnapshot(snap, recap, recapActive);
             const g = findGame(watchId);
             if (g && prevStatus && prevStatus !== g.status) phaseManual = false;
+            if (g) renderSituation(g);
             const last = plays.find(p => p.gameId === watchId);
             if (last && !relayCache[watchId]?.plays?.length && !g?.relay?.lastPlay) {
                 renderPlayBox(last);
@@ -4547,6 +4854,16 @@
             shareMyGame();
         });
         document.getElementById('share-prompt-x')?.addEventListener('click', dismissSharePrompt);
+
+        (function bindAudioUnlock() {
+            const unlock = () => {
+                if (prefs.sound) ensureAudio();
+                document.removeEventListener('pointerdown', unlock);
+                document.removeEventListener('keydown', unlock);
+            };
+            document.addEventListener('pointerdown', unlock, { passive: true });
+            document.addEventListener('keydown', unlock);
+        })();
 
         watchId = localStorage.getItem('watch-game');
         document.getElementById('pref-haptic').classList.toggle('on', prefs.haptic);

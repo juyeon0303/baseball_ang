@@ -2,7 +2,9 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { StockStreamGateway } from '../amm/stock-stream.gateway';
 import { MEME_STOCKS } from './market-meme-lineup';
@@ -25,6 +27,7 @@ import {
   Position,
   PriceSnapshot,
   TradeAction,
+  TradeRecord,
   UserWallet,
   UserWeekStat,
 } from './market.types';
@@ -34,15 +37,91 @@ import { getMarketSession, isMarketHoursEnforced } from './market-session.util';
 import { isKboGameDay } from '../stats/game-day.util';
 import { PricingService } from './pricing.service';
 import { THEME_ETFS } from './etf-lineup';
+import {
+  buildPulseWeekKing,
+  buildShowcaseTrades,
+  SHOWCASE_TRADE_USERS,
+} from './market-showcase.util';
 
 @Injectable()
-export class MarketService {
+export class MarketService implements OnModuleInit {
+  private readonly logger = new Logger(MarketService.name);
+
   constructor(
     @Inject(MARKET_STORE)
     private readonly store: MemoryMarketStoreService | PostgresMarketStoreService,
     private readonly pricing: PricingService,
     private readonly stream: StockStreamGateway,
   ) {}
+
+  onModuleInit(): void {
+    setTimeout(() => {
+      void this.ensureShowcaseActivity().catch((e) =>
+        this.logger.warn(`마켓 쇼케이스 시드: ${e}`),
+      );
+    }, 18_000);
+  }
+
+  async ensureShowcaseActivity(): Promise<void> {
+    const stats = await Promise.resolve(this.store.getStats());
+    if (stats.tradeCount > 0) return;
+    const actions: TradeAction[] = [
+      'open_long',
+      'open_short',
+      'open_long',
+      'open_long',
+      'open_short',
+      'open_long',
+      'open_short',
+      'open_long',
+    ];
+    let seeded = 0;
+    for (let i = 0; i < KBO_TEAM_STOCKS.length && seeded < 8; i += 1) {
+      const seed = KBO_TEAM_STOCKS[i];
+      try {
+        const inst = await Promise.resolve(this.store.getInstrument(seed.id));
+        const action = actions[seeded % actions.length];
+        const qty = 2 + (seeded % 4);
+        await Promise.resolve(
+          this.store.addTrade({
+            userId: SHOWCASE_TRADE_USERS[seeded % SHOWCASE_TRADE_USERS.length],
+            instrumentId: seed.id,
+            action,
+            quantity: qty,
+            price: inst.price,
+            pointsDelta:
+              action === 'open_short' ? qty * inst.price : -(qty * inst.price),
+            oracleValue: inst.oracleValue,
+          }),
+        );
+        seeded += 1;
+      } catch (e) {
+        this.logger.debug(`쇼케이스 체결 스킵 ${seed.id}: ${e}`);
+      }
+    }
+    if (seeded > 0) {
+      this.logger.log(`마켓 쇼케이스 — 데모 체결 ${seeded}건 시드`);
+    }
+  }
+
+  async getShowcaseTrades(limit = 8): Promise<TradeRecord[]> {
+    const resolve = new Map<string, InstrumentState>();
+    for (const seed of KBO_TEAM_STOCKS.slice(0, limit)) {
+      try {
+        const inst = await Promise.resolve(this.store.getInstrument(seed.id));
+        resolve.set(seed.id, inst);
+      } catch {
+        /* skip */
+      }
+    }
+    return buildShowcaseTrades((id) => resolve.get(id) ?? null, limit);
+  }
+
+  getPulseWeekKing(
+    board: Awaited<ReturnType<MarketService['getMarketBoard']>>,
+  ) {
+    return buildPulseWeekKing(board.gainers[0]);
+  }
 
   async getLineup(): Promise<InstrumentState[]> {
     return Promise.resolve(this.store.getLineup());
@@ -517,18 +596,22 @@ export class MarketService {
         changePct: number;
       }> = [];
       for (const id of etf.memberIds) {
-        if (!(await Promise.resolve(this.store.hasInstrument(id)))) continue;
-        const inst = await Promise.resolve(this.store.getInstrument(id));
-        const enriched = await this.enrichInstrument(inst);
-        sum += inst.price;
-        changeSum += enriched.changePct ?? 0;
-        members.push({
-          instrumentId: id,
-          playerName: inst.playerName,
-          teamShort: inst.teamShort,
-          price: inst.price,
-          changePct: enriched.changePct ?? 0,
-        });
+        try {
+          if (!(await Promise.resolve(this.store.hasInstrument(id)))) continue;
+          const inst = await Promise.resolve(this.store.getInstrument(id));
+          const enriched = await this.enrichInstrument(inst);
+          sum += inst.price;
+          changeSum += enriched.changePct ?? 0;
+          members.push({
+            instrumentId: id,
+            playerName: inst.playerName,
+            teamShort: inst.teamShort,
+            price: inst.price,
+            changePct: enriched.changePct ?? 0,
+          });
+        } catch {
+          /* 종목 미준비 시 ETF 나머지는 계속 */
+        }
       }
       rows.push({
         ...etf,
