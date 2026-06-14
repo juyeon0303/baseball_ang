@@ -124,6 +124,10 @@
             gap: 12px;
         }
 
+        .col-main {
+            order: -1;
+        }
+
         .col-side,
         .col-main {
             display: flex;
@@ -135,23 +139,25 @@
         @media (min-width: 900px) {
             .page-grid {
                 display: grid;
-                grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr) minmax(220px, 260px);
+                grid-template-columns: minmax(240px, 272px) minmax(360px, 1fr) minmax(260px, 300px);
                 gap: 16px;
-                align-items: stretch;
-                height: calc(100dvh - var(--strip-h) - 108px);
-                min-height: 560px;
+                align-items: start;
+            }
+
+            .col-main {
+                order: 0;
+                position: sticky;
+                top: calc(var(--strip-h) + 10px);
+                align-self: start;
+                max-height: calc(100dvh - var(--strip-h) - 20px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                scrollbar-gutter: stable;
             }
 
             .col-left,
-            .col-main,
             .col-right {
                 min-width: 0;
-                min-height: 0;
-                overflow-x: hidden;
-                overflow-y: auto;
-                overscroll-behavior: contain;
-                padding-right: 4px;
-                scrollbar-gutter: stable;
             }
 
             .col-main .hero-stat-val {
@@ -177,6 +183,118 @@
                 grid-column: 1 / -1;
                 order: -1;
             }
+        }
+
+        /* Right rail tabs */
+        .side-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            margin-bottom: 4px;
+            position: sticky;
+            top: calc(var(--strip-h) + 8px);
+            z-index: 5;
+        }
+        .side-tabs button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 9px 6px;
+            border-radius: 9px;
+            cursor: pointer;
+        }
+        .side-tabs button.on {
+            background: var(--accent-soft);
+            color: var(--accent-neon);
+            box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.25);
+        }
+        @media (min-width: 900px) {
+            .side-tabs {
+                top: 0;
+                position: sticky;
+            }
+        }
+
+        .auth-compact-bar {
+            display: none;
+        }
+        @media (min-width: 900px) {
+            #guide-panel,
+            #my-trades-panel,
+            #watchlist-panel,
+            .wallet-nick,
+        #progress-panel { display: none !important; }
+            .holdings-open-btn,
+            .story-card .share-row {
+                display: none !important;
+            }
+            #account-panel:not(.expanded) .auth-guest-hint,
+            #account-panel:not(.expanded) .auth-storage-warn,
+            #account-panel:not(.expanded) .auth-sub,
+            #account-panel:not(.expanded) #auth-login-panel,
+            #account-panel:not(.expanded) #auth-register-panel,
+            #account-panel:not(.expanded) .auth-err {
+                display: none !important;
+            }
+            #account-panel:not(.expanded) .auth-compact-bar {
+                display: block;
+            }
+            #account-panel.signed-in:not(.expanded) .auth-compact-bar {
+                display: none !important;
+            }
+            #account-panel.signed-in:not(.expanded) {
+                padding: 12px 14px;
+            }
+            #account-panel.expanded .auth-compact-bar {
+                display: none;
+            }
+            #lineup-body.collapsed {
+                max-height: 2400px;
+                margin-top: 12px;
+                opacity: 1;
+                pointer-events: auto;
+            }
+            #toggle-lineup {
+                display: none;
+            }
+        }
+        .auth-compact-bar button {
+            width: 100%;
+            border: 1px dashed rgba(94, 234, 212, 0.45);
+            background: rgba(94, 234, 212, 0.08);
+            color: var(--accent-neon);
+            font: inherit;
+            font-size: 0.84rem;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .header-login-btn {
+            display: none;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        @media (min-width: 900px) {
+            .header-login-btn { display: inline-block; }
+        }
+        .header-login-btn.signed-in {
+            border-color: rgba(94, 234, 212, 0.35);
+            color: var(--accent-neon);
         }
 
         .trade-focus {
@@ -2371,6 +2489,7 @@
             <div class="sync">
                 <div class="sync-row"><span class="dot" id="sync-dot"></span><span id="sync-text">연결 중</span></div>
                 <div class="session-pill" id="session-pill">장 상태 확인 중</div>
+                <button type="button" class="header-login-btn" id="header-login-btn" onclick="expandAccountPanel()">로그인</button>
                 <a class="cross-link" id="playball-link" href="#">플레이볼 →</a>
             </div>
         </header>
@@ -2386,6 +2505,9 @@
             <aside class="col-side col-left">
                 <section class="panel auth-panel" id="account-panel">
                     <div class="label">로그인 · 가입</div>
+                    <div class="auth-compact-bar">
+                        <button type="button" onclick="expandAccountPanel()">로그인 · 가입 (닉+PIN)</button>
+                    </div>
                     <p class="auth-guest-hint">로그인 없이도 종목·경기·시세는 볼 수 있습니다. 베팅·랭킹·내 지갑만 계정이 필요합니다.</p>
                     <div class="auth-storage-warn" id="auth-storage-warn">
                         ⚠️ 지금 서버는 계정을 DB에 저장하지 않습니다. 재시작·슬립 후 가입 정보가 사라질 수 있어요. 같은 닉네임으로 다시 가입해 주세요.
@@ -2498,15 +2620,6 @@
                         <input class="field" id="user-id" value="" oninput="updateNickHint()" onblur="onDisplayNameBlur()" placeholder="랭킹·피드에 보이는 이름">
                         <div class="nick-hint" id="nick-hint">로그인 없이도 둘러볼 수 있습니다 · 베팅은 위 <a href="#" onclick="openAccountPanel(); return false;" style="color:#fde68a">로그인</a></div>
                     </div>
-                </section>
-
-                <section class="panel lb-panel" id="lb-panel">
-                    <div class="lb-head">
-                        <div class="label" style="margin:0">주간 랭킹</div>
-                        <span class="lb-week" id="lb-week">—</span>
-                    </div>
-                    <ul class="lb-list" id="lb-list"></ul>
-                    <div class="lb-me-hint" id="lb-me-hint"></div>
                 </section>
 
                 <section class="panel lineup-panel" id="lineup-panel">
@@ -2634,32 +2747,38 @@
             </main>
 
             <aside class="col-side col-right">
-                <section class="panel side-rail-panel" id="market-board-panel">
+                <nav class="side-tabs" aria-label="부가 정보">
+                    <button type="button" class="on" data-side-tab="market" onclick="setSideTab('market')">시장</button>
+                    <button type="button" data-side-tab="news" onclick="setSideTab('news')">소식</button>
+                    <button type="button" data-side-tab="feed" onclick="setSideTab('feed')">픽·랭킹</button>
+                </nav>
+
+                <section class="panel side-rail-panel" id="market-board-panel" data-side-group="market">
                     <div class="label">시장 현황 · 등락</div>
                     <div class="market-board-grid" id="market-board-grid">
                         <div class="meta">불러오는 중…</div>
                     </div>
                 </section>
 
-                <section class="panel side-rail-panel" id="disc-panel">
+                <section class="panel side-rail-panel" id="disc-panel" data-side-group="news">
                     <div class="label">실시간 공시창 · 프리마켓</div>
                     <div class="disc-sub" id="disc-session-sub">장 상태 확인 중…</div>
                     <ul class="disc-list" id="disc-list"></ul>
                 </section>
 
-                <section class="panel side-rail-panel" id="etf-panel">
+                <section class="panel side-rail-panel" id="etf-panel" data-side-group="market">
                     <div class="label">테마 ETF (바스켓 시세)</div>
                     <div id="etf-list"></div>
                     <p class="meta" style="margin-top:8px">숏(매도)은 NO 베팅입니다</p>
                 </section>
 
-                <section class="panel side-rail-panel" id="owner-panel">
+                <section class="panel side-rail-panel" id="owner-panel" data-side-group="news">
                     <div class="label">구단주 · 대주주</div>
                     <p class="meta" style="margin:-2px 0 8px;line-height:1.45">YES 베팅 비중 5%+ 구단주 · 1%+ 대주주</p>
                     <div id="owner-list"></div>
                 </section>
 
-                <section class="panel side-rail-panel activity-panel" id="activity-panel">
+                <section class="panel side-rail-panel activity-panel" id="activity-panel" data-side-group="feed">
                     <div class="activity-block">
                         <div class="label">이번 주 1위</div>
                         <div class="king-line" id="crown">—</div>
@@ -2668,6 +2787,15 @@
                         <div class="label">실시간 픽 로그</div>
                         <ul class="feed-list" id="feed"></ul>
                     </div>
+                </section>
+
+                <section class="panel lb-panel" id="lb-panel" data-side-group="feed">
+                    <div class="lb-head">
+                        <div class="label" style="margin:0">주간 랭킹</div>
+                        <span class="lb-week" id="lb-week">—</span>
+                    </div>
+                    <ul class="lb-list" id="lb-list"></ul>
+                    <div class="lb-me-hint" id="lb-me-hint"></div>
                 </section>
 
                 <section class="panel progress-panel" id="progress-panel">
@@ -2730,6 +2858,7 @@
         let selectedId = 'lee-jung-hoo';
         let pendingDeepInstrument = null;
         let lastRank = null;
+        let sideTab = 'market';
         let hub = null;
         let hubLoaded = false;
         let lineupOpen = false;
@@ -2973,19 +3102,57 @@
             if (sessionReady) {
                 signedOut.style.display = 'none';
                 signedIn.style.display = '';
-                if (panel) panel.classList.add('compact');
+                if (panel) {
+                    panel.classList.add('compact', 'signed-in');
+                    panel.classList.remove('expanded');
+                }
             } else {
                 signedOut.style.display = '';
                 signedIn.style.display = 'none';
-                if (panel) panel.classList.remove('compact');
+                if (panel) {
+                    panel.classList.remove('compact', 'signed-in');
+                }
             }
+            updateHeaderLoginBtn();
         }
 
-        function openAccountPanel() {
+        function expandAccountPanel() {
+            const panel = document.getElementById('account-panel');
+            panel?.classList.add('expanded');
             const saved = localStorage.getItem(NICKNAME_KEY);
             const nick = document.getElementById('auth-nickname');
             if (nick && saved && !nick.value) nick.value = saved;
-            document.getElementById('account-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function openAccountPanel() {
+            expandAccountPanel();
+        }
+
+        function setSideTab(tab) {
+            sideTab = tab || 'market';
+            document.querySelectorAll('.side-tabs button').forEach(b => {
+                b.classList.toggle('on', b.dataset.sideTab === sideTab);
+            });
+            document.querySelectorAll('[data-side-group]').forEach(p => {
+                p.style.display = p.dataset.sideGroup === sideTab ? '' : 'none';
+            });
+            try { localStorage.setItem('yas-side-tab', sideTab); } catch (_) {}
+        }
+
+        function updateHeaderLoginBtn() {
+            const btn = document.getElementById('header-login-btn');
+            if (!btn) return;
+            if (sessionReady) {
+                const nick = localStorage.getItem(NICKNAME_KEY) || localStorage.getItem(DISPLAY_NAME_KEY) || '계정';
+                btn.textContent = `@${String(nick).slice(0, 10)}`;
+                btn.classList.add('signed-in');
+                btn.onclick = () => expandAccountPanel();
+            } else {
+                btn.textContent = '로그인';
+                btn.classList.remove('signed-in');
+                btn.onclick = () => expandAccountPanel();
+            }
         }
 
         function showAuthGate() {
@@ -3127,7 +3294,7 @@
             const ok = await tryRestoreSession();
             if (ok) return { accountId: accountId() };
             openAccountPanel();
-            toast('왼쪽 로그인 패널에서 가입·로그인해 주세요');
+            toast('로그인 · 가입 패널에서 진행해 주세요');
             throw new Error('로그인이 필요합니다');
         }
 
@@ -3147,7 +3314,7 @@
 
         function ensureUserNick() {
             if (!sessionReady) {
-                toast('베팅하려면 왼쪽에서 로그인해 주세요');
+                toast('베팅하려면 로그인해 주세요');
                 openAccountPanel();
                 return false;
             }
@@ -4614,7 +4781,8 @@
                 document.getElementById('guide-toggle').textContent = '펼치기';
             }
             const lineupStored = localStorage.getItem('lineup-collapsed');
-            if (lineupStored === '0') {
+            const desktop = window.matchMedia('(min-width: 900px)').matches;
+            if (desktop || lineupStored === '0') {
                 lineupOpen = true;
                 document.getElementById('lineup-body').classList.remove('collapsed');
                 document.getElementById('toggle-lineup').textContent = '접기';
@@ -4623,6 +4791,11 @@
                 document.getElementById('lineup-body').classList.add('collapsed');
                 document.getElementById('toggle-lineup').textContent = '펼치기';
             }
+            try {
+                sideTab = localStorage.getItem('yas-side-tab') || 'market';
+            } catch (_) {}
+            setSideTab(sideTab);
+            updateHeaderLoginBtn();
             updateNickHint();
         } catch (_) {}
 
