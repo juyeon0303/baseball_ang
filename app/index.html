@@ -1520,7 +1520,7 @@
             background: rgba(148, 163, 184, 0.12);
             color: var(--faint);
         }
-        .bc-pitch-chip:last-child {
+        .bc-pitch-chip:first-child {
             background: rgba(94, 184, 255, 0.18);
             color: var(--accent);
             font-weight: 700;
@@ -4549,7 +4549,7 @@
 
             const pitch = relay?.lastPitch;
             const pitchLogEl = el('bc-pitch-log');
-            const chips = (relay?.recentPitches || []).slice(-8);
+            const chips = (relay?.recentPitches || []).slice(-8).reverse();
             if (pitchLogEl) {
                 pitchLogEl.innerHTML = chips.length
                     ? chips.map(t => `<span class="bc-pitch-chip">${t}</span>`).join('')
@@ -4888,15 +4888,31 @@
             return /홈런|2루타|3루타|안타|1루타|득점|홈인|볼넷|4구|삼진/.test(type + text);
         }
 
-        function buildInningGroups(list) {
-            const labels = [...new Set((list || []).map(p => p.inning).filter(Boolean))]
+        function sortPlaysChronologically(list) {
+            return [...(list || [])].sort((a, b) => playSortKey(a) - playSortKey(b));
+        }
+
+        function sortPlaysNewestFirst(list) {
+            return [...(list || [])].sort((a, b) => playSortKey(b) - playSortKey(a));
+        }
+
+        function buildInningGroups(list, newestFirst = true) {
+            const sorted = sortPlaysChronologically(list);
+            const labels = [...new Set(sorted.map(p => p.inning).filter(Boolean))]
                 .sort((a, b) => inningOrderKey(a) - inningOrderKey(b));
-            return labels.map(label => ({
+            let groups = labels.map(label => ({
                 key: label,
                 label,
                 meta: parseInningMeta(label),
-                plays: list.filter(p => p.inning === label),
+                plays: sorted.filter(p => p.inning === label),
             }));
+            if (newestFirst) {
+                groups = groups.slice().reverse().map(g => ({
+                    ...g,
+                    plays: g.plays.slice().reverse(),
+                }));
+            }
+            return groups;
         }
 
         function filterTimelinePlays(source) {
@@ -4915,13 +4931,16 @@
             if (document.getElementById('tab-feed')?.classList.contains('feed-live-mode')) return;
             const liveKey = game.status === 'live' ? game.inning : null;
             const expandKeys = new Set();
+            const chronological = [...groups].sort(
+                (a, b) => inningOrderKey(a.key) - inningOrderKey(b.key),
+            );
             if (liveKey) {
-                const liveIdx = groups.findIndex((g) => g.key === liveKey);
+                const liveIdx = chronological.findIndex((g) => g.key === liveKey);
                 if (liveIdx >= 0) {
-                    expandKeys.add(groups[liveIdx].key);
-                    if (liveIdx > 0) expandKeys.add(groups[liveIdx - 1].key);
-                } else if (groups.length) {
-                    expandKeys.add(groups[groups.length - 1].key);
+                    expandKeys.add(chronological[liveIdx].key);
+                    if (liveIdx > 0) expandKeys.add(chronological[liveIdx - 1].key);
+                } else if (chronological.length) {
+                    expandKeys.add(chronological[chronological.length - 1].key);
                 }
             }
             for (const g of groups) {
@@ -4960,8 +4979,9 @@
         }
 
         function timelineSectionPreview(group) {
-            const hit = group.plays.find(timelineHighlightPlay);
-            const sample = hit || group.plays[group.plays.length - 1];
+            const chronological = sortPlaysChronologically(group.plays);
+            const hit = chronological.find(timelineHighlightPlay);
+            const sample = hit || chronological[chronological.length - 1];
             if (!sample) return '기록 없음';
             const prefix = sample.team ? `${sample.team} · ` : '';
             return prefix + (sample.text || '').slice(0, 72);
@@ -4989,9 +5009,9 @@
         }
 
         function renderTimelineFlat(list, game) {
-            const groups = buildInningGroups(list);
+            const groups = buildInningGroups(list, true);
             if (groups.length <= 1) {
-                const plays = groups[0]?.plays || list;
+                const plays = sortPlaysNewestFirst(groups[0]?.plays || list);
                 return plays.map(timelinePlayHtml).join('');
             }
             return groups.map(group => `
@@ -5082,6 +5102,9 @@
             el.innerHTML = timelineInning === 'all'
                 ? renderTimelineGrouped(list, g)
                 : renderTimelineFlat(list, g);
+            if (g?.status === 'live' && el.scrollTop < 80) {
+                el.scrollTop = 0;
+            }
         }
 
         function gagaHtml(msg) {
