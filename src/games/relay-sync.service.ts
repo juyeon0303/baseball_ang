@@ -112,7 +112,7 @@ export class RelaySyncService {
     }
   }
 
-  @Interval(10_000)
+  @Interval(3_000)
   async relayPoll(): Promise<void> {
     if (!this.isEnabled()) return;
     const snap = this.gamesSync.getSnapshot();
@@ -274,6 +274,8 @@ export class RelaySyncService {
       prevRelay?.pitchBatter &&
       parsed.batter !== prevRelay.pitchBatter
     ) {
+      mergedPitches = [...parsed.recentPitches];
+    } else if (parsed.recentPitches.length) {
       mergedPitches = [...parsed.recentPitches];
     } else {
       mergedPitches = [...(prevRelay?.recentPitches ?? [])];

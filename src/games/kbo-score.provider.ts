@@ -146,9 +146,9 @@ export class KboScoreProvider {
       stadium: raw.S_NM?.trim(),
       awayPitcher: raw.T_PIT_P_NM?.trim(),
       homePitcher: raw.B_PIT_P_NM?.trim(),
-      batter: raw.T_P_NM?.trim(),
-      pitcher: raw.B_P_NM?.trim(),
-      situation,
+      batter: status === 'live' ? undefined : raw.T_P_NM?.trim(),
+      pitcher: status === 'live' ? undefined : raw.B_P_NM?.trim(),
+      situation: status === 'live' ? undefined : situation,
     };
   }
 

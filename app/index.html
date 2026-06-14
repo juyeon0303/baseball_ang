@@ -2875,15 +2875,19 @@
                 snippet.innerHTML = w
                     ? `🏁 <strong>${w}</strong> 승 · ${winnerLabel(g)}`
                     : `🏁 ${winnerLabel(g)}`;
-            } else if (relay?.lastPitch && g.batter) {
-                const stack = formatPitchStack(relay);
-                snippet.textContent = stack ? `${g.batter} · ${stack}` : `${g.batter} · ${relay.lastPitch}`;
             } else if (relay?.lastPitch) {
-                snippet.textContent = relay.lastPitch;
+                const batter = resolveLiveBatter(g, relay);
+                const stack = formatPitchStack(relay);
+                snippet.textContent = batter
+                    ? (stack ? `${batter} · ${stack}` : `${batter} · ${relay.lastPitch}`)
+                    : relay.lastPitch;
             } else if (relay?.lastPlay) {
-                snippet.textContent = g.batter ? `${g.batter} · ${relay.lastPlay}` : relay.lastPlay;
-            } else if (g.batter) {
-                snippet.textContent = g.pitcher ? `${g.pitcher}(P) · ${g.batter} 타석` : `${g.batter} 타석`;
+                const batter = resolveLiveBatter(g, relay);
+                snippet.textContent = batter ? `${batter} · ${relay.lastPlay}` : relay.lastPlay;
+            } else if (g.batter || g.pitcher) {
+                const batter = resolveLiveBatter(g, relay);
+                if (batter && g.pitcher) snippet.textContent = `${g.pitcher}(P) · ${batter}`;
+                else if (batter) snippet.textContent = batter;
             } else if (g.status === 'live') {
                 snippet.textContent = '실시간 문자 중계 · 중계 탭에서 확인';
             } else {
@@ -4629,14 +4633,24 @@
             return true;
         }
 
-        function formatLiveCaptionHtml(batter, actionText, team) {
-            const body = (actionText || '타석').trim();
-            if (batter) {
-                const teamPrefix = team ? `<span class="team">${team}</span> · ` : '';
-                return `<span class="batter">${batter}</span> · ${teamPrefix}<span class="action">${body}</span>`;
+        function resolveLiveBatter(g, relay) {
+            return (relay?.pitchBatter || g?.batter || '').trim();
+        }
+
+        function formatLiveCaptionHtml(batter, actionText, sit) {
+            const body = (actionText || '').trim();
+            if (body) {
+                if (batter) {
+                    return `<span class="batter">${batter}</span> · <span class="action">${body}</span>`;
+                }
+                return `<span class="action">${body}</span>`;
             }
-            if (team) return `<span class="team">${team}</span> ${body}`;
-            return body;
+            if (batter && sit) {
+                const count = `${sit.balls ?? 0}-${sit.strikes ?? 0}, ${sit.outs ?? 0}아웃`;
+                return `<span class="batter">${batter}</span> · <span class="action">${count}</span>`;
+            }
+            if (batter) return `<span class="batter">${batter}</span>`;
+            return '중계 대기 중';
         }
 
         function applyBroadcastToPrefix(prefix, g, sit, relay) {
@@ -4675,7 +4689,7 @@
 
             const playText = relay?.lastPlay;
             const playKind = relay?.lastPlayKind;
-            const batter = (g?.batter || relay?.batter || '').trim();
+            const batter = resolveLiveBatter(g, relay);
             const pitcher = (g?.pitcher || relay?.pitcher || '').trim();
             const captionEl = document.getElementById('feed-bc-live-caption');
             const liveTextEl = el('bc-live-text');
@@ -4690,7 +4704,6 @@
                     (impact === 'run' ? ' impact-run' : impact === 'game_end' ? ' impact-score' : '');
             }
             if (liveTextEl && badgeEl) {
-                const team = relay?.lastPlayTeam;
                 const showResult = relayResultIsActive(relay, batter);
                 if (showResult) {
                     const badge = playBadgeMeta({
@@ -4700,19 +4713,19 @@
                     });
                     badgeEl.textContent = badge.label;
                     badgeEl.className = 'bc-play-badge ' + badge.cls;
-                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, playText, team);
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, playText, sit);
                 } else if (pitchStack) {
                     badgeEl.textContent = '球';
                     badgeEl.className = 'bc-play-badge def';
-                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, pitchStack, null);
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, pitchStack, sit);
                 } else if (batter) {
                     badgeEl.textContent = '⚾';
                     badgeEl.className = 'bc-play-badge def';
-                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, '타석', null);
+                    liveTextEl.innerHTML = formatLiveCaptionHtml(batter, '', sit);
                 } else {
                     badgeEl.textContent = '⚾';
                     badgeEl.className = 'bc-play-badge def';
-                    liveTextEl.textContent = '타석 소식 대기 중';
+                    liveTextEl.textContent = '중계 대기 중';
                 }
             }
 

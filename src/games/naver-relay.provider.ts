@@ -196,8 +196,7 @@ export class NaverRelayProvider {
     let awayScore = this.parseScores(current).awayScore;
     let homeScore = this.parseScores(current).homeScore;
 
-    let batter = this.findActiveName(data, 'batter');
-    let pitcher = this.findActiveName(data, 'pitcher');
+    let { batter, pitcher } = this.resolveActivePlayers(data);
     let lastPitch: string | undefined;
     const recentPitches: string[] = [];
     let lastPlay: string | undefined;
@@ -274,6 +273,26 @@ export class NaverRelayProvider {
 
     while (recentPitches.length > 8) recentPitches.shift();
 
+    const latestSituation = this.parseSituation(current, inningLabel);
+    if (latestSituation) Object.assign(situation, latestSituation);
+
+    const relayBatter = this.resolveLatestBatterFromRelays(relays);
+    if (relayBatter) batter = relayBatter;
+
+    const latestPitch = this.resolveLatestPitchFromRelays(relays);
+    if (latestPitch) lastPitch = latestPitch;
+
+    const atBatPitches = this.resolveCurrentAtBatPitches(relays, inningLabel);
+    if (atBatPitches.length) {
+      recentPitches.length = 0;
+      recentPitches.push(...atBatPitches);
+      while (recentPitches.length > 12) recentPitches.shift();
+    }
+
+    const active = this.resolveActivePlayers(data);
+    if (active.batter) batter = active.batter;
+    if (active.pitcher) pitcher = active.pitcher;
+
     return {
       situation,
       batter,
@@ -309,8 +328,7 @@ export class NaverRelayProvider {
     let situation = this.parseSituation(current, topInningLabel);
     if (!situation) return null;
 
-    let batter = this.findActiveName(data, 'batter');
-    let pitcher = this.findActiveName(data, 'pitcher');
+    let { batter, pitcher } = this.resolveActivePlayers(data);
     let lastPitch: string | undefined;
     const recentPitches: string[] = [];
     let lastPlay: string | undefined;
@@ -416,6 +434,26 @@ export class NaverRelayProvider {
     while (recentPitches.length > 8) recentPitches.shift();
     situation.inning = inningLabel ?? topInningLabel;
 
+    const latestSituation = this.parseSituation(current, inningLabel ?? topInningLabel);
+    if (latestSituation) Object.assign(situation, latestSituation);
+
+    const relayBatter = this.resolveLatestBatterFromRelays(relays);
+    if (relayBatter) batter = relayBatter;
+
+    const latestPitch = this.resolveLatestPitchFromRelays(relays);
+    if (latestPitch) lastPitch = latestPitch;
+
+    const atBatPitches = this.resolveCurrentAtBatPitches(relays, inningLabel);
+    if (atBatPitches.length) {
+      recentPitches.length = 0;
+      recentPitches.push(...atBatPitches);
+      while (recentPitches.length > 12) recentPitches.shift();
+    }
+
+    const active = this.resolveActivePlayers(data);
+    if (active.batter) batter = active.batter;
+    if (active.pitcher) pitcher = active.pitcher;
+
     return {
       situation,
       batter,
@@ -488,16 +526,126 @@ export class NaverRelayProvider {
     return `${half}${inn}`;
   }
 
-  private findActiveName(
-    data: Record<string, unknown>,
-    role: 'batter' | 'pitcher',
+  private resolveActivePlayers(data: Record<string, unknown>): {
+    batter?: string;
+    pitcher?: string;
+  } {
+    const current = data.currentGameState as NaverGameState | undefined;
+    const homeOrAway = String(data.homeOrAway ?? '');
+    const isHomeBatting = homeOrAway === '1';
+
+    let batter = current?.batter?.trim();
+    let pitcher = current?.pitcher?.trim();
+
+    type Entry = {
+      batter?: Array<{ name?: string }>;
+      pitcher?: Array<{ name?: string }>;
+    };
+
+    if (!batter) {
+      const entryKey = isHomeBatting ? 'homeEntry' : 'awayEntry';
+      const entry = data[entryKey] as Entry | undefined;
+      batter = entry?.batter?.[0]?.name?.trim();
+    }
+    if (!pitcher) {
+      const entryKey = isHomeBatting ? 'awayEntry' : 'homeEntry';
+      const entry = data[entryKey] as Entry | undefined;
+      pitcher = entry?.pitcher?.[0]?.name?.trim();
+    }
+
+    return { batter, pitcher };
+  }
+
+  private resolveLatestBatterFromRelays(
+    relays: NaverTextRelay[],
   ): string | undefined {
-    const entryKey = role === 'batter' ? 'awayEntry' : 'homeEntry';
-    const entry = data[entryKey] as
-      | { batter?: Array<{ name?: string }>; pitcher?: Array<{ name?: string }> }
-      | undefined;
-    const list = role === 'batter' ? entry?.batter : entry?.pitcher;
-    return list?.[0]?.name?.trim();
+    let latest: string | undefined;
+    let latestSeq = -1;
+    for (const relay of relays) {
+      for (const opt of relay.textOptions ?? []) {
+        if (opt.type !== 8) continue;
+        const text = (opt.text ?? relay.title ?? '').trim();
+        if (!text) continue;
+        const name = text
+          .replace(/^\d+번타자\s*/, '')
+          .replace(/^대타\s*/, '')
+          .trim();
+        if (!name) continue;
+        const sn = opt.seqno ?? 0;
+        if (sn >= latestSeq) {
+          latestSeq = sn;
+          latest = name;
+        }
+      }
+    }
+    return latest;
+  }
+
+  private resolveLatestPitchFromRelays(
+    relays: NaverTextRelay[],
+  ): string | undefined {
+    let latest: string | undefined;
+    let latestSeq = -1;
+    for (const relay of relays) {
+      for (const opt of relay.textOptions ?? []) {
+        if (opt.type !== 1) continue;
+        const text = (opt.text ?? relay.title ?? '').trim();
+        if (!text) continue;
+        const sn = opt.seqno ?? 0;
+        if (sn >= latestSeq) {
+          latestSeq = sn;
+          latest = text;
+        }
+      }
+    }
+    return latest;
+  }
+
+  private resolveCurrentAtBatPitches(
+    relays: NaverTextRelay[],
+    inningLabel?: string,
+  ): string[] {
+    const flattened: Array<{ sn: number; text: string; type: number; inning?: number; half?: string }> = [];
+    for (const relay of relays) {
+      const relayInning = Number(relay.inn ?? 0);
+      const half = String(relay.homeOrAway ?? '');
+      for (const opt of relay.textOptions ?? []) {
+        const text = (opt.text ?? relay.title ?? '').trim();
+        if (!text) continue;
+        flattened.push({
+          sn: opt.seqno ?? 0,
+          text,
+          type: opt.type ?? -1,
+          inning: relayInning,
+          half,
+        });
+      }
+    }
+    flattened.sort((a, b) => a.sn - b.sn);
+
+    let lastAtBatStart = -1;
+    for (const item of flattened) {
+      if (item.type === 8) lastAtBatStart = item.sn;
+    }
+
+    const pitches: string[] = [];
+    for (const item of flattened) {
+      if (lastAtBatStart >= 0 && item.sn <= lastAtBatStart) continue;
+      if (item.type === 1) {
+        if (pitches[pitches.length - 1] !== item.text) pitches.push(item.text);
+        continue;
+      }
+      if (lastAtBatStart >= 0 && item.type !== 7 && item.type !== 2) break;
+    }
+
+    if (!pitches.length) {
+      for (const item of flattened) {
+        if (item.type !== 1) continue;
+        if (pitches[pitches.length - 1] !== item.text) pitches.push(item.text);
+      }
+    }
+
+    return pitches.slice(-12);
   }
 
   private mapRelayKind(type?: number): PlayRelayKind {
