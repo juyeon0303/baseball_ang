@@ -46,6 +46,13 @@ import {
 @Injectable()
 export class MarketService implements OnModuleInit {
   private readonly logger = new Logger(MarketService.name);
+  private leaderboardSnapshot: {
+    at: number;
+    weekKey: string;
+    allRanked: LeaderboardEntry[];
+    opsKing: LeaderboardEntry | null;
+  } | null = null;
+  private readonly LEADERBOARD_TTL_MS = 4_000;
 
   constructor(
     @Inject(MARKET_STORE)
@@ -262,11 +269,13 @@ export class MarketService implements OnModuleInit {
   async getCrowdRatio(instrumentId: string) {
     let longShares = 0;
     let shortShares = 0;
+    let participants = 0;
     const userIds = await Promise.resolve(this.store.getAllUserIds());
     for (const userId of userIds) {
       const wallet = await Promise.resolve(this.store.getWallet(userId));
       const pos = wallet.positions[instrumentId];
       if (!pos) continue;
+      if (pos.longShares > 0 || pos.shortShares > 0) participants++;
       longShares += pos.longShares;
       shortShares += pos.shortShares;
     }
@@ -277,12 +286,29 @@ export class MarketService implements OnModuleInit {
       shortShares,
       longPct,
       shortPct: 100 - longPct,
-      participants: userIds.length,
+      participants,
     };
   }
 
-  async getLeaderboard(limit = 10): Promise<LeaderboardResult> {
+  private invalidateLeaderboardCache(): void {
+    this.leaderboardSnapshot = null;
+  }
+
+  private async loadLeaderboardSnapshot(): Promise<{
+    weekKey: string;
+    allRanked: LeaderboardEntry[];
+    opsKing: LeaderboardEntry | null;
+  }> {
     const weekKey = getWeekKey();
+    const now = Date.now();
+    if (
+      this.leaderboardSnapshot &&
+      this.leaderboardSnapshot.weekKey === weekKey &&
+      now - this.leaderboardSnapshot.at < this.LEADERBOARD_TTL_MS
+    ) {
+      return this.leaderboardSnapshot;
+    }
+
     const entries: LeaderboardEntry[] = [];
     const userIds = await Promise.resolve(this.store.getAllUserIds());
 
@@ -309,8 +335,7 @@ export class MarketService implements OnModuleInit {
     }
 
     entries.sort((a, b) => b.weeklyReturnPct - a.weeklyReturnPct);
-    const ranked = entries.map((e, i) => ({ ...e, rank: i + 1 }));
-    const rankings = ranked.slice(0, limit);
+    const allRanked = entries.map((e, i) => ({ ...e, rank: i + 1 }));
 
     const opsCandidates = entries.filter((e) => e.opsTradeCount > 0);
     opsCandidates.sort((a, b) => {
@@ -323,16 +348,29 @@ export class MarketService implements OnModuleInit {
       ? { ...opsCandidates[0], isOpsKing: true }
       : null;
     if (opsKing) {
-      const inRank = rankings.find((r) => r.userId === opsKing.userId);
+      const inRank = allRanked.find((r) => r.userId === opsKing.userId);
       if (inRank) inRank.isOpsKing = true;
     }
 
-    return {
+    this.leaderboardSnapshot = {
+      at: now,
       weekKey,
-      weekLabel: getWeekLabel(weekKey),
-      updatedAt: new Date().toISOString(),
-      totalParticipants: entries.length,
+      allRanked,
       opsKing,
+    };
+    return this.leaderboardSnapshot;
+  }
+
+  async getLeaderboard(limit = 10): Promise<LeaderboardResult> {
+    const snap = await this.loadLeaderboardSnapshot();
+    const rankings = snap.allRanked.slice(0, limit);
+
+    return {
+      weekKey: snap.weekKey,
+      weekLabel: getWeekLabel(snap.weekKey),
+      updatedAt: new Date().toISOString(),
+      totalParticipants: snap.allRanked.length,
+      opsKing: snap.opsKing,
       rankings,
     };
   }
@@ -364,9 +402,9 @@ export class MarketService implements OnModuleInit {
     const longValue = pos.longShares * instrument.price;
     const shortLiability = pos.shortShares * instrument.price;
     const currentEquity = await this.calcEquity(wallet);
-    const lbAll = await this.getLeaderboard(9999);
+    const lbSnap = await this.loadLeaderboardSnapshot();
     const myRank =
-      lbAll.rankings.find((r) => r.userId === userId)?.rank ?? null;
+      lbSnap.allRanked.find((r) => r.userId === userId)?.rank ?? null;
 
     const holdings: Array<{
       instrumentId: string;
@@ -436,9 +474,9 @@ export class MarketService implements OnModuleInit {
       weeklyReturnPct: this.calcReturnPct(weekStat.startEquity, currentEquity),
       weekLabel: getWeekLabel(weekStat.weekKey),
       startEquity: weekStat.startEquity,
-      totalParticipants: lbAll.totalParticipants,
+      totalParticipants: lbSnap.allRanked.length,
       myRank,
-      isOpsKing: lbAll.opsKing?.userId === userId,
+      isOpsKing: lbSnap.opsKing?.userId === userId,
       holdings,
       recentTrades: await Promise.resolve(
         this.store.getUserTrades(userId, 15),
@@ -639,7 +677,7 @@ export class MarketService implements OnModuleInit {
         }),
       );
       const updated = await Promise.resolve(this.store.recalcPrice(instrumentId));
-      this.broadcast(updated);
+      await this.broadcast(updated);
       return updated;
     } catch {
       return null;
@@ -704,7 +742,7 @@ export class MarketService implements OnModuleInit {
       this.store.updateInstrument(instrumentId, { oracleValue: value }),
     );
     const updated = await Promise.resolve(this.store.recalcPrice(instrumentId));
-    this.broadcast(updated);
+    await this.broadcast(updated);
     return updated;
   }
 
@@ -777,7 +815,8 @@ export class MarketService implements OnModuleInit {
       }),
     );
 
-    this.broadcast(instrument);
+    this.invalidateLeaderboardCache();
+    await this.broadcast(instrument);
     this.stream.broadcastTradeFeed({
       userId,
       action: ctx.action,
@@ -825,7 +864,11 @@ export class MarketService implements OnModuleInit {
     }
   }
 
-  private broadcast(instrument: InstrumentState): void {
+  private async broadcast(instrument: InstrumentState): Promise<void> {
+    const history = await Promise.resolve(
+      this.store.getPriceHistory(instrument.id),
+    );
+    const changePct = this.calcChangePct(history);
     this.stream.broadcastPriceUpdate({
       id: instrument.id,
       name: instrument.name,
@@ -837,6 +880,7 @@ export class MarketService implements OnModuleInit {
       oracleOps: instrument.oracleValue,
       metric: instrument.metric,
       sentiment: instrument.sentiment,
+      changePct,
       updatedAt: instrument.updatedAt,
     });
   }

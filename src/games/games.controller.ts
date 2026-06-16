@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, BadRequestException, Headers } from '@nestjs/common';
+import { assertAdminKey } from '../common/admin.util';
 import { isKboGameDay } from '../stats/game-day.util';
 import { GamesRecapService } from './games-recap.service';
 import { GamesSyncService } from './games-sync.service';
@@ -53,7 +54,8 @@ export class GamesController {
   }
 
   @Post('refresh')
-  async refreshNow() {
+  async refreshNow(@Headers() headers: Record<string, string>) {
+    assertAdminKey(headers);
     const snapshot = await this.sync.refresh('manual');
     return {
       success: true,
@@ -99,7 +101,8 @@ export class GamesController {
   }
 
   @Post('players/roster/refresh')
-  async refreshPlayerRoster() {
+  async refreshPlayerRoster(@Headers() headers: Record<string, string>) {
+    assertAdminKey(headers);
     try {
       return await this.playerStats.refreshRoster(true);
     } catch (e) {
@@ -177,9 +180,17 @@ export class GamesController {
   async getRelay(@Param('gameId') gameId: string) {
     const bundle = await this.relay.getGameRelay(gameId);
     if (!bundle) {
-      throw new BadRequestException('문자중계를 불러올 수 없습니다.');
+      return {
+        gameId,
+        plays: [],
+        situation: null,
+        batter: null,
+        pitcher: null,
+        recentPitches: [],
+        ready: false,
+      };
     }
-    return bundle;
+    return { ...bundle, ready: true };
   }
 
   @Get(':gameId/wpa')

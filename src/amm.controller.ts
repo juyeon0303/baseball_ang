@@ -23,6 +23,7 @@ import { getEffectiveStorageMode, isPostgresConfigured } from './persist/storage
 import { DisclosureService } from './market/disclosure.service';
 import { OffDayDemoService } from './market/off-day-demo.service';
 import { ShareholderService } from './market/shareholder.service';
+import { assertAdminKey } from './common/admin.util';
 
 @Controller('amm')
 export class AmmController {
@@ -66,6 +67,11 @@ export class AmmController {
       storageMode,
       effectiveStorage,
       persistent: effectiveStorage === 'postgres' && db.connected,
+      sessionStorage: 'memory',
+      sessionHint:
+        effectiveStorage === 'postgres' && db.connected
+          ? '계정·지갑은 DB에 저장됩니다. 로그인 세션(토큰)은 서버 재시작 시 만료됩니다.'
+          : '서버 재시작 시 계정·지갑·세션이 초기화될 수 있습니다. DATABASE_URL을 설정하세요.',
       database: db,
       stats,
       serverTime: new Date().toISOString(),
@@ -107,7 +113,11 @@ export class AmmController {
   }
 
   @Post('sync-memes')
-  async syncMemesNow(@Query('force') force?: string) {
+  async syncMemesNow(
+    @Headers() headers: Record<string, string>,
+    @Query('force') force?: string,
+  ) {
+    assertAdminKey(headers);
     const snapshot = await this.memeSync.syncAll(
       force === '1' || force === 'true',
     );
@@ -132,9 +142,11 @@ export class AmmController {
 
   @Post('sync-stats')
   async syncStatsNow(
+    @Headers() headers: Record<string, string>,
     @Query('force') force?: string,
     @Query('scope') scope?: string,
   ) {
+    assertAdminKey(headers);
     const safeScope =
       scope === 'kbo' || scope === 'mlb' || scope === 'all' ? scope : 'all';
     const snapshot = await this.liveStats.syncAll(
@@ -168,13 +180,15 @@ export class AmmController {
   }
 
   @Post('disclosures/pulse')
-  async pulseDisclosure() {
+  async pulseDisclosure(@Headers() headers: Record<string, string>) {
+    assertAdminKey(headers);
     const item = await this.disclosure.pulse('manual');
     return { success: !!item, item };
   }
 
   @Post('demo/pulse')
-  async pulseDemo() {
+  async pulseDemo(@Headers() headers: Record<string, string>) {
+    assertAdminKey(headers);
     await this.offDayDemo.pulse('manual');
     return {
       success: true,
@@ -320,8 +334,10 @@ export class AmmController {
 
   @Post('oracle')
   async updateOracle(
+    @Headers() headers: Record<string, string>,
     @Body() body: { ops?: number; era?: number; value?: number; instrumentId?: string },
   ) {
+    assertAdminKey(headers);
     const instrumentId = body.instrumentId ?? LEE_JUNG_HOO_OPS_ID;
     const value = body.value ?? body.ops ?? body.era;
     if (value == null) {
@@ -331,7 +347,11 @@ export class AmmController {
   }
 
   @Post('ingest-boxscore')
-  async ingestBoxscore(@Body() body: { dailyStats?: Array<Record<string, unknown>> }) {
+  async ingestBoxscore(
+    @Headers() headers: Record<string, string>,
+    @Body() body: { dailyStats?: Array<Record<string, unknown>> },
+  ) {
+    assertAdminKey(headers);
     const stats = body?.dailyStats ?? [];
     const updated: string[] = [];
     for (const row of stats) {
