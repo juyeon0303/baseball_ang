@@ -9,7 +9,6 @@ import { CommunityService } from '../community/community.service';
 
 import { isKboGameDay, todayKey } from '../stats/game-day.util';
 
-import { findMemeByKeyword } from '../market/market-meme-lineup';
 import { MarketService } from '../market/market.service';
 
 import {
@@ -541,15 +540,6 @@ export class GamesSyncService implements OnModuleInit {
       sentimentDelta,
       play.impact ?? 'inning',
     );
-
-    const meme = findMemeByKeyword(play.text);
-    if (meme) {
-      const memeDelta =
-        sentimentDelta > 0 ? sentimentDelta * 0.8 : sentimentDelta * 0.6;
-      if (memeDelta !== 0) {
-        await this.market.applyPlaySentiment(meme.id, memeDelta);
-      }
-    }
   }
 
   private async applyGameEndMarket(
@@ -692,13 +682,6 @@ export class GamesSyncService implements OnModuleInit {
     if (input.skipMarket || !instrumentId || sentimentDelta === 0) return;
 
     await this.applyInstrumentSentiment(instrumentId, sentimentDelta, impact);
-
-    const meme = findMemeByKeyword(input.text);
-    if (meme) {
-      const memeDelta =
-        sentimentDelta > 0 ? sentimentDelta * 1.4 : sentimentDelta * 0.8;
-      await this.market.applyPlaySentiment(meme.id, memeDelta);
-    }
 
   }
 

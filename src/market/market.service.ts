@@ -7,7 +7,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { StockStreamGateway } from '../amm/stock-stream.gateway';
-import { MEME_STOCKS } from './market-meme-lineup';
+import { MEME_STOCKS, isMemeInstrumentId } from './market-meme-lineup';
 import {
   findSeedById,
   findSeedByPlayerName,
@@ -135,6 +135,7 @@ export class MarketService implements OnModuleInit {
   }
 
   async getMemeLineup(): Promise<InstrumentState[]> {
+    if (!this.memesEnabled()) return [];
     if ('getMemeLineup' in this.store && typeof this.store.getMemeLineup === 'function') {
       return this.store.getMemeLineup();
     }
@@ -198,7 +199,6 @@ export class MarketService implements OnModuleInit {
           status: 'done',
         },
         { id: 'live-score', label: '실시간 점수판·타석 소식', status: 'done' },
-        { id: 'meme-stocks', label: '밈·화제 베팅', status: 'done' },
         { id: 'mobile-app', label: 'Ruta++ 모바일 앱 (app/)', status: 'todo' },
         { id: 'web-frontend', label: '웹 프론트 (web/)', status: 'done' },
       ],
@@ -243,9 +243,8 @@ export class MarketService implements OnModuleInit {
 
   async getMarketBoard(limit = 12) {
     const lineup = await this.getLineup();
-    const memes = await this.getMemeLineup();
     const rows = await Promise.all(
-      [...lineup, ...memes].map((inst) => this.enrichInstrument(inst)),
+      lineup.map((inst) => this.enrichInstrument(inst)),
     );
     rows.sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0));
     const gainers = rows.filter((r) => (r.changePct ?? 0) > 0).slice(0, limit);
@@ -428,6 +427,7 @@ export class MarketService implements OnModuleInit {
       const inst = await Promise.resolve(
         this.store.getInstrument(posInstrumentId),
       );
+      if (!this.memesEnabled() && inst.kind === 'meme') continue;
       const longCost = p.longCost ?? 0;
       const shortCredit = p.shortCredit ?? 0;
       const longPnl =
@@ -912,6 +912,13 @@ export class MarketService implements OnModuleInit {
     if (!(await Promise.resolve(this.store.hasInstrument(instrumentId)))) {
       throw new NotFoundException(`상품을 찾을 수 없습니다: ${instrumentId}`);
     }
+    if (!this.memesEnabled() && isMemeInstrumentId(instrumentId)) {
+      throw new BadRequestException('현재 밈 종목 거래는 지원하지 않습니다.');
+    }
+  }
+
+  private memesEnabled(): boolean {
+    return process.env.MEME_SYNC_ENABLED === 'true';
   }
 
   private assertQuantity(quantity: number): void {

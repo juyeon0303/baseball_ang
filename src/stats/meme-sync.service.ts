@@ -46,7 +46,7 @@ export class MemeSyncService implements OnModuleInit {
   }
 
   isEnabled(): boolean {
-    return this.config.get('MEME_SYNC_ENABLED') !== 'false';
+    return this.config.get('MEME_SYNC_ENABLED') === 'true';
   }
 
   getLastSnapshot(): MemeSyncSnapshot | null {

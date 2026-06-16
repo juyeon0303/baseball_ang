@@ -84,6 +84,9 @@ export class AmmController {
 
   @Get('memes')
   async getMemes() {
+    if (!this.memeSync.isEnabled()) {
+      return { enabled: false, last: null, items: [] };
+    }
     const items = await this.market.getMemeLineup();
     const sorted = [...items].sort(
       (a, b) => b.oracleValue - a.oracleValue || b.price - a.price,

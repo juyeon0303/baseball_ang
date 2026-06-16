@@ -9,6 +9,10 @@ import { GamesService } from '../games/games.service';
 import { KBO_TEAM_STOCKS } from './market-lineup';
 import { MarketService } from './market.service';
 
+/**
+ * 휴무·비경기 시간 샘플 시세 펄스 (기본 OFF).
+ * OFFDAY_DEMO_ENABLED=true 일 때만 수동/스케줄 펄스 — 프로덕션은 실제 공시·거래·리캡만 사용.
+ */
 @Injectable()
 export class OffDayDemoService implements OnModuleInit {
   private readonly logger = new Logger(OffDayDemoService.name);
@@ -23,13 +27,18 @@ export class OffDayDemoService implements OnModuleInit {
     private readonly moduleRef: ModuleRef,
   ) {}
 
+  /** 명시적으로 true일 때만 샘플 펄스 허용 */
+  isEnabled(): boolean {
+    return this.config.get('OFFDAY_DEMO_ENABLED') === 'true';
+  }
+
   onModuleInit(): void {
-    if (this.config.get('OFFDAY_DEMO_ENABLED') === 'false') return;
+    if (!this.isEnabled()) return;
     setTimeout(() => void this.pulse('boot').catch(() => {}), 18_000);
   }
 
   isActive(): boolean {
-    if (this.config.get('OFFDAY_DEMO_ENABLED') === 'false') return false;
+    if (!this.isEnabled()) return false;
     return !this.games.getTodayGames().some((g) => g.status === 'live');
   }
 
@@ -37,10 +46,9 @@ export class OffDayDemoService implements OnModuleInit {
     return this.lastMessage;
   }
 
-  /** 라이브 없을 때 50초마다 샘플 시세·상황 데모 */
   @Interval(50_000)
   async scheduledPulse(): Promise<void> {
-    if (this.config.get('OFFDAY_DEMO_ENABLED') === 'false') return;
+    if (!this.isEnabled()) return;
     await this.pulse('interval');
   }
 

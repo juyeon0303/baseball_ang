@@ -7,7 +7,6 @@ import { LEE_JUNG_HOO_OPS_ID } from '../market/market-lineup';
 import { getMarketSession } from '../market/market-session.util';
 import { MarketService } from '../market/market.service';
 import { ShareholderService, buildSkeletonShareholderTeams } from '../market/shareholder.service';
-import { OffDayDemoService } from '../market/off-day-demo.service';
 import { InstrumentState, LeaderboardResult, TradeRecord } from '../market/market.types';
 import { getWeekKey, getWeekLabel } from '../market/week.util';
 
@@ -21,7 +20,6 @@ export class HubService {
     private readonly stream: StockStreamGateway,
     private readonly disclosure: DisclosureService,
     private readonly shareholders: ShareholderService,
-    private readonly offDayDemo: OffDayDemoService,
   ) {}
 
   async getHub(
@@ -50,16 +48,11 @@ export class HubService {
     const leaderboard = await this.safeLeaderboard();
     const trades = await this.safeTrades();
     const crowd = await this.safeCrowd(featuredId);
-    const memeLineup = await this.safeMemeLineup();
     const etfs = await this.safeEtfs();
     const shareholderBoard = await this.safeShareholderBoard(userId);
 
     const tradeRows =
       trades.length > 0 ? trades : await this.market.getShowcaseTrades(8);
-
-    const memes = [...memeLineup].sort(
-      (a, b) => b.oracleValue - a.oracleValue || b.price - a.price,
-    );
 
     const top = leaderboard.rankings[0] ?? null;
     const rankings = leaderboard.rankings.map((row) => ({
@@ -149,7 +142,7 @@ export class HubService {
       game,
       session,
       plays: this.games.getSnapshot()?.plays?.slice(0, 5) ?? [],
-      memes,
+      memes: [],
       crowd,
       liveCount: this.stream.getLiveCount(),
       weekKing,
@@ -165,8 +158,6 @@ export class HubService {
         rankings,
       },
       me,
-      demoMode: this.offDayDemo.isActive(),
-      demoMessage: this.offDayDemo.getLastMessage(),
     };
   }
 
@@ -230,15 +221,6 @@ export class HubService {
         shortPct: 50,
         participants: 0,
       };
-    }
-  }
-
-  private async safeMemeLineup(): Promise<InstrumentState[]> {
-    try {
-      return await this.market.getMemeLineup();
-    } catch (e) {
-      this.logger.warn(`hub meme lineup fallback: ${e}`);
-      return [];
     }
   }
 

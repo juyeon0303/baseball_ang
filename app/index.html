@@ -49,61 +49,12 @@
             --text-on-accent: #061018;
             --glow-accent: 0 0 24px rgba(94, 184, 255, 0.35);
             --glow-live: 0 0 20px rgba(74, 222, 128, 0.35);
-            --scrollbar-size: 7px;
-            --scrollbar-track: rgba(5, 8, 13, 0.35);
-            --scrollbar-thumb: rgba(148, 163, 184, 0.32);
-            --scrollbar-thumb-hover: rgba(94, 184, 255, 0.58);
-            --scrollbar-thumb-active: rgba(56, 189, 248, 0.75);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         html {
-            scrollbar-gutter: stable;
-        }
-
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-        }
-
-        *::-webkit-scrollbar {
-            width: var(--scrollbar-size);
-            height: var(--scrollbar-size);
-        }
-
-        *::-webkit-scrollbar-track {
-            background: var(--scrollbar-track);
-            border-radius: 999px;
-        }
-
-        *::-webkit-scrollbar-thumb {
-            background: linear-gradient(
-                180deg,
-                rgba(148, 163, 184, 0.38) 0%,
-                rgba(94, 184, 255, 0.3) 100%
-            );
-            border: 2px solid transparent;
-            background-clip: padding-box;
-            border-radius: 999px;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-
-        *::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(
-                180deg,
-                rgba(94, 184, 255, 0.68) 0%,
-                rgba(56, 189, 248, 0.48) 100%
-            );
-            background-clip: padding-box;
-        }
-
-        *::-webkit-scrollbar-thumb:active {
-            background: var(--scrollbar-thumb-active);
-            background-clip: padding-box;
-        }
-
-        *::-webkit-scrollbar-corner {
-            background: transparent;
+            overflow-x: hidden;
+            height: auto;
         }
 
         body {
@@ -561,9 +512,9 @@
             font-weight: 700;
         }
         .stats-list-scroll {
-            max-height: 42vh;
-            overflow-y: auto;
-            padding-right: 2px;
+            max-height: none;
+            overflow: visible;
+            padding-right: 0;
         }
         .play-now {
             margin-top: 10px;
@@ -654,9 +605,8 @@
             line-height: 1.5;
         }
         .timeline {
-            max-height: 520px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            max-height: none;
+            overflow: visible;
             scroll-behavior: smooth;
         }
         .feed-relay-stack,
@@ -679,7 +629,7 @@
         .feed-relay-stack .panel,
         .feed-play-stack .panel { margin-bottom: 0; }
         .feed-relay-stack .broadcast-panel { border-color: rgba(94, 184, 255, 0.35); }
-        .timeline-panel-compact .timeline { max-height: 260px; }
+        .timeline-panel-compact .timeline { max-height: none; }
         .feed-play-strip { padding-top: 10px; }
         .feed-play-strip .play-now {
             margin: 6px 0 0;
@@ -692,7 +642,7 @@
         }
         .feed-play-stack .player-stats-panel { margin-top: 4px; }
         .feed-wpa-bar { margin-bottom: 10px; }
-        .chat-panel-compact .gaga-feed { max-height: 160px; }
+        .chat-panel-compact .gaga-feed { max-height: none; }
         .home-games-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -775,7 +725,7 @@
             flex: 1;
             min-height: 0;
             max-height: none;
-            overflow-y: auto;
+            overflow: visible;
         }
         #tab-feed.feed-live-mode .timeline-panel-compact .tl-card { padding: 7px 5px; }
         #tab-feed.feed-live-mode .timeline-panel-compact .tl-card-text {
@@ -789,7 +739,7 @@
         #tab-feed.feed-live-mode .chat-panel-compact.collapsed .input-row,
         #tab-feed.feed-live-mode .chat-panel-compact.collapsed .nick-input,
         #tab-feed.feed-live-mode .chat-panel-compact.collapsed .chat-hint { display: none; }
-        #tab-feed.feed-live-mode .chat-panel-compact .gaga-feed { max-height: 100px; }
+        #tab-feed.feed-live-mode .chat-panel-compact .gaga-feed { max-height: none; }
         .feed-score-strip {
             display: flex;
             align-items: center;
@@ -1064,8 +1014,8 @@
             color: var(--text);
         }
         .gaga-feed {
-            max-height: 200px;
-            overflow-y: auto;
+            max-height: none;
+            overflow: visible;
             background: var(--surface-inset);
             border: 1px solid var(--border);
             border-radius: 10px;
@@ -2877,7 +2827,6 @@
         let selectedWpa = null;
         let sentimentSnap = null;
         let lastScores = { away: null, home: null };
-        let demoSituation = null;
         let gamePhase = 'live';
         let phaseManual = false;
         let shareDeepGameToast = null;
@@ -4071,9 +4020,6 @@
                 if (cached.pitcher && !g.pitcher) g.pitcher = cached.pitcher;
                 return cached.situation;
             }
-            if (!hasLiveToday() && showRecapMode && !g?.relay?.source && g.status !== 'live') {
-                return demoSituation;
-            }
             return null;
         }
 
@@ -4723,7 +4669,7 @@
             if (el('sit-b')) el('sit-b').textContent = sit.balls;
             if (el('sit-s')) el('sit-s').textContent = sit.strikes;
             if (el('sit-o')) el('sit-o').textContent = sit.outs;
-            if (feedPanel) feedPanel.classList.toggle('demo', !!sit.demo);
+            if (feedPanel) feedPanel.classList.remove('demo');
             if (el('sit-count')) {
                 el('sit-count').textContent = sit.countText || `${sit.balls}-${sit.strikes}`;
             }
@@ -5560,20 +5506,6 @@
             if (!payload?.gameId) return;
             syncGameRelay(payload.gameId, payload);
             if (payload.gameId === watchId) renderTimeline();
-        });
-        socket.on('demoPulse', payload => {
-            if (!payload?.demoMode) return;
-            demoSituation = payload.situation || demoSituation;
-            const g = findGame(watchId);
-            if (g?.relay?.lastPlay || relayCache[watchId]?.plays?.length) {
-                renderSituation(g);
-                return;
-            }
-            if (payload.message) {
-                document.getElementById('play-now').innerHTML =
-                    `<span class="team">${payload.team || '데모'}</span> ${payload.message}`;
-            }
-            renderSituation(g ? { ...g, situation: payload.situation } : { situation: payload.situation });
         });
 
         document.getElementById('share-prompt-go')?.addEventListener('click', () => {
