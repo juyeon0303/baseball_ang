@@ -43,6 +43,7 @@
             --text-on-accent: #041510;
             --site-header-offset: 72px;
             --strip-h: 44px;
+            --marquee-h: 26px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +58,7 @@
             font-size: 15px;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
-            padding-top: var(--strip-h);
+            padding-top: calc(var(--strip-h) + var(--marquee-h));
         }
 
         @media (min-width: 900px) {
@@ -147,9 +148,9 @@
             .col-main {
                 order: 0;
                 position: sticky;
-                top: calc(var(--strip-h) + 10px);
+                top: calc(var(--strip-h) + var(--marquee-h) + 10px);
                 align-self: start;
-                max-height: calc(100dvh - var(--strip-h) - 20px);
+                max-height: calc(100dvh - var(--strip-h) - var(--marquee-h) - 20px);
                 overflow-y: auto;
                 overscroll-behavior: contain;
                 scrollbar-gutter: stable;
@@ -195,7 +196,7 @@
             border: 1px solid var(--border);
             margin-bottom: 4px;
             position: sticky;
-            top: calc(var(--strip-h) + 8px);
+            top: calc(var(--strip-h) + var(--marquee-h) + 8px);
             z-index: 5;
         }
         .side-tabs button {
@@ -2415,6 +2416,220 @@
             padding: 4px 8px;
         }
 
+        /* Dopamine / retention layer */
+        .yas-marquee {
+            position: fixed;
+            top: var(--strip-h);
+            left: 0;
+            right: 0;
+            z-index: 99;
+            height: var(--marquee-h);
+            overflow: hidden;
+            background: rgba(8, 12, 20, 0.88);
+            border-bottom: 1px solid rgba(94, 234, 212, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .yas-marquee-track {
+            display: flex;
+            width: max-content;
+            animation: marqueeScroll 28s linear infinite;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--muted);
+            white-space: nowrap;
+            padding: 5px 0;
+        }
+        .yas-marquee-track span {
+            padding: 0 18px;
+            border-right: 1px solid rgba(51, 65, 85, 0.4);
+        }
+        .yas-marquee-track .hot { color: var(--highlight); }
+        .yas-marquee-track .up { color: var(--accent-neon); }
+        .yas-marquee-track .down { color: var(--down-neon); }
+        @keyframes marqueeScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @media (min-width: 900px) {
+            header { margin-top: calc(-1 * var(--marquee-h)); }
+        }
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 200;
+            opacity: 0;
+        }
+        #confetti-canvas.active { opacity: 1; }
+        .dopamine-stack {
+            position: fixed;
+            bottom: 72px;
+            right: 14px;
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: min(280px, calc(100vw - 28px));
+            pointer-events: none;
+        }
+        .dopamine-toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(21, 28, 40, 0.96), rgba(15, 20, 30, 0.98));
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.25s;
+        }
+        .dopamine-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .dopamine-toast.tier-gold {
+            border-color: rgba(251, 191, 36, 0.55);
+            box-shadow: 0 0 28px rgba(251, 191, 36, 0.2), 0 12px 40px rgba(0, 0, 0, 0.45);
+        }
+        .dop-emoji { font-size: 1.35rem; line-height: 1; flex-shrink: 0; }
+        .dop-title { font-size: 0.78rem; font-weight: 800; line-height: 1.3; }
+        .dop-sub { font-size: 0.65rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+        .streak-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            background: rgba(252, 211, 77, 0.12);
+            border: 1px solid rgba(252, 211, 77, 0.35);
+            color: var(--highlight);
+        }
+        .streak-chip.pulse { animation: streakPulse 0.6s ease; }
+        @keyframes streakPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); box-shadow: 0 0 16px rgba(252, 211, 77, 0.35); }
+        }
+        .missions-panel {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid rgba(94, 234, 212, 0.18);
+        }
+        .missions-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--accent-neon);
+            margin-bottom: 8px;
+            letter-spacing: 0.04em;
+        }
+        .mission-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.68rem;
+        }
+        .mission-row:last-child { margin-bottom: 0; }
+        .mission-row.done { opacity: 0.55; }
+        .mission-row.done .mission-label { text-decoration: line-through; }
+        .mission-bar {
+            flex: 1;
+            height: 5px;
+            border-radius: 999px;
+            background: var(--border);
+            overflow: hidden;
+        }
+        .mission-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-neon), var(--highlight));
+            transition: width 0.45s ease;
+        }
+        .mission-label { min-width: 88px; color: var(--muted); }
+        .combo-badge {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, rgba(251, 113, 133, 0.15), rgba(252, 211, 77, 0.12));
+            border: 1px solid rgba(252, 211, 77, 0.35);
+            color: var(--highlight);
+            animation: comboGlow 1.2s ease infinite;
+        }
+        .combo-badge.show { display: flex; }
+        @keyframes comboGlow {
+            0%, 100% { box-shadow: 0 0 0 rgba(252, 211, 77, 0); }
+            50% { box-shadow: 0 0 20px rgba(252, 211, 77, 0.25); }
+        }
+        .hero-price.tick-up {
+            color: var(--accent-neon);
+            text-shadow: 0 0 24px rgba(94, 234, 212, 0.45);
+            animation: priceTickUp 0.55s ease;
+        }
+        .hero-price.tick-down {
+            color: var(--down-neon);
+            animation: priceTickDown 0.55s ease;
+        }
+        @keyframes priceTickUp {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        @keyframes priceTickDown {
+            0% { transform: scale(1); }
+            40% { transform: scale(0.96); }
+            100% { transform: scale(1); }
+        }
+        .rank-badge.rank-up {
+            animation: rankClimb 0.7s cubic-bezier(0.34, 1.5, 0.64, 1);
+            box-shadow: 0 0 24px rgba(251, 191, 36, 0.4);
+        }
+        @keyframes rankClimb {
+            0% { transform: scale(1); }
+            35% { transform: scale(1.12) rotate(-2deg); }
+            100% { transform: scale(1); }
+        }
+        .feed-list li.fresh {
+            animation: feedPop 0.55s ease;
+            background: rgba(94, 234, 212, 0.06);
+            border-radius: 8px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+        @keyframes feedPop {
+            0% { opacity: 0; transform: translateX(-8px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .crowd-bar.crowd-shift .crowd-long {
+            animation: crowdPulse 0.8s ease;
+        }
+        @keyframes crowdPulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.35); }
+        }
+        .presence-nudge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--highlight);
+            margin-top: 6px;
+            min-height: 1em;
+        }
+
         .auth-panel { margin-bottom: 0; }
         .auth-panel.compact .auth-guest-hint { display: none; }
         .auth-guest-hint {
@@ -2476,6 +2691,13 @@
         <span class="yas-strip-cta">탭 → 베팅</span>
     </div>
     <div class="deal-flash" id="deal-flash"></div>
+    <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+    <div class="dopamine-stack" id="dopamine-stack" aria-live="polite"></div>
+    <div class="yas-marquee" id="yas-marquee" aria-hidden="true">
+        <div class="yas-marquee-track" id="yas-marquee-track">
+            <span>YASDAQ · 실시간 픽이 쌓이는 중…</span>
+        </div>
+    </div>
     <div class="wrap">
         <div class="boot-error" id="boot-error">
             서버에 연결하지 못했습니다. API가 실행 중인지 확인해 주세요.
@@ -2559,6 +2781,14 @@
                             <button type="button" class="share-chip" onclick="shareMyYasdaq()">🔗 내 픽 공유</button>
                             <button type="button" class="share-chip" onclick="shareInviteLink()">초대 링크</button>
                         </div>
+                        <div class="streak-chip" id="streak-chip" style="display:none">🔥 출석 0일</div>
+                    </div>
+                    <div class="missions-panel" id="missions-panel">
+                        <div class="missions-head">
+                            <span>오늘의 미션</span>
+                            <span id="missions-done-count">0/3</span>
+                        </div>
+                        <div id="missions-list"></div>
                     </div>
                     <div class="wallet-head">
                         <div>
@@ -2706,6 +2936,7 @@
 
                     <section class="panel trade-form">
                         <div class="label">주문 · 매수 / 매도</div>
+                        <div class="combo-badge" id="combo-badge">🔥 연속 베팅 0</div>
                         <div class="trade-mode">
                             <button type="button" class="on" data-mode="buy" onclick="setTradeMode('buy')">매수</button>
                             <button type="button" data-mode="sell" onclick="setTradeMode('sell')">매도</button>
@@ -2737,6 +2968,7 @@
                     </div>
                     <div class="play-ticker" id="play-ticker">타석 소식 대기 중</div>
                     <div class="meta" id="live-line">접속 —명 · 탭하면 연동 종목 보기</div>
+                    <div class="presence-nudge" id="presence-nudge"></div>
                 </button>
 
                 <section class="panel" id="meme-panel">
@@ -2850,6 +3082,15 @@
         const NICKNAME_KEY = 'yamgu-nickname';
         const WEEK_SEEN_KEY = 'yamgu-week-seen';
         const WATCHLIST_KEY = 'yas-watchlist';
+        const STREAK_KEY = 'yas-streak';
+        const STREAK_LAST_KEY = 'yas-streak-last';
+        const MISSIONS_KEY = 'yas-missions';
+        const MILESTONE_KEY = 'yas-milestones';
+        const MISSION_DEFS = [
+            { id: 'visit', label: '출석 체크', target: 1, emoji: '📅' },
+            { id: 'trade', label: '베팅 1회', target: 1, emoji: '🎲' },
+            { id: 'explore', label: '종목 3개 구경', target: 3, emoji: '🔭' },
+        ];
         let tradeMode = 'buy';
         let tradeAction = { yes: ['buy', 'long'], no: ['sell', 'short'] };
         const YAS_SHARE_BASE = IS_LOCAL_DEV ? 'http://localhost:5173/stock/' : `${location.origin}/stock/`;
@@ -2869,6 +3110,14 @@
         let liveLineMeta = { count: 0, gameStatus: 'scheduled', instrumentName: '' };
         let orderBusy = false;
         let chartLoadSeq = 0;
+        let tradeCombo = 0;
+        let lastComboAt = 0;
+        let lastFeedSig = '';
+        let lastCrowdLong = null;
+        let lastPriceById = {};
+        let missionState = null;
+        let milestonesSeen = {};
+        let lastTradeFeedToast = 0;
         document.getElementById('playball-link').href = PLAYBALL_URL;
         if (!IS_LOCAL_DEV) {
             const prog = document.getElementById('progress-panel');
@@ -2973,6 +3222,330 @@
             if (navigator.vibrate) navigator.vibrate(pattern);
         }
 
+        function todayKey() {
+            return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+        }
+
+        function loadMissionState() {
+            try {
+                const raw = localStorage.getItem(MISSIONS_KEY);
+                const parsed = raw ? JSON.parse(raw) : null;
+                if (parsed?.date === todayKey()) return parsed;
+            } catch (_) {}
+            return { date: todayKey(), visit: 0, trade: 0, explore: [] };
+        }
+
+        function saveMissionState() {
+            try { localStorage.setItem(MISSIONS_KEY, JSON.stringify(missionState)); } catch (_) {}
+        }
+
+        function missionProgress(id) {
+            if (!missionState) return 0;
+            if (id === 'visit') return missionState.visit ? 1 : 0;
+            if (id === 'trade') return Math.min(missionState.trade, 1);
+            if (id === 'explore') return Math.min(missionState.explore?.length || 0, 3);
+            return 0;
+        }
+
+        function missionDone(id) {
+            const def = MISSION_DEFS.find(m => m.id === id);
+            return def ? missionProgress(id) >= def.target : false;
+        }
+
+        function renderMissions() {
+            const list = document.getElementById('missions-list');
+            const countEl = document.getElementById('missions-done-count');
+            if (!list || !missionState) return;
+            let done = 0;
+            list.innerHTML = MISSION_DEFS.map(m => {
+                const prog = missionProgress(m.id);
+                const finished = prog >= m.target;
+                if (finished) done++;
+                const pct = Math.min(100, (prog / m.target) * 100);
+                return `<div class="mission-row${finished ? ' done' : ''}">
+                    <span class="mission-label">${m.emoji} ${m.label}</span>
+                    <div class="mission-bar"><div class="mission-bar-fill" style="width:${pct}%"></div></div>
+                    <span>${Math.min(prog, m.target)}/${m.target}</span>
+                </div>`;
+            }).join('');
+            if (countEl) countEl.textContent = `${done}/${MISSION_DEFS.length}`;
+            if (done === MISSION_DEFS.length && !missionState.allCelebrated) {
+                missionState.allCelebrated = true;
+                saveMissionState();
+                showDopamineToast('🏆', '오늘 미션 올클리어!', '내일도 새 미션이 열려요', 'gold');
+                fireConfetti(55);
+            }
+        }
+
+        function bumpMission(id, extra) {
+            if (!missionState) missionState = loadMissionState();
+            if (missionState.date !== todayKey()) {
+                missionState = { date: todayKey(), visit: 0, trade: 0, explore: [] };
+            }
+            const wasDone = missionDone(id);
+            if (id === 'visit' && !missionState.visit) {
+                missionState.visit = 1;
+                if (!wasDone) {
+                    showDopamineToast('📅', '출석 완료', '오늘도 야스닥 ON');
+                }
+            } else if (id === 'trade') {
+                missionState.trade = (missionState.trade || 0) + 1;
+                if (!wasDone && missionDone('trade')) {
+                    showDopamineToast('🎲', '베팅 미션 클리어', '한 판 더?');
+                }
+            } else if (id === 'explore' && extra) {
+                const arr = missionState.explore || (missionState.explore = []);
+                if (!arr.includes(extra)) arr.push(extra);
+                if (!wasDone && missionDone('explore')) {
+                    showDopamineToast('🔭', '종목 탐험 완료', '3개 종목 구경했어요');
+                }
+            }
+            saveMissionState();
+            renderMissions();
+        }
+
+        function initDailyStreak() {
+            let streak = 0;
+            try { streak = parseInt(localStorage.getItem(STREAK_KEY) || '0', 10) || 0; } catch (_) {}
+            const last = localStorage.getItem(STREAK_LAST_KEY);
+            const today = todayKey();
+            const chip = document.getElementById('streak-chip');
+            if (last !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yKey = yesterday.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+                if (last === yKey) streak += 1;
+                else streak = 1;
+                try {
+                    localStorage.setItem(STREAK_KEY, String(streak));
+                    localStorage.setItem(STREAK_LAST_KEY, today);
+                } catch (_) {}
+                if (streak > 1) {
+                    showDopamineToast('🔥', `${streak}일 연속 출석`, '스트릭이 쌓이는 중');
+                    chip?.classList.add('pulse');
+                    setTimeout(() => chip?.classList.remove('pulse'), 700);
+                }
+            }
+            if (chip) {
+                chip.style.display = '';
+                chip.textContent = streak > 1 ? `🔥 ${streak}일 연속 출석` : '📈 오늘 첫 출석';
+            }
+            missionState = loadMissionState();
+            bumpMission('visit');
+            renderMissions();
+            try {
+                milestonesSeen = JSON.parse(localStorage.getItem(MILESTONE_KEY) || '{}');
+            } catch (_) {
+                milestonesSeen = {};
+            }
+        }
+
+        function showDopamineToast(emoji, title, sub, tier) {
+            const stack = document.getElementById('dopamine-stack');
+            if (!stack) return;
+            const el = document.createElement('div');
+            el.className = 'dopamine-toast' + (tier ? ` tier-${tier}` : '');
+            el.innerHTML = `<span class="dop-emoji">${emoji}</span><div><div class="dop-title">${title}</div>${sub ? `<div class="dop-sub">${sub}</div>` : ''}</div>`;
+            stack.prepend(el);
+            requestAnimationFrame(() => el.classList.add('show'));
+            yasHaptic(tier === 'gold' ? [12, 28, 12, 28, 18] : [8, 18, 8]);
+            setTimeout(() => {
+                el.classList.remove('show');
+                setTimeout(() => el.remove(), 380);
+            }, tier === 'gold' ? 4200 : 3000);
+            while (stack.children.length > 4) stack.lastElementChild?.remove();
+        }
+
+        function fireConfetti(pieces = 36) {
+            const canvas = document.getElementById('confetti-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.classList.add('active');
+            const colors = ['#5eead4', '#fcd34d', '#fb7185', '#2dd4bf', '#fbbf24', '#f472b6'];
+            const particles = Array.from({ length: pieces }, () => ({
+                x: Math.random() * canvas.width,
+                y: -12 - Math.random() * 60,
+                r: 3 + Math.random() * 5,
+                c: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 5,
+                vy: 2 + Math.random() * 5,
+                rot: Math.random() * 360,
+                vr: (Math.random() - 0.5) * 10,
+            }));
+            let frames = 0;
+            function tick() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = 0;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.1;
+                    p.rot += p.vr;
+                    if (p.y < canvas.height + 24) alive++;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.c;
+                    ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r);
+                    ctx.restore();
+                });
+                frames++;
+                if (alive > 0 && frames < 130) requestAnimationFrame(tick);
+                else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.classList.remove('active');
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function recordTradeCombo() {
+            const now = Date.now();
+            if (now - lastComboAt < 90_000) tradeCombo += 1;
+            else tradeCombo = 1;
+            lastComboAt = now;
+            const badge = document.getElementById('combo-badge');
+            if (!badge) return;
+            if (tradeCombo >= 2) {
+                badge.classList.add('show');
+                badge.textContent = `🔥 ${tradeCombo}연속 베팅 · momentum ON`;
+                if (tradeCombo === 3 || tradeCombo === 5 || tradeCombo % 5 === 0) {
+                    showDopamineToast('⚡', `${tradeCombo}연속 베팅`, '흐름 탔다 — 한 번 더?');
+                    if (tradeCombo >= 5) fireConfetti(28);
+                }
+            } else {
+                badge.classList.remove('show');
+            }
+        }
+
+        function celebrateRankChange(prev, next) {
+            if (prev == null || next == null || next >= prev) return;
+            const jump = prev - next;
+            const badge = document.getElementById('rank-badge');
+            badge?.classList.remove('rank-up');
+            void badge?.offsetWidth;
+            badge?.classList.add('rank-up');
+            showDopamineToast('📈', `순위 ${prev}위 → ${next}위`, jump >= 5 ? '대반등! TOP10을 노려봐' : '올라가는 중');
+            if (next <= 3) {
+                fireConfetti(48);
+                showDopamineToast('👑', 'TOP 3 진입', '공유하면 더 뜨거워져요', 'gold');
+            } else if (next <= 10) {
+                fireConfetti(32);
+            }
+            yasHaptic([16, 32, 16, 32, 24]);
+        }
+
+        function celebrateEquityMilestones(prev, next) {
+            if (prev == null || next == null || next <= prev) return;
+            const week = hub?.me?.weekLabel || 'week';
+            const keyBase = `${week}-`;
+            [105_000, 110_000, 120_000, 150_000, 200_000].forEach(m => {
+                if (prev < m && next >= m && !milestonesSeen[keyBase + m]) {
+                    milestonesSeen[keyBase + m] = true;
+                    try { localStorage.setItem(MILESTONE_KEY, JSON.stringify(milestonesSeen)); } catch (_) {}
+                    showDopamineToast('💰', `${(m / 10000).toFixed(0)}만 P 돌파`, `총자산 ${next.toLocaleString()}P`, m >= 150_000 ? 'gold' : undefined);
+                    if (m >= 120_000) fireConfetti(m >= 150_000 ? 50 : 30);
+                }
+            });
+        }
+
+        function celebrateWeeklyReturn(pct) {
+            if (pct >= 10 && !milestonesSeen[`ret-${hub?.me?.weekLabel}-10`]) {
+                milestonesSeen[`ret-${hub?.me?.weekLabel}-10`] = true;
+                try { localStorage.setItem(MILESTONE_KEY, JSON.stringify(milestonesSeen)); } catch (_) {}
+                showDopamineToast('🚀', `주간 수익 ${fmtPct(pct)}`, '이 속도면 순위 폭등', 'gold');
+                fireConfetti(60);
+            } else if (pct >= 5 && !milestonesSeen[`ret-${hub?.me?.weekLabel}-5`]) {
+                milestonesSeen[`ret-${hub?.me?.weekLabel}-5`] = true;
+                try { localStorage.setItem(MILESTONE_KEY, JSON.stringify(milestonesSeen)); } catch (_) {}
+                showDopamineToast('📊', `주간 +${pct.toFixed(1)}%`, '수익률 미션 가즈아');
+            }
+        }
+
+        function flashHeroPrice(dir) {
+            const el = document.getElementById('hero-price');
+            if (!el) return;
+            el.classList.remove('tick-up', 'tick-down');
+            void el.offsetWidth;
+            el.classList.add(dir === 'up' ? 'tick-up' : 'tick-down');
+            setTimeout(() => el.classList.remove('tick-up', 'tick-down'), 600);
+        }
+
+        function updateMarquee(trades, liveCount, board) {
+            const track = document.getElementById('yas-marquee-track');
+            if (!track) return;
+            const bits = [];
+            if (liveCount > 0) bits.push(`<span class="hot">🔴 ${liveCount}명 실시간 접속</span>`);
+            (trades || []).slice(0, 6).forEach(t => {
+                const side = t.action?.includes('long') || t.action === 'buy' ? 'up' : 'down';
+                bits.push(`<span class="${side}">@${(t.displayName || t.userId || 'guest').slice(0, 8)} · ${actionKo(t.action)} · ${t.instrumentName || '픽'}</span>`);
+            });
+            (board?.gainers || []).slice(0, 3).forEach(g => {
+                bits.push(`<span class="up">📈 ${g.teamShort}·${g.playerName} ${g.changePct >= 0 ? '+' : ''}${Number(g.changePct || 0).toFixed(1)}%</span>`);
+            });
+            (board?.losers || []).slice(0, 2).forEach(g => {
+                bits.push(`<span class="down">📉 ${g.teamShort}·${g.playerName} ${Number(g.changePct || 0).toFixed(1)}%</span>`);
+            });
+            if (!bits.length) bits.push('<span>YASDAQ · YES/NO 베팅하고 순위에 올라가세요</span>');
+            const html = bits.join('');
+            track.innerHTML = html + html;
+        }
+
+        function updatePresenceNudge(count) {
+            const el = document.getElementById('presence-nudge');
+            if (!el) return;
+            if (count >= 8) el.textContent = `🔥 지금 ${count}명이 동시에 베팅 중 — 혼자가 아니에요`;
+            else if (count >= 3) el.textContent = `👀 ${count}명이 같이 지켜보는 중`;
+            else el.textContent = count > 0 ? `${count}명 접속 · 첫 YES를 남겨보세요` : '';
+        }
+
+        function maybeCrowdShift(longPct) {
+            const bar = document.querySelector('.crowd-bar');
+            if (!bar || longPct == null) return;
+            if (lastCrowdLong != null && Math.abs(longPct - lastCrowdLong) >= 3) {
+                bar.classList.add('crowd-shift');
+                setTimeout(() => bar.classList.remove('crowd-shift'), 900);
+                if (longPct >= 65 || longPct <= 35) {
+                    showDopamineToast(longPct >= 65 ? '🟢' : '🔴', `군중 ${longPct}% YES`, '한쪽으로 기울었어요');
+                }
+            }
+            lastCrowdLong = longPct;
+        }
+
+        function checkWatchlistMovers(board) {
+            const list = board?.all || [];
+            if (!list.length) return;
+            getWatchlist().forEach(id => {
+                const item = list.find(x => x.id === id);
+                if (!item) return;
+                const ch = Number(item.changePct || 0);
+                const prev = lastPriceById[id]?.change;
+                if (prev != null && Math.abs(ch - prev) >= 2.5) {
+                    const inst = lineupCache.find(i => i.instrumentId === id);
+                    showDopamineToast(ch > prev ? '📈' : '📉', `관심종목 ${inst?.playerName || id}`, `${ch >= 0 ? '+' : ''}${ch.toFixed(1)}% 급변`);
+                    yasHaptic([10, 20, 10]);
+                }
+                lastPriceById[id] = { change: ch };
+            });
+        }
+
+        function renderFeedList(trades) {
+            const feed = document.getElementById('feed');
+            if (!feed) return;
+            const sig = (trades || []).map(t => `${t.userId}-${t.at}-${t.instrumentId}`).join('|');
+            const isFresh = sig && sig !== lastFeedSig;
+            lastFeedSig = sig;
+            feed.innerHTML = trades?.length
+                ? trades.map((t, i) => `
+                    <li class="${isFresh && i === 0 ? 'fresh' : ''}">
+                        <span>@${(t.displayName || t.userId || 'guest').slice(0, 8)}</span>
+                        <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.instrumentName || '픽'} · ${Number(t.price || 0).toLocaleString()}P</span>
+                    </li>`).join('')
+                : '<li class="meta">첫 YES/NO 베팅이 여기에 실시간으로 쌓입니다</li>';
+        }
+
         function celebrateTrade(side) {
             const btn = document.getElementById(side === 'long' ? 'btn-yes' : 'btn-no');
             btn?.classList.remove('celebrate');
@@ -2990,6 +3563,9 @@
             void holdStat?.offsetWidth;
             holdStat?.classList.add('pop');
             yasHaptic(side === 'long' ? [10, 30, 14] : [16, 40, 16]);
+            recordTradeCombo();
+            bumpMission('trade');
+            if (tradeCombo === 1) fireConfetti(18);
         }
 
         function scrollToTrade() {
@@ -3270,6 +3846,7 @@
         async function bootApp() {
             if (appBooted) return;
             appBooted = true;
+            initDailyStreak();
             void checkStoragePersistence();
             renderWatchlist();
             updateTradeUI();
@@ -3485,6 +4062,7 @@
         function animateEquity(target) {
             const el = document.getElementById('wallet-equity');
             const start = lastEquity == null ? target : lastEquity;
+            celebrateEquityMilestones(start, target);
             lastEquity = target;
             el.classList.remove('equity-up', 'equity-down');
             if (start === target) {
@@ -3584,7 +4162,11 @@
                 }
             }
 
-            if (me.rank !== lastRank && me.rank != null) lastRank = me.rank;
+            if (me.rank !== lastRank && me.rank != null) {
+                if (lastRank != null && me.rank < lastRank) celebrateRankChange(lastRank, me.rank);
+                lastRank = me.rank;
+            }
+            celebrateWeeklyReturn(Number(me.weeklyReturnPct) || 0);
             maybeWeeklyToast();
 
             document.getElementById('ops-crown').style.display =
@@ -4200,14 +4782,10 @@
             try {
                 const feed = document.getElementById('feed');
                 const trades = data.recentTrades || [];
-                feed.innerHTML = trades.length
-                    ? trades.map(t => `
-                        <li>
-                            <span>@${(t.displayName || t.userId || 'guest').slice(0, 8)}</span>
-                            <span><span class="feed-action">${actionKo(t.action)}</span> · ${t.instrumentName || '픽'} · ${Number(t.price || 0).toLocaleString()}P</span>
-                        </li>`).join('')
-                    : '<li class="meta">첫 YES/NO 베팅이 여기에 실시간으로 쌓입니다</li>';
+                renderFeedList(trades);
             } catch (e) { console.warn('feed', e); }
+            try { updateMarquee(data.recentTrades, data.liveCount ?? liveLineMeta.count, data.marketBoard); } catch (e) { console.warn('marquee', e); }
+            try { checkWatchlistMovers(data.marketBoard); } catch (e) { console.warn('watch movers', e); }
             try { renderMarketBoard(data.marketBoard); } catch (e) { console.warn('board', e); }
         }
 
@@ -4234,6 +4812,8 @@
             document.getElementById('crowd-long').style.width = lp + '%';
             document.getElementById('crowd-text').textContent =
                 `YES ${lp}% · NO ${crowd.shortPct ?? 100 - lp}% · ${data.liveCount ?? 0}명 참여 중`;
+            maybeCrowdShift(lp);
+            updatePresenceNudge(data.liveCount ?? 0);
 
             const g = data.game;
             if (g) {
@@ -4557,10 +5137,12 @@
                 : '탭하면 종목 보기';
             document.getElementById('live-line').textContent =
                 `${liveLineMeta.count}명 접속 · ${hint}`;
+            updatePresenceNudge(liveLineMeta.count);
         }
 
         async function selectStock(instrumentId) {
             selectedId = instrumentId;
+            bumpMission('explore', instrumentId);
             setPriceChartLoading();
             try {
                 const res = await fetch(`${API}/amm/market/${encodeURIComponent(instrumentId)}`);
@@ -4702,17 +5284,34 @@
             liveLineMeta.count = p.liveCount ?? 0;
             updateLiveLine();
         });
-        socket.on('tradeFeed', () => refresh());
+        socket.on('tradeFeed', () => {
+            const now = Date.now();
+            if (now - lastTradeFeedToast > 12_000) {
+                lastTradeFeedToast = now;
+                showDopamineToast('⚡', '누군가 베팅했어요', '실시간 픽 로그 확인');
+            }
+            refresh();
+        });
         socket.on('disclosure', payload => {
             if (payload?.item) {
                 const list = hub?.disclosures ? [payload.item, ...hub.disclosures] : [payload.item];
                 if (hub) hub.disclosures = list.slice(0, 8);
                 renderDisclosures(list.slice(0, 8), hub?.session);
                 if (payload.instrument?.id === selectedId) {
+                    const prev = hub?.instrument?.price;
                     document.getElementById('hero-price').textContent =
                         payload.instrument.price.toLocaleString() + ' P';
+                    if (prev != null && payload.instrument.price !== prev) {
+                        flashHeroPrice(payload.instrument.price > prev ? 'up' : 'down');
+                    }
                 }
-                toast(`공시 ${payload.item.priceDeltaPct >= 0 ? '📈' : '📉'} ${payload.item.headline.slice(0, 24)}…`);
+                showDopamineToast(
+                    payload.item.priceDeltaPct >= 0 ? '📈' : '📉',
+                    '속보 공시',
+                    payload.item.headline.slice(0, 36),
+                    Math.abs(payload.item.priceDeltaPct) >= 3 ? 'gold' : undefined,
+                );
+                if (Math.abs(payload.item.priceDeltaPct) >= 3) fireConfetti(22);
             }
         });
         socket.on('demoPulse', payload => {
@@ -4739,6 +5338,11 @@
         socket.on('gameUpdate', snapshot => renderGameSnapshot(snapshot));
         socket.on('playFeed', play => {
             renderPlay(play);
+            if (play?.text && /홈런|2루타|3루타|적시|만루|역전|득점/.test(play.text)) {
+                showDopamineToast('⚾', '타석 속보', play.text.slice(0, 40), 'gold');
+                fireConfetti(24);
+                yasHaptic([14, 28, 14, 28, 20]);
+            }
             if (play.instrumentId && hub?.game?.status === 'live') {
                 fetch(`${API}/amm/market/${play.instrumentId}`)
                     .then(r => r.json())
@@ -4753,14 +5357,27 @@
             }
         });
         socket.on('priceUpdate', item => {
-            if (item.id !== selectedId) return;
-            document.getElementById('hero-price').textContent =
-                item.price.toLocaleString() + ' P';
-            if (item.oracleValue != null && hub?.instrument) {
-                const probe = { ...hub.instrument, id: item.id, oracleValue: item.oracleValue };
-                document.getElementById('hero-ops').textContent = fmtOracle(probe);
+            const prev = hub?.instrument?.price;
+            if (item.id === selectedId) {
+                document.getElementById('hero-price').textContent =
+                    item.price.toLocaleString() + ' P';
+                if (prev != null && item.price !== prev) {
+                    flashHeroPrice(item.price > prev ? 'up' : 'down');
+                }
+                if (item.oracleValue != null && hub?.instrument) {
+                    const probe = { ...hub.instrument, id: item.id, oracleValue: item.oracleValue };
+                    document.getElementById('hero-ops').textContent = fmtOracle(probe);
+                }
+                loadPriceChart(selectedId);
             }
-            loadPriceChart(selectedId);
+            if (isWatchlisted(item.id)) {
+                const ch = Number(item.changePct ?? 0);
+                const prevCh = lastPriceById[item.id]?.change;
+                if (prevCh != null && Math.abs(ch - prevCh) >= 2) {
+                    showDopamineToast(ch > prevCh ? '⭐📈' : '⭐📉', '관심종목 급변', `${ch >= 0 ? '+' : ''}${ch.toFixed(1)}%`);
+                }
+                lastPriceById[item.id] = { change: ch };
+            }
         });
 
         document.getElementById('share-prompt-go')?.addEventListener('click', () => {
