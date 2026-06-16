@@ -7,7 +7,7 @@
 | **플레이볼** (앱) | `https://OOO.onrender.com/` | 실시간 경기·중계·가가존 |
 | **야구주식** (웹) | `https://OOO.onrender.com/stock/` | 베팅·시세·밈 |
 
-`OOO` = Render가 만들어 주는 이름 (예: `playball-kbo`)
+`OOO` = Render 서비스 이름 (고정: **`kbo-stock-mvp`**)
 
 > 플레이볼은 **앱스토어 APK가 아니라 웹 앱**이에요.  
 > 동업자는 링크만 열면 폰·PC 브라우저에서 바로 씁니다. (나중에 Expo 앱은 별도)
@@ -34,7 +34,7 @@ git push origin main
 
 | 항목 | 값 |
 |------|-----|
-| Name | `playball-kbo` (아무 이름) |
+| Name | **`kbo-stock-mvp`** (이 이름 그대로 — URL이 `https://kbo-stock-mvp.onrender.com` 이 됨) |
 | Build Command | `npm run build:render` |
 | Start Command | `npm run start:prod` |
 | Health Check | `/amm/health` |
@@ -47,7 +47,7 @@ git push origin main
 | `STORAGE_MODE` | `postgres` |
 | `DATABASE_URL` | Supabase에서 복사한 URI |
 | `DB_SYNCHRONIZE` | `true` |
-| `PUBLIC_URL` | 배포 후 나온 URL (예: `https://playball-kbo.onrender.com`) |
+| `PUBLIC_URL` | `https://kbo-stock-mvp.onrender.com` |
 
 6. **Create Web Service** → 5~10분 대기
 
@@ -57,10 +57,10 @@ git push origin main
 
 ```
 플레이볼 (실시간 야구 앱)
-https://playball-kbo.onrender.com/
+https://kbo-stock-mvp.onrender.com/
 
-야구주식 (베팅 게임)
-https://playball-kbo.onrender.com/stock/
+야스닥 (베팅 게임)
+https://kbo-stock-mvp.onrender.com/stock/
 
 ※ 첫 접속 30초 정도 느릴 수 있음 (무료 서버 슬립)
 ※ 가상 포인트 게임, 실제 돈 아님

@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: playball-kbo
+    name: kbo-stock-mvp
     runtime: node
     plan: free
     # build:render 스크립트가 devDeps 설치 + nest/vite 빌드를 한 번에 처리
@@ -25,6 +25,6 @@ services:
         value: true
       - key: MEME_SYNC_ENABLED
         value: true
-      # 배포 후 실제 URL로 바꾸기 (예: https://playball-kbo.onrender.com)
+      # 배포 후 실제 URL (서비스 이름과 동일해야 함)
       - key: PUBLIC_URL
-        value: https://playball-kbo.onrender.com
+        value: https://kbo-stock-mvp.onrender.com
