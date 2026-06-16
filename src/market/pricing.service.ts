@@ -13,7 +13,8 @@ const PRICE_FLOOR = 500;
 const HYPE_PRICE_BASE = 600;
 const HYPE_PRICE_SLOPE = 12;
 
-export const SENTIMENT_PER_SHARE = 0.00015;
+/** 1주당 sentiment 변화 — 유저 베팅 체감 (100주 ≈ ±3.5%) */
+export const SENTIMENT_PER_SHARE = 0.00035;
 
 @Injectable()
 export class PricingService {

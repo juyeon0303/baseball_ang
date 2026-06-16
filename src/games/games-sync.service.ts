@@ -29,25 +29,16 @@ import { KboRawGame, KboScoreProvider, resolveKboGameStatus } from './kbo-score.
 import { GamesService } from './games.service';
 import { GameLiveService } from './game-live.service';
 import { RelaySyncService } from './relay-sync.service';
-
-
-
-const PLAY_SENTIMENT: Record<PlayImpactKind, number> = {
-
-  run: 0.012,
-
-  game_end: 0.02,
-
-  game_start: 0.004,
-
-  inning: 0,
-
-};
-
-
+import {
+  computeSentimentDelta,
+  GAME_END_LOSS_SENTIMENT,
+  GAME_END_WIN_SENTIMENT,
+  playSentimentDelta,
+  resolveInstrumentForPlay,
+  SENTIMENT_DECAY_RATE,
+} from './play-sentiment.util';
 
 @Injectable()
-
 export class GamesSyncService implements OnModuleInit {
 
   private readonly logger = new Logger(GamesSyncService.name);
@@ -416,13 +407,19 @@ export class GamesSyncService implements OnModuleInit {
 
             : null;
 
-      const instrumentId = winner
+      const loser =
 
-        ? this.games.resolveInstrumentForTeam(winner)
+        winner === game.homeTeam
 
-        : game.linkedInstrumentId;
+          ? game.awayTeam
 
-      this.pushPlay({
+          : winner === game.awayTeam
+
+            ? game.homeTeam
+
+            : null;
+
+      void this.pushPlay({
 
         gameId: game.id,
 
@@ -430,11 +427,13 @@ export class GamesSyncService implements OnModuleInit {
 
         team: winner ?? undefined,
 
-        instrumentId,
-
         impact: 'game_end',
 
+        skipMarket: true,
+
       });
+
+      void this.applyGameEndMarket(game, winner, loser);
 
     }
 
@@ -512,11 +511,100 @@ export class GamesSyncService implements OnModuleInit {
 
       sentimentMultiplier: runs,
 
+      skipMarket: this.relay.isEnabled(),
+
     });
 
   }
 
 
+
+  /** 네이버 중계 플레이 → 선수/팀 종목 sentiment (relay-sync에서 호출) */
+  async applyPlayPriceEffect(
+    play: PlayFeedItem,
+    game?: TodayGame,
+  ): Promise<void> {
+    const sentimentDelta = playSentimentDelta(play);
+    if (!sentimentDelta) return;
+
+    const instrumentId = resolveInstrumentForPlay({
+      text: play.text,
+      team: play.team,
+      batter: game?.batter,
+      explicitInstrumentId: play.instrumentId,
+      resolveTeamInstrument: (t) => this.games.resolveInstrumentForTeam(t),
+    });
+    if (!instrumentId) return;
+
+    await this.applyInstrumentSentiment(
+      instrumentId,
+      sentimentDelta,
+      play.impact ?? 'inning',
+    );
+
+    const meme = findMemeByKeyword(play.text);
+    if (meme) {
+      const memeDelta =
+        sentimentDelta > 0 ? sentimentDelta * 0.8 : sentimentDelta * 0.6;
+      if (memeDelta !== 0) {
+        await this.market.applyPlaySentiment(meme.id, memeDelta);
+      }
+    }
+  }
+
+  private async applyGameEndMarket(
+    game: TodayGame,
+    winner: string | null,
+    loser: string | null,
+  ): Promise<void> {
+    if (winner) {
+      await this.applyInstrumentSentiment(
+        this.games.resolveInstrumentForTeam(winner),
+        GAME_END_WIN_SENTIMENT,
+        'game_end',
+      );
+    }
+    if (loser) {
+      await this.applyInstrumentSentiment(
+        this.games.resolveInstrumentForTeam(loser),
+        GAME_END_LOSS_SENTIMENT,
+        'game_end',
+      );
+    }
+    await this.market.decaySentimentTowardNeutral(
+      this.games.resolveInstrumentForTeam(game.awayTeam),
+      SENTIMENT_DECAY_RATE,
+    );
+    await this.market.decaySentimentTowardNeutral(
+      this.games.resolveInstrumentForTeam(game.homeTeam),
+      SENTIMENT_DECAY_RATE,
+    );
+  }
+
+  private async applyInstrumentSentiment(
+    instrumentId: string,
+    sentimentDelta: number,
+    playImpact?: string,
+  ): Promise<void> {
+    const inst = await this.market.applyPlaySentiment(
+      instrumentId,
+      sentimentDelta,
+    );
+    if (!inst) return;
+
+    this.stream.broadcastPriceUpdate({
+      id: inst.id,
+      name: inst.name,
+      teamShort: inst.teamShort,
+      playerName: inst.playerName,
+      price: inst.price,
+      fairPrice: inst.fairPrice,
+      oracleValue: inst.oracleValue,
+      sentiment: inst.sentiment,
+      metricLabel: inst.metricLabel,
+      playImpact,
+    });
+  }
 
   private async pushPlay(input: {
 
@@ -528,21 +616,45 @@ export class GamesSyncService implements OnModuleInit {
 
     instrumentId?: string;
 
+    batter?: string;
+
     impact?: PlayImpactKind;
 
+    playType?: string;
+
     sentimentMultiplier?: number;
+
+    skipMarket?: boolean;
 
   }): Promise<void> {
 
     const impact = input.impact ?? 'inning';
 
-    const base = PLAY_SENTIMENT[impact];
+    const sentimentDelta = computeSentimentDelta({
 
-    const mult = input.sentimentMultiplier ?? 1;
+      impact,
 
-    const sentimentDelta = base * mult;
+      playType: input.playType,
 
+      text: input.text,
 
+      multiplier: input.sentimentMultiplier,
+
+    });
+
+    const instrumentId = resolveInstrumentForPlay({
+
+      text: input.text,
+
+      team: input.team,
+
+      batter: input.batter,
+
+      explicitInstrumentId: input.instrumentId,
+
+      resolveTeamInstrument: (t) => this.games.resolveInstrumentForTeam(t),
+
+    });
 
     const play: PlayFeedItem = {
 
@@ -556,7 +668,7 @@ export class GamesSyncService implements OnModuleInit {
 
       team: input.team,
 
-      instrumentId: input.instrumentId,
+      instrumentId,
 
       impact,
 
@@ -577,50 +689,14 @@ export class GamesSyncService implements OnModuleInit {
 
     void this.community.postPlay(input.text, input.gameId, input.team);
 
-    if (input.instrumentId && sentimentDelta !== 0) {
+    if (input.skipMarket || !instrumentId || sentimentDelta === 0) return;
 
-      const inst = await this.market.applyPlaySentiment(
-
-        input.instrumentId,
-
-        sentimentDelta,
-
-      );
-
-      if (inst) {
-
-        this.stream.broadcastPriceUpdate({
-
-          id: inst.id,
-
-          name: inst.name,
-
-          teamShort: inst.teamShort,
-
-          playerName: inst.playerName,
-
-          price: inst.price,
-
-          fairPrice: inst.fairPrice,
-
-          oracleValue: inst.oracleValue,
-
-          sentiment: inst.sentiment,
-
-          metricLabel: inst.metricLabel,
-
-          playImpact: impact,
-
-        });
-
-      }
-
-    }
+    await this.applyInstrumentSentiment(instrumentId, sentimentDelta, impact);
 
     const meme = findMemeByKeyword(input.text);
-    if (meme && sentimentDelta !== 0) {
+    if (meme) {
       const memeDelta =
-        impact === 'run' ? sentimentDelta * 1.4 : sentimentDelta * 0.8;
+        sentimentDelta > 0 ? sentimentDelta * 1.4 : sentimentDelta * 0.8;
       await this.market.applyPlaySentiment(meme.id, memeDelta);
     }
 

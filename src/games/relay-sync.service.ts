@@ -2,8 +2,6 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Interval } from '@nestjs/schedule';
 import { StockStreamGateway } from '../amm/stock-stream.gateway';
-import { findMemeByKeyword } from '../market/market-meme-lineup';
-import { MarketService } from '../market/market.service';
 import { CommunityService } from '../community/community.service';
 import { formatBasesLabel } from './games-display.util';
 import { GamesRecapService } from './games-recap.service';
@@ -25,13 +23,6 @@ import {
   NaverRelayProvider,
 } from './naver-relay.provider';
 
-const PLAY_SENTIMENT: Record<string, number> = {
-  run: 0.012,
-  game_end: 0.02,
-  game_start: 0.004,
-  inning: 0,
-};
-
 @Injectable()
 export class RelaySyncService {
   private readonly logger = new Logger(RelaySyncService.name);
@@ -46,7 +37,6 @@ export class RelaySyncService {
     @Inject(forwardRef(() => GamesSyncService))
     private readonly gamesSync: GamesSyncService,
     private readonly recap: GamesRecapService,
-    private readonly market: MarketService,
     private readonly stream: StockStreamGateway,
     private readonly community: CommunityService,
     private readonly live: GameLiveService,
@@ -323,36 +313,6 @@ export class RelaySyncService {
     this.live.recordGameState(game, play);
     this.stream.broadcastPlayFeed(play);
     void this.community.postPlay(play.text, play.gameId, play.team);
-
-    const impact = play.impact ?? 'inning';
-    const base = PLAY_SENTIMENT[impact] ?? 0;
-    const mult = impact === 'run' ? 1 : 1;
-    const sentimentDelta = base * mult;
-
-    if (game.linkedInstrumentId && sentimentDelta !== 0) {
-      const inst = await this.market.applyPlaySentiment(
-        game.linkedInstrumentId,
-        sentimentDelta,
-      );
-      if (inst) {
-        this.stream.broadcastPriceUpdate({
-          id: inst.id,
-          name: inst.name,
-          teamShort: inst.teamShort,
-          playerName: inst.playerName,
-          price: inst.price,
-          fairPrice: inst.fairPrice,
-          oracleValue: inst.oracleValue,
-          sentiment: inst.sentiment,
-          metricLabel: inst.metricLabel,
-          playImpact: impact,
-        });
-      }
-    }
-
-    const meme = findMemeByKeyword(play.text);
-    if (meme && sentimentDelta !== 0) {
-      await this.market.applyPlaySentiment(meme.id, sentimentDelta * 0.8);
-    }
+    await this.gamesSync.applyPlayPriceEffect(play, game);
   }
 }

@@ -44,9 +44,63 @@
             --site-header-offset: 72px;
             --strip-h: 44px;
             --marquee-h: 26px;
+            --scrollbar-size: 7px;
+            --scrollbar-track: rgba(5, 8, 13, 0.35);
+            --scrollbar-thumb: rgba(148, 163, 184, 0.32);
+            --scrollbar-thumb-hover: rgba(94, 234, 212, 0.58);
+            --scrollbar-thumb-active: rgba(45, 212, 191, 0.75);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            scrollbar-gutter: stable;
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+        }
+
+        *::-webkit-scrollbar {
+            width: var(--scrollbar-size);
+            height: var(--scrollbar-size);
+        }
+
+        *::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+            border-radius: 999px;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: linear-gradient(
+                180deg,
+                rgba(148, 163, 184, 0.38) 0%,
+                rgba(94, 234, 212, 0.3) 100%
+            );
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            border-radius: 999px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(
+                180deg,
+                rgba(94, 234, 212, 0.68) 0%,
+                rgba(45, 212, 191, 0.48) 100%
+            );
+            background-clip: padding-box;
+        }
+
+        *::-webkit-scrollbar-thumb:active {
+            background: var(--scrollbar-thumb-active);
+            background-clip: padding-box;
+        }
+
+        *::-webkit-scrollbar-corner {
+            background: transparent;
+        }
 
         body {
             background:
@@ -900,19 +954,6 @@
             max-height: 220px;
             overflow-y: auto;
             padding-right: 4px;
-        }
-
-        .feed-list::-webkit-scrollbar,
-        .lb-list::-webkit-scrollbar,
-        .disc-list::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .feed-list::-webkit-scrollbar-thumb,
-        .lb-list::-webkit-scrollbar-thumb,
-        .disc-list::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 999px;
         }
 
         .feed-list li {
@@ -3082,6 +3123,8 @@
         const NICKNAME_KEY = 'yamgu-nickname';
         const WEEK_SEEN_KEY = 'yamgu-week-seen';
         const WATCHLIST_KEY = 'yas-watchlist';
+        const SIDE_CACHE_KEY = 'yas-side-cache-v1';
+        const SIDE_CACHE_TTL_MS = 15 * 60 * 1000;
         const STREAK_KEY = 'yas-streak';
         const STREAK_LAST_KEY = 'yas-streak-last';
         const MISSIONS_KEY = 'yas-missions';
@@ -3102,6 +3145,9 @@
         let sideTab = 'market';
         let hub = null;
         let hubLoaded = false;
+        let sidePanelsReady = false;
+        let sidePanelSnapshot = null;
+        let sidePanelFetchGen = 0;
         let lineupOpen = false;
         let lineupCache = [];
         let lastEquity = null;
@@ -3122,6 +3168,98 @@
         if (!IS_LOCAL_DEV) {
             const prog = document.getElementById('progress-panel');
             if (prog) prog.style.display = 'none';
+        }
+
+        function readSideCache() {
+            try {
+                const raw = localStorage.getItem(SIDE_CACHE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed?.data || Date.now() - (parsed.at || 0) > SIDE_CACHE_TTL_MS) return null;
+                return parsed.data;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function writeSideCache(data) {
+            if (!data) return;
+            try {
+                localStorage.setItem(SIDE_CACHE_KEY, JSON.stringify({ at: Date.now(), data }));
+            } catch (_) {}
+        }
+
+        function applySidePanels(patch, { persist = true } = {}) {
+            if (!patch || typeof patch !== 'object') return;
+            sidePanelSnapshot = { ...(sidePanelSnapshot || {}), ...patch };
+            sidePanelsReady = true;
+            hubLoaded = true;
+            hub = { ...(hub || {}), ...sidePanelSnapshot };
+            renderSideRail({
+                ...(hub || {}),
+                liveCount: hub?.liveCount ?? liveLineMeta.count ?? 0,
+            });
+            if (persist) writeSideCache(sidePanelSnapshot);
+        }
+
+        function hydrateSidePanelsFromCache() {
+            const cached = readSideCache();
+            if (!cached) return false;
+            if (cached.lineup?.length && !lineupCache.length) {
+                renderLineup(cached.lineup);
+            }
+            applySidePanels(cached, { persist: false });
+            setSyncStatus(true, '캐시 · 갱신 중');
+            return true;
+        }
+
+        async function fetchSidePanelsFast() {
+            const gen = ++sidePanelFetchGen;
+            try {
+                const needLineup = !lineupCache.length;
+                const [boardRes, etfRes, tradesRes, discRes, lineupRes] = await Promise.all([
+                    fetch(`${API}/amm/market-board`).catch(() => null),
+                    fetch(`${API}/amm/etfs`).catch(() => null),
+                    fetch(`${API}/amm/trades?limit=8`).catch(() => null),
+                    fetch(`${API}/amm/disclosures`).catch(() => null),
+                    needLineup ? fetch(`${API}/amm/lineup`).catch(() => null) : null,
+                ]);
+                if (gen !== sidePanelFetchGen) return null;
+
+                const patch = {};
+                if (boardRes?.ok) patch.marketBoard = await boardRes.json();
+                if (etfRes?.ok) {
+                    const etf = await etfRes.json();
+                    patch.etfs = etf.etfs || [];
+                }
+                if (tradesRes?.ok) {
+                    const tr = await tradesRes.json();
+                    patch.recentTrades = tr.trades || [];
+                }
+                if (discRes?.ok) {
+                    const disc = await discRes.json();
+                    patch.disclosures = disc.disclosures || [];
+                    patch.session = disc.session;
+                }
+                if (lineupRes?.ok) {
+                    const lineup = await lineupRes.json();
+                    patch.lineup = lineup;
+                    renderLineup(lineup);
+                }
+                if (patch.marketBoard?.gainers?.[0] && !patch.weekKing) {
+                    const g = patch.marketBoard.gainers[0];
+                    patch.weekKing = {
+                        userId: 'market_pulse',
+                        displayName: `${g.teamShort}·${g.playerName}`,
+                        weeklyReturnPct: g.changePct ?? 0,
+                        isPulse: true,
+                    };
+                }
+                applySidePanels(patch);
+                return patch;
+            } catch (_) {
+                return null;
+            }
         }
 
         function toast(msg) {
@@ -4244,7 +4382,7 @@
                 sub.textContent = '장 상태 확인 중…';
             }
             if (!items?.length) {
-                if (hubLoaded) {
+                if (sidePanelsReady || hubLoaded) {
                     items = staticDisclosureFallback(session);
                 } else {
                     el.innerHTML = '<li class="disc-item meta disc-skeleton">공시 불러오는 중…</li>';
@@ -4267,7 +4405,7 @@
         function renderEtfs(etfs) {
             const el = document.getElementById('etf-list');
             if (!etfs?.length) {
-                el.innerHTML = hubLoaded
+                el.innerHTML = sidePanelsReady
                     ? '<div class="meta etf-skeleton">ETF 데이터 없음 · 새로고침 후 다시 시도</div>'
                     : '<div class="meta etf-skeleton">ETF 불러오는 중…</div>';
                 return;
@@ -4317,7 +4455,7 @@
                 }));
             }
             if (!rows.length) {
-                el.innerHTML = hubLoaded
+                el.innerHTML = sidePanelsReady
                     ? '<div class="meta">구단주 데이터 없음 · YES 베팅하면 순위에 올라요</div>'
                     : '<div class="meta">구단주 순위 불러오는 중…</div>';
                 return;
@@ -4576,7 +4714,7 @@
                 }
             }
             if (!gainers.length && !losers.length) {
-                el.innerHTML = hubLoaded
+                el.innerHTML = sidePanelsReady
                     ? '<div class="meta" style="grid-column:1/-1">등락 데이터 없음 · 잠시 후 새로고침</div>'
                     : '<div class="meta" style="grid-column:1/-1">시장 데이터 불러오는 중…</div>';
                 return;
@@ -4997,7 +5135,7 @@
         }
 
         async function loadHubSidePanels(hubData) {
-            const merged = { ...(hubData || {}) };
+            const merged = { ...(hubData || {}), ...(sidePanelSnapshot || {}) };
             const needsDisc = !merged.disclosures?.length;
             const needsEtf = !merged.etfs?.length;
             const needsOwners = !merged.shareholders?.length;
@@ -5043,6 +5181,7 @@
                         isPulse: true,
                     };
                 }
+                applySidePanels(merged, { persist: true });
                 return merged;
             } catch (_) {
                 return merged;
@@ -5051,27 +5190,31 @@
 
         async function refresh() {
             let apiOk = false;
-            let roadmap = [];
-            try {
-                const bootId = selectedId || 'lee-jung-hoo';
-                const statusRes = await fetch(
-                    `${API}/amm/status?instrumentId=${encodeURIComponent(bootId)}`,
-                );
-                if (statusRes.ok) {
-                    apiOk = true;
-                    const statusData = await statusRes.json();
-                    roadmap = statusData.roadmap || [];
-                    renderPriceChart(statusData.priceHistory);
-                }
-            } catch (_) {}
-            renderProgress(roadmap, apiOk);
+            const bootId = selectedId || 'lee-jung-hoo';
+
+            // 시장 패널·마퀴는 허브보다 먼저 (가벼운 API 병렬)
+            void fetchSidePanelsFast();
+
+            const statusPromise = fetch(
+                `${API}/amm/status?instrumentId=${encodeURIComponent(bootId)}`,
+            ).catch(() => null);
 
             const [hubRes, lineupRes, syncRes, memeRes] = await Promise.all([
                 fetch(`${API}/amm/hub`, { headers: authHeaders(false) }).catch(() => null),
-                fetch(`${API}/amm/lineup`).catch(() => null),
+                lineupCache.length ? null : fetch(`${API}/amm/lineup`).catch(() => null),
                 fetch(`${API}/amm/live-stats`).catch(() => null),
                 fetch(`${API}/amm/memes`).catch(() => null),
             ]);
+
+            void statusPromise.then(async (statusRes) => {
+                if (!statusRes?.ok) return;
+                apiOk = true;
+                try {
+                    const statusData = await statusRes.json();
+                    renderProgress(statusData.roadmap || [], true);
+                    renderPriceChart(statusData.priceHistory);
+                } catch (_) {}
+            });
 
             if (lineupRes?.ok) {
                 renderLineup(await lineupRes.json());
@@ -5090,19 +5233,12 @@
             }
 
             if (!hubRes?.ok) {
-                hubLoaded = false;
-                setSyncStatus(false, '허브 일부 오류 · 종목·차트는 계속 불러옵니다');
+                setSyncStatus(sidePanelsReady, sidePanelsReady ? '일부 갱신 중' : '허브 일부 오류 · 종목·차트는 계속 불러옵니다');
                 document.getElementById('boot-error').classList.remove('show');
                 if (lineupCache.length) renderLineup(lineupCache);
                 renderMemes(memes);
-                const side = await loadHubSidePanels({
-                    session: null,
-                    marketBoard: hub?.marketBoard,
-                    weekKing: hub?.weekKing,
-                });
-                hubLoaded = true;
-                renderSideRail(side);
-                await loadPriceChart(selectedId || 'lee-jung-hoo');
+                if (!sidePanelsReady) await fetchSidePanelsFast();
+                await loadPriceChart(selectedId || bootId);
                 return;
             }
             document.getElementById('boot-error').classList.remove('show');
@@ -5417,6 +5553,7 @@
         } catch (_) {}
 
         (async () => {
+            hydrateSidePanelsFromCache();
             void loadPriceChart('lee-jung-hoo');
             await bootApp();
             await tryRestoreSession();

@@ -684,6 +684,29 @@ export class MarketService implements OnModuleInit {
     }
   }
 
+  /** 경기 종료 등 — sentiment를 1.0 쪽으로 완만히 복귀 */
+  async decaySentimentTowardNeutral(
+    instrumentId: string,
+    rate = 0.06,
+  ): Promise<InstrumentState | null> {
+    if (!Number.isFinite(rate) || rate <= 0) return null;
+    try {
+      const inst = await Promise.resolve(this.store.getInstrument(instrumentId));
+      const next = inst.sentiment + (1 - inst.sentiment) * rate;
+      if (Math.abs(next - inst.sentiment) < 0.0001) return null;
+      await Promise.resolve(
+        this.store.updateInstrument(instrumentId, {
+          sentiment: Math.max(0.5, Math.min(2, next)),
+        }),
+      );
+      const updated = await Promise.resolve(this.store.recalcPrice(instrumentId));
+      await this.broadcast(updated);
+      return updated;
+    } catch {
+      return null;
+    }
+  }
+
   async updateMemeOracle(
     instrumentId: string,
     value: number,
