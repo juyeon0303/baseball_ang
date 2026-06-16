@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="YASDAQ — KBO 선수 가상 포인트 베팅 (실제 투자 아님)">
     <meta name="theme-color" content="#0f1419">
     <meta property="og:title" content="야스닥 · YASDAQ">
@@ -44,6 +44,9 @@
             --site-header-offset: 72px;
             --strip-h: 44px;
             --marquee-h: 26px;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --dock-h: 58px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,7 +66,11 @@
             font-size: 15px;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
-            padding-top: calc(var(--strip-h) + var(--marquee-h));
+            padding-top: calc(var(--strip-h) + var(--marquee-h) + var(--safe-top));
+        }
+
+        body.has-trade-dock {
+            padding-bottom: calc(var(--dock-h) + var(--safe-bottom));
         }
 
         @media (min-width: 900px) {
@@ -195,7 +202,7 @@
             border: 1px solid var(--border);
             margin-bottom: 4px;
             position: sticky;
-            top: calc(var(--strip-h) + var(--marquee-h) + 8px);
+            top: calc(var(--strip-h) + var(--marquee-h) + var(--safe-top) + 8px);
             z-index: 5;
         }
         .side-tabs button {
@@ -301,7 +308,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            scroll-margin-top: calc(var(--strip-h) + 12px);
+            scroll-margin-top: calc(var(--strip-h) + var(--marquee-h) + var(--safe-top) + 12px);
         }
 
         @media (min-width: 900px) {
@@ -1151,7 +1158,7 @@
 
         .toast {
             position: fixed;
-            bottom: 20px;
+            bottom: calc(20px + var(--safe-bottom));
             left: 50%;
             transform: translateX(-50%) translateY(8px);
             background: var(--surface2);
@@ -2112,7 +2119,8 @@
             left: 0;
             right: 0;
             z-index: 100;
-            height: var(--strip-h);
+            height: calc(var(--strip-h) + var(--safe-top));
+            padding-top: var(--safe-top);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -2247,7 +2255,7 @@
         /* Dopamine / retention layer */
         .yas-marquee {
             position: fixed;
-            top: var(--strip-h);
+            top: calc(var(--strip-h) + var(--safe-top));
             left: 0;
             right: 0;
             z-index: 99;
@@ -2505,6 +2513,165 @@
         .auth-err { min-height: 1.2em; font-size: 0.72rem; color: var(--danger); margin-top: 6px; }
         .auth-account-tag { font-size: 0.72rem; color: var(--accent-neon); margin-bottom: 4px; }
 
+        /* UX polish: touch, focus, motion, mobile dock */
+        button:focus-visible,
+        a:focus-visible,
+        .yas-strip:focus-visible,
+        [role="button"]:focus-visible {
+            outline: 2px solid var(--accent-neon);
+            outline-offset: 2px;
+        }
+
+        @keyframes uxShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .sk-line {
+            display: block;
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, var(--surface2) 0%, rgba(148, 163, 184, 0.14) 50%, var(--surface2) 100%);
+            background-size: 200% 100%;
+            animation: uxShimmer 1.3s ease infinite;
+        }
+
+        .sk-line.short { width: 55%; margin-top: 8px; }
+
+        .board-skeleton {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .board-skeleton > div {
+            padding: 10px;
+            border-radius: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+        }
+
+        .glass-hero.hero-loading .hero-name,
+        .glass-hero.hero-loading .hero-price,
+        .glass-hero.hero-loading .hero-stat-val {
+            color: transparent;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--surface2) 0%, rgba(148, 163, 184, 0.12) 50%, var(--surface2) 100%);
+            background-size: 200% 100%;
+            animation: uxShimmer 1.3s ease infinite;
+        }
+
+        .glass-hero.hero-loading .hero-name { max-width: 8em; }
+        .glass-hero.hero-loading .hero-price { min-width: 5em; }
+        .glass-hero.hero-loading .hero-stat-val { min-width: 3.5em; display: inline-block; }
+
+        .mobile-trade-dock {
+            display: none;
+        }
+
+        @media (max-width: 899px) {
+            .field,
+            .auth-field input {
+                font-size: 16px;
+            }
+
+            .qty-chips button,
+            .side-tabs button,
+            .trade-mode button {
+                min-height: 44px;
+            }
+
+            .btn {
+                min-height: 48px;
+            }
+
+            .mobile-trade-dock {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 95;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 12px calc(8px + var(--safe-bottom));
+                background: rgba(8, 12, 20, 0.94);
+                border-top: 1px solid var(--glass-border);
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+                transform: translateY(110%);
+                transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+                pointer-events: none;
+            }
+
+            .mobile-trade-dock.show {
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+
+            .mobile-trade-dock-info {
+                flex: 1;
+                min-width: 0;
+                line-height: 1.25;
+            }
+
+            .mobile-trade-dock-info span {
+                display: block;
+                font-size: 0.72rem;
+                font-weight: 700;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .mobile-trade-dock-info strong {
+                font-size: 0.82rem;
+                color: var(--accent-neon);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .mobile-trade-dock-btns {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                width: min(168px, 42vw);
+            }
+
+            .mobile-trade-dock-btns button {
+                border: none;
+                border-radius: 10px;
+                font: inherit;
+                font-size: 0.78rem;
+                font-weight: 800;
+                min-height: 44px;
+                cursor: pointer;
+            }
+
+            .mobile-trade-dock-btns .dock-yes {
+                background: linear-gradient(135deg, var(--accent-neon), #14b8a6);
+                color: var(--text-on-accent);
+            }
+
+            .mobile-trade-dock-btns .dock-no {
+                background: var(--down-soft);
+                color: #fecdd3;
+                border: 1px solid rgba(251, 113, 133, 0.45);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+
+            .yas-marquee-track { animation: none; }
+            .mobile-trade-dock { transition: none; }
+        }
+
     </style>
 </head>
 
@@ -2733,7 +2900,7 @@
             <main class="col-main">
                 <div class="col-main-stack">
                 <div class="trade-focus">
-                    <section class="panel glass-hero" id="hero">
+                    <section class="panel glass-hero hero-loading" id="hero">
                         <div class="label">오늘의 픽</div>
                         <div class="bet-cta" id="bet-cta">종목을 선택하세요</div>
                         <div class="hero-top">
@@ -2810,7 +2977,10 @@
                 <section class="panel side-rail-panel" id="market-board-panel" data-side-group="market">
                     <div class="label">시장 현황 · 등락</div>
                     <div class="market-board-grid" id="market-board-grid">
-                        <div class="meta">불러오는 중…</div>
+                        <div class="board-skeleton">
+                            <div><span class="sk-line"></span><span class="sk-line short"></span></div>
+                            <div><span class="sk-line"></span><span class="sk-line short"></span></div>
+                        </div>
                     </div>
                 </section>
 
@@ -2870,6 +3040,17 @@
         </div>
     </div>
     <div class="toast" id="toast"></div>
+
+    <div class="mobile-trade-dock" id="mobile-trade-dock" aria-hidden="true">
+        <div class="mobile-trade-dock-info">
+            <span id="dock-name">종목 선택</span>
+            <strong id="dock-price">—</strong>
+        </div>
+        <div class="mobile-trade-dock-btns">
+            <button type="button" class="dock-yes" onclick="dockScrollTrade('long')">YES</button>
+            <button type="button" class="dock-no" onclick="dockScrollTrade('short')">NO</button>
+        </div>
+    </div>
 
     <div class="holdings-sheet" id="holdings-sheet" aria-hidden="true">
         <div class="holdings-backdrop" onclick="closeHoldingsSheet()"></div>
@@ -3483,6 +3664,40 @@
             yasHaptic([8]);
         }
 
+        function updateMobileTradeDock(inst) {
+            const dock = document.getElementById('mobile-trade-dock');
+            if (!dock) return;
+            if (!inst) {
+                document.getElementById('dock-name').textContent = '종목 선택';
+                document.getElementById('dock-price').textContent = '—';
+                return;
+            }
+            document.getElementById('dock-name').textContent = inst.playerName || '종목';
+            document.getElementById('dock-price').textContent =
+                Number(inst.price).toLocaleString() + ' P';
+        }
+
+        function dockScrollTrade(side) {
+            setTradeMode(side === 'long' ? 'buy' : 'sell');
+            scrollToTrade();
+            document.getElementById('qty')?.focus({ preventScroll: true });
+        }
+
+        function initMobileTradeDock() {
+            if (window.matchMedia('(min-width: 900px)').matches) return;
+            const form = document.querySelector('.trade-form');
+            const dock = document.getElementById('mobile-trade-dock');
+            if (!form || !dock || dock.dataset.bound === '1') return;
+            dock.dataset.bound = '1';
+            const io = new IntersectionObserver(([entry]) => {
+                const show = !entry.isIntersecting;
+                dock.classList.toggle('show', show);
+                dock.setAttribute('aria-hidden', show ? 'false' : 'true');
+                document.body.classList.toggle('has-trade-dock', show);
+            }, { threshold: 0.12, rootMargin: '-78px 0px 0px 0px' });
+            io.observe(form);
+        }
+
         function updateYasStrip(inst, session) {
             if (!inst) return;
             document.getElementById('yas-strip-name').textContent = inst.playerName || 'YASDAQ';
@@ -3494,6 +3709,7 @@
             pctEl.style.color = ch >= 0 ? 'var(--accent-neon)' : 'var(--down-neon)';
             const dot = document.getElementById('yas-strip-dot');
             dot.classList.toggle('live', session?.marketOpen || hub?.game?.status === 'live');
+            updateMobileTradeDock(inst);
         }
 
         function renderYasdaqStory(me, inst) {
@@ -4740,6 +4956,7 @@
             renderSideRail(data);
             updateYasStrip(inst, data.session);
             renderYasdaqStory(data.me, inst);
+            document.getElementById('hero')?.classList.remove('hero-loading');
             if (lineupCache.length) renderLineup(lineupCache);
             renderMyTrades(data.me?.myTrades);
             renderWatchlist();
@@ -5182,6 +5399,13 @@
         });
         document.getElementById('share-prompt-x')?.addEventListener('click', dismissSharePrompt);
 
+        document.getElementById('yas-strip')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                scrollToTrade();
+            }
+        });
+
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape' && isHoldingsSheetOpen()) closeHoldingsSheet();
         });
@@ -5210,9 +5434,11 @@
             setSideTab(sideTab);
             updateHeaderLoginBtn();
             updateNickHint();
+            initMobileTradeDock();
         } catch (_) {}
 
         (async () => {
+            document.getElementById('hero')?.classList.add('hero-loading');
             hydrateSidePanelsFromCache();
             void loadPriceChart('lee-jung-hoo');
             await bootApp();

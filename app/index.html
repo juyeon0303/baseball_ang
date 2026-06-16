@@ -39,6 +39,8 @@
             --danger: #fb7185;
             --nav-h: 60px;
             --strip-h: 48px;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
             --radius: 16px;
             --fs-caption: 0.74rem;
             --fs-small: 0.82rem;
@@ -66,14 +68,14 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
             font-size: 16px;
             line-height: 1.55;
-            padding-bottom: calc(var(--nav-h) + 12px);
+            padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px);
             -webkit-font-smoothing: antialiased;
         }
         .wrap {
             max-width: 440px;
             margin: 0 auto;
             padding: 14px 14px 0;
-            padding-top: calc(14px + var(--strip-h) + 6px);
+            padding-top: calc(14px + var(--strip-h) + var(--safe-top) + 6px);
         }
         header {
             display: flex;
@@ -686,7 +688,7 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            max-height: calc(100dvh - var(--strip-h) - var(--nav-h) - 118px);
+            max-height: calc(100dvh - var(--strip-h) - var(--nav-h) - var(--safe-top) - var(--safe-bottom) - 118px);
             min-height: 320px;
         }
         #tab-feed.feed-live-mode .feed-toolbar { display: none; }
@@ -1093,13 +1095,16 @@
         nav.bottom-nav {
             position: fixed;
             left: 0; right: 0; bottom: 0;
-            height: var(--nav-h);
+            height: calc(var(--nav-h) + var(--safe-bottom));
+            padding-bottom: var(--safe-bottom);
             background: color-mix(in srgb, var(--surface) 92%, transparent);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid var(--border);
             display: flex;
             max-width: 440px;
             margin: 0 auto;
+            z-index: 50;
         }
         nav.bottom-nav button {
             flex: 1;
@@ -1108,14 +1113,15 @@
             color: var(--muted);
             font-size: 0.74rem;
             font-weight: 600;
-            padding-top: 6px;
+            padding-top: 8px;
+            min-height: var(--nav-h);
             cursor: pointer;
         }
         nav.bottom-nav button .ico { display: block; font-size: 1.15rem; margin-bottom: 2px; }
         nav.bottom-nav button.on { color: var(--accent-neon); font-weight: 700; text-shadow: 0 0 12px rgba(94, 184, 255, 0.45); }
         .toast {
             position: fixed;
-            bottom: calc(var(--nav-h) + 12px);
+            bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px);
             left: 50%;
             transform: translateX(-50%) translateY(8px);
             background: rgba(15, 23, 42, 0.92);
@@ -1740,7 +1746,8 @@
             left: 0;
             right: 0;
             z-index: 45;
-            height: var(--strip-h);
+            height: calc(var(--strip-h) + var(--safe-top));
+            padding-top: var(--safe-top);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -1979,7 +1986,7 @@
         }
         header {
             position: sticky;
-            top: var(--strip-h);
+            top: calc(var(--strip-h) + var(--safe-top));
             z-index: 30;
             background: rgba(5, 8, 13, 0.75);
             backdrop-filter: blur(12px);
@@ -2123,6 +2130,46 @@
         .empty { font-size: var(--fs-body); }
         .stock-link { font-size: var(--fs-small); }
         .toast { font-size: var(--fs-body); }
+
+        button:focus-visible,
+        a:focus-visible,
+        .zero-strip:focus-visible,
+        [role="button"]:focus-visible {
+            outline: 2px solid var(--accent-neon);
+            outline-offset: 2px;
+        }
+
+        .tab-panel.active {
+            animation: tabFadeIn 0.22s ease;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        .auth-field input,
+        .chat-input,
+        .nick-input {
+            font-size: max(16px, var(--fs-body));
+        }
+
+        .sentiment-btns button,
+        .team-pick,
+        nav.bottom-nav button {
+            min-height: 44px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+
+            .tab-panel.active { animation: none; }
+        }
     </style>
 </head>
 <body>
@@ -2967,6 +3014,13 @@
                 void loadGameRelay(g.id);
             }
         }
+
+        document.getElementById('zero-strip')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openFromStrip();
+            }
+        });
 
         function renderPulseStory() {
             const el = document.getElementById('pulse-story');
